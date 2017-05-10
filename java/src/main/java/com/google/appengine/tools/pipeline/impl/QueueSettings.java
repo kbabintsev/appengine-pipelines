@@ -1,5 +1,7 @@
 package com.google.appengine.tools.pipeline.impl;
 
+import com.google.common.base.MoreObjects;
+
 /**
  * Queue settings implementation.
  *
@@ -8,33 +10,52 @@ package com.google.appengine.tools.pipeline.impl;
 public final class QueueSettings implements Cloneable {
 
   private String onBackend;
-  private String onModule;
-  private String moduleVersion;
   private String onQueue;
+  private String onService;
+  private String onVersion;
+  private Long queueRetryTaskRetryLimit;
+  private Long queueRetryTaskAgeLimitSeconds;
+  private Long queueRetryMinBackoffSeconds;
+  private Long queueRetryMaxBackoffSeconds;
+  private Long queueRetryMaxDoublings;
   private Long delay;
 
   /**
    * Merge will override any {@code null} setting with a matching setting from {@code other}.
-   * Note, delay value is not being merged.
+   * Note, delay value is not being merged. moduleVersion is only copied if onModule is copied.
    */
   public QueueSettings merge(QueueSettings other) {
-    if (onBackend == null && onModule == null) {
+    if (onBackend == null) {
       onBackend = other.getOnBackend();
     }
-    if (onModule == null && onBackend == null) {
-      onModule = other.getOnModule();
-      moduleVersion = other.getModuleVersion();
+    if (onService == null) {
+      onService = other.getOnService();
+    }
+    if (onVersion == null) {
+      onVersion = other.getOnVersion();
     }
     if (onQueue == null) {
       onQueue = other.getOnQueue();
+    }
+    if (queueRetryTaskRetryLimit == null) {
+      queueRetryTaskRetryLimit = other.getQueueRetryTaskRetryLimit();
+    }
+    if (queueRetryTaskAgeLimitSeconds == null) {
+      queueRetryTaskAgeLimitSeconds = other.getQueueRetryTaskAgeLimitSeconds();
+    }
+    if (queueRetryMinBackoffSeconds == null) {
+      queueRetryMinBackoffSeconds = other.getQueueRetryMinBackoffSeconds();
+    }
+    if (queueRetryMaxBackoffSeconds == null) {
+      queueRetryMaxBackoffSeconds = other.getQueueRetryMaxBackoffSeconds();
+    }
+    if (queueRetryMaxDoublings == null) {
+      queueRetryMaxDoublings = other.getQueueRetryMaxDoublings();
     }
     return this;
   }
 
   public QueueSettings setOnBackend(String onBackend) {
-    if (onBackend != null && onModule != null) {
-      throw new IllegalStateException("OnModule and OnBackend cannot be combined");
-    }
     this.onBackend = onBackend;
     return this;
   }
@@ -43,29 +64,71 @@ public final class QueueSettings implements Cloneable {
     return onBackend;
   }
 
-  public QueueSettings setOnModule(String onModule) {
-    if (onModule != null && onBackend != null) {
-      throw new IllegalStateException("OnModule and OnBackend cannot be combined");
-    }
-    this.onModule = onModule;
+  public String getOnService() {
+    return onService;
+  }
+
+  public QueueSettings setOnService(final String onService) {
+    this.onService = onService;
     return this;
   }
 
-  public String getOnModule() {
-    return onModule;
+  public String getOnVersion() {
+    return onVersion;
   }
 
-  public QueueSettings setModuleVersion(String moduleVersion) {
-    this.moduleVersion = moduleVersion;
+  public QueueSettings setOnVersion(final String onVersion) {
+    this.onVersion = onVersion;
     return this;
-  }
-
-  public String getModuleVersion() {
-    return moduleVersion;
   }
 
   public QueueSettings setOnQueue(String onQueue) {
     this.onQueue = onQueue;
+    return this;
+  }
+
+  public Long getQueueRetryTaskRetryLimit() {
+    return queueRetryTaskRetryLimit;
+  }
+
+  public QueueSettings setQueueRetryTaskRetryLimit(Long queueRetryTaskRetryLimit) {
+    this.queueRetryTaskRetryLimit = queueRetryTaskRetryLimit;
+    return this;
+  }
+
+  public Long getQueueRetryMaxBackoffSeconds() {
+    return queueRetryMaxBackoffSeconds;
+  }
+
+  public QueueSettings setQueueRetryMaxBackoffSeconds(Long queueRetryMaxBackoffSeconds) {
+    this.queueRetryMaxBackoffSeconds = queueRetryMaxBackoffSeconds;
+    return this;
+  }
+
+  public Long getQueueRetryMaxDoublings() {
+    return queueRetryMaxDoublings;
+  }
+
+  public QueueSettings setQueueRetryMaxDoublings(Long queueRetryMaxDoublings) {
+    this.queueRetryMaxDoublings = queueRetryMaxDoublings;
+    return this;
+  }
+
+  public Long getQueueRetryMinBackoffSeconds() {
+    return queueRetryMinBackoffSeconds;
+  }
+
+  public QueueSettings setQueueRetryMinBackoffSeconds(Long queueRetryMinBackoffSeconds) {
+    this.queueRetryMinBackoffSeconds = queueRetryMinBackoffSeconds;
+    return this;
+  }
+
+  public Long getQueueRetryTaskAgeLimitSeconds() {
+    return queueRetryTaskAgeLimitSeconds;
+  }
+
+  public QueueSettings setQueueRetryTaskAgeLimitSeconds(Long queueRetryTaskAgeLimitSeconds) {
+    this.queueRetryTaskAgeLimitSeconds = queueRetryTaskAgeLimitSeconds;
     return this;
   }
 
@@ -92,7 +155,16 @@ public final class QueueSettings implements Cloneable {
 
   @Override
   public String toString() {
-    return "QueueSettings[onBackEnd=" + onBackend + ", onModule=" + onModule + ", moduleVersion="
-        + moduleVersion + ", onQueue=" + onQueue + ", delayInSeconds=" + delay + "]";
+    return MoreObjects.toStringHelper(this)
+            .add("onBackend", onBackend)
+            .add("onService", onService)
+            .add("onVersion", onVersion)
+            .add("onQueue", onQueue)
+            .add("queueRetryTaskRetryLimit", queueRetryTaskRetryLimit)
+            .add("queueRetryTaskAgeLimitSeconds", queueRetryTaskAgeLimitSeconds)
+            .add("queueRetryMinBackoffSeconds", queueRetryMinBackoffSeconds)
+            .add("queueRetryMaxBackoffSeconds", queueRetryMaxBackoffSeconds)
+            .add("queueRetryMaxDoublings", queueRetryMaxDoublings)
+            .toString();
   }
 }

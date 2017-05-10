@@ -39,7 +39,6 @@ import java.util.Set;
  * relevant parameters from the request, its name and then invoke
  * {@link #fromProperties(String, Properties)}.
  *
- *
  * @author rudominer@google.com (Mitch Rudominer)
  */
 public abstract class Task {
@@ -59,28 +58,6 @@ public abstract class Task {
         return task.getQueueSettings().getOnBackend();
       }
     },
-    ON_MODULE {
-      @Override
-      void setProperty(Task task, String value) {
-        task.getQueueSettings().setOnModule(value);
-      }
-
-      @Override
-      String getProperty(Task task) {
-        return task.getQueueSettings().getOnModule();
-      }
-    },
-    MODULE_VERSION {
-      @Override
-      void setProperty(Task task, String value) {
-        task.getQueueSettings().setModuleVersion(value);
-      }
-
-      @Override
-      String getProperty(Task task) {
-        return task.getQueueSettings().getModuleVersion();
-      }
-    },
     ON_QUEUE {
       @Override
       void setProperty(Task task, String value) {
@@ -90,6 +67,100 @@ public abstract class Task {
       @Override
       String getProperty(Task task) {
         return task.getQueueSettings().getOnQueue();
+      }
+    },
+
+    ON_SERVICE {
+      @Override
+      void setProperty(Task task, String value) {
+        task.getQueueSettings().setOnService(value);
+      }
+
+      @Override
+      String getProperty(Task task) {
+        return task.getQueueSettings().getOnService();
+      }
+    },
+
+    ON_VERSION {
+      @Override
+      void setProperty(Task task, String value) {
+        task.getQueueSettings().setOnVersion(value);
+      }
+
+      @Override
+      String getProperty(Task task) {
+        return task.getQueueSettings().getOnVersion();
+      }
+    },
+    QUEUE_RETRY_TASK_RETRY_LIMIT {
+      @Override
+      void setProperty(Task task, String value) {
+        if (value != null) {
+          task.getQueueSettings().setQueueRetryTaskRetryLimit(Long.parseLong(value));
+        }
+      }
+
+      @Override
+      String getProperty(Task task) {
+        Long value = task.getQueueSettings().getQueueRetryTaskRetryLimit();
+        return value == null ? null : value.toString();
+      }
+    },
+    QUEUE_RETRY_TASK_AGE_LIMIT_SECONDS {
+      @Override
+      void setProperty(Task task, String value) {
+        if (value != null) {
+          task.getQueueSettings().setQueueRetryTaskAgeLimitSeconds(Long.parseLong(value));
+        }
+      }
+
+      @Override
+      String getProperty(Task task) {
+        Long value = task.getQueueSettings().getQueueRetryTaskAgeLimitSeconds();
+        return value == null ? null : value.toString();
+      }
+    },
+    QUEUE_RETRY_TASK_MIN_BACKOFF_SECONDS {
+      @Override
+      void setProperty(Task task, String value) {
+        if (value != null) {
+          task.getQueueSettings().setQueueRetryMinBackoffSeconds(Long.parseLong(value));
+        }
+      }
+
+      @Override
+      String getProperty(Task task) {
+        Long value = task.getQueueSettings().getQueueRetryMinBackoffSeconds();
+        return value == null ? null : value.toString();
+      }
+    },
+    QUEUE_RETRY_TASK_MAX_BACKOFF_SECONDS {
+      @Override
+      void setProperty(Task task, String value) {
+        if (value != null) {
+          task.getQueueSettings().setQueueRetryMaxBackoffSeconds(Long.parseLong(value));
+        }
+      }
+
+      @Override
+      String getProperty(Task task) {
+        Long value = task.getQueueSettings().getQueueRetryMaxBackoffSeconds();
+        return value == null ? null : value.toString();
+      }
+    },
+    QUEUE_RETRY_TASK_MAX_DOUBLINGS {
+      @Override
+      void setProperty(Task task, String value) {
+        if (value != null) {
+          task.getQueueSettings().setQueueRetryMaxDoublings(Long.parseLong(value));
+        }
+      }
+
+      @Override
+      String getProperty(Task task) {
+        Long value = task.getQueueSettings().getQueueRetryMaxDoublings();
+        return value == null ? null : value.toString();
       }
     },
     DELAY {
@@ -110,6 +181,7 @@ public abstract class Task {
     static final Set<TaskProperty> ALL = EnumSet.allOf(TaskProperty.class);
 
     abstract void setProperty(Task task, String value);
+
     abstract String getProperty(Task task);
 
     void applyFrom(Task task, Properties properties) {

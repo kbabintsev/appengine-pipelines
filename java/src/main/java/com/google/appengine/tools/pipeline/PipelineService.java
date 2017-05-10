@@ -68,7 +68,7 @@ public interface PipelineService {
    *         {@link #deletePipelineRecords(String, boolean, boolean)}
    */
   <T1, T2> String startNewPipeline(Job2<?, T1, T2> jobInstance, T1 arg1, T2 arg2,
-      JobSetting... settings);
+                                   JobSetting... settings);
 
   /**
    * Start a new Pipeline by specifying the root job and its arguments This
@@ -89,7 +89,7 @@ public interface PipelineService {
    *         {@link #deletePipelineRecords(String, boolean, boolean)}
    */
   <T1, T2, T3> String startNewPipeline(Job3<?, T1, T2, T3> jobInstance, T1 arg1, T2 arg2, T3 arg3,
-      JobSetting... settings);
+                                       JobSetting... settings);
 
   /**
    * Start a new Pipeline by specifying the root job and its arguments This
@@ -112,7 +112,7 @@ public interface PipelineService {
    *         {@link #deletePipelineRecords(String, boolean, boolean)}
    */
   <T1, T2, T3, T4> String startNewPipeline(Job4<?, T1, T2, T3, T4> jobInstance, T1 arg1, T2 arg2,
-      T3 arg3, T4 arg4, JobSetting... settings);
+                                           T3 arg3, T4 arg4, JobSetting... settings);
 
   /**
    * Start a new Pipeline by specifying the root job and its arguments This
@@ -137,7 +137,7 @@ public interface PipelineService {
    *         {@link #deletePipelineRecords(String, boolean, boolean)}
    */
   <T1, T2, T3, T4, T5> String startNewPipeline(Job5<?, T1, T2, T3, T4, T5> jobInstance, T1 arg1,
-      T2 arg2, T3 arg3, T4 arg4, T5 arg5, JobSetting... settings);
+                                               T2 arg2, T3 arg3, T4 arg4, T5 arg5, JobSetting... settings);
 
   /**
    * Start a new Pipeline by specifying the root job and its arguments This
@@ -164,7 +164,7 @@ public interface PipelineService {
    *         {@link #deletePipelineRecords(String, boolean, boolean)},
    */
   <T1, T2, T3, T4, T5, T6> String startNewPipeline(Job6<?, T1, T2, T3, T4, T5, T6> jobInstance,
-      T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, JobSetting... settings);
+                                                   T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, JobSetting... settings);
 
   /**
    * Start a new Pipeline by specifying the root job and its arguments This

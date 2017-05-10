@@ -14,12 +14,12 @@
 
 package com.google.appengine.tools.pipeline;
 
-import com.google.appengine.api.datastore.Key;
 import com.google.appengine.tools.pipeline.impl.FutureValueImpl;
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.appengine.tools.pipeline.impl.PromisedValueImpl;
 import com.google.appengine.tools.pipeline.impl.backend.UpdateSpec;
 import com.google.appengine.tools.pipeline.impl.model.JobRecord;
+import com.google.cloud.datastore.Key;
 
 import java.io.Serializable;
 import java.util.List;
@@ -294,7 +294,6 @@ public abstract class Job<E> implements Serializable {
     return futureCallUnchecked(settings, jobInstance, v1, v2, v3, v4);
   }
 
-
   /**
    * Invoke this method from within the {@code run} method of a <b>generator
    * job</b> in order to specify a job node in the generated child job graph.
@@ -472,12 +471,21 @@ public abstract class Job<E> implements Serializable {
   }
 
   /**
-   * Constructs a new {@code JobSetting.OnModule}. This method is only
-   * syntactic sugar. {@code onModule(x)} is equivalent to
-   * {@code new JobSetting.OnModule(x)}.
+   * Constructs a new {@code JobSetting.OnService}. This method is only
+   * syntactic sugar. {@code onService(x)} is equivalent to
+   * {@code new JobSetting.OnService(x)}.
    */
-  public static JobSetting.OnModule onModule(String module) {
-    return new JobSetting.OnModule(module);
+  public static JobSetting.OnService onService(String service) {
+    return new JobSetting.OnService(service);
+  }
+
+  /**
+   * Constructs a new {@code JobSetting.OnVersion}. This method is only
+   * syntactic sugar. {@code onVersion(x)} is equivalent to
+   * {@code new JobSetting.OnVersion(x)}.
+   */
+  public static JobSetting.OnVersion onVersion(String version) {
+    return new JobSetting.OnVersion(version);
   }
 
   /**
@@ -553,8 +561,12 @@ public abstract class Job<E> implements Serializable {
     return thisJobRecord.getQueueSettings().getOnBackend();
   }
 
-  protected String getOnModule() {
-    return thisJobRecord.getQueueSettings().getOnModule();
+  protected String getOnService() {
+    return thisJobRecord.getQueueSettings().getOnService();
+  }
+
+  protected String getOnVersion() {
+    return thisJobRecord.getQueueSettings().getOnVersion();
   }
 
   /**

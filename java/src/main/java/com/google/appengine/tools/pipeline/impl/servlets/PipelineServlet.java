@@ -14,15 +14,14 @@
 
 package com.google.appengine.tools.pipeline.impl.servlets;
 
-import com.google.appengine.api.datastore.Key;
 import com.google.appengine.tools.pipeline.util.Pair;
-
-import java.io.IOException;
+import com.google.cloud.datastore.Key;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 /**
  * Servlet that handles all requests for the Pipeline framework.
@@ -43,7 +42,7 @@ public class PipelineServlet extends HttpServlet {
    * This must match the URL in web.xml
    */
   public static String baseUrl() {
-    String baseURL =  System.getProperty(BASE_URL_PROPERTY, "/_ah/pipeline/");
+    String baseURL = System.getProperty(BASE_URL_PROPERTY, "/_ah/pipeline/");
     if (!baseURL.endsWith("/")) {
       baseURL += "/";
     }
@@ -71,7 +70,7 @@ public class PipelineServlet extends HttpServlet {
     }
 
     public boolean matches(String path) {
-      return pathComponent.equals(path);
+      return path != null && path.startsWith(pathComponent);
     }
   }
 

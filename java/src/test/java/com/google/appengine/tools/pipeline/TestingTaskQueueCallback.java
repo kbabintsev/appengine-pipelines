@@ -16,7 +16,7 @@ package com.google.appengine.tools.pipeline;
 
 import com.google.appengine.api.urlfetch.URLFetchServicePb;
 import com.google.appengine.api.urlfetch.URLFetchServicePb.URLFetchRequest;
-import com.google.appengine.tools.development.testing.LocalTaskQueueTestConfig.DeferredTaskCallback;
+import com.google.appengine.tools.development.testing.DeferredTaskCallback;
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.appengine.tools.pipeline.impl.servlets.TaskHandler;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
@@ -43,7 +43,7 @@ public class TestingTaskQueueCallback extends DeferredTaskCallback {
    * @return The HTTP status code of the fetch.
    */
   @Override
-  public int executeNonDeferredRequest(URLFetchServicePb.URLFetchRequest req) {
+  public int executeNonDeferredRequest(URLFetchRequest req) {
     String taskName = null;
     int retryCount = -1;
     String queueName = null;

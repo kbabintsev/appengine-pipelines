@@ -16,7 +16,6 @@ package com.google.appengine.tools.pipeline;
 
 import java.io.Serializable;
 
-
 /**
  * A setting for specifying to the framework some aspect of a Job's execution.
  *
@@ -155,15 +154,28 @@ public interface JobSetting extends Serializable {
   }
 
   /**
-   * A setting for specifying what module to run a job on.
+   * A setting for specifying what service to run a job on.
    */
-  final class OnModule extends StringValuedSetting {
+  final class OnService extends StringValuedSetting {
 
-    private static final long serialVersionUID = 3877411731586475273L;
+    private static final long serialVersionUID = -239968568113511744L;
     public static final String DEFAULT = null;
 
-    public OnModule(String module) {
-      super(module);
+    public OnService(String backend) {
+      super(backend);
+    }
+  }
+
+  /**
+   * A setting for specifying what backend to run a job on.
+   */
+  final class OnVersion extends StringValuedSetting {
+
+    private static final long serialVersionUID = -239968568113511744L;
+    public static final String DEFAULT = null;
+
+    public OnVersion(String backend) {
+      super(backend);
     }
   }
 
@@ -189,6 +201,66 @@ public interface JobSetting extends Serializable {
 
     public StatusConsoleUrl(String statusConsoleUrl) {
       super(statusConsoleUrl);
+    }
+  }
+
+  /**
+   *
+   */
+  final class QueueRetryTaskRetryLimit extends IntValuedSetting {
+
+    private static final long serialVersionUID = 1961356639967041657L;
+
+    public QueueRetryTaskRetryLimit(int value) {
+      super(value);
+    }
+  }
+
+  /**
+   *
+   */
+  final class QueueRetryTaskAgeLimitSeconds extends IntValuedSetting {
+
+    private static final long serialVersionUID = 1961356639967041657L;
+
+    public QueueRetryTaskAgeLimitSeconds(int value) {
+      super(value);
+    }
+  }
+
+  /**
+   *
+   */
+  final class QueueRetryMinBackoffSeconds extends IntValuedSetting {
+
+    private static final long serialVersionUID = 1961356639967041657L;
+
+    public QueueRetryMinBackoffSeconds(int value) {
+      super(value);
+    }
+  }
+
+  /**
+   *
+   */
+  final class QueueRetryMaxBackoffSeconds extends IntValuedSetting {
+
+    private static final long serialVersionUID = 1961356639967041657L;
+
+    public QueueRetryMaxBackoffSeconds(int value) {
+      super(value);
+    }
+  }
+
+  /**
+   *
+   */
+  final class QueueRetryMaxDoublings extends IntValuedSetting {
+
+    private static final long serialVersionUID = 1961356639967041657L;
+
+    public QueueRetryMaxDoublings(int value) {
+      super(value);
     }
   }
 }
