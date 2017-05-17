@@ -29,3 +29,8 @@ env_variables:
     -Dcloudtasks.api.root.url=https://cloudtasks.googleapis.com/
     -Dcloudtasks.api.default.parent=projects/yourapp/locations/us-central1
 ```
+
+# Changelog
+
+* 0.2.13.1.CLOUDTASKS-SNAPSHOT - `google-cloud-datastore` updated to 1.0.1 
+* 0.2.13.CLOUDTASKS-SNAPSHOT - Cloud Tasks and Cloud Datastore release 
