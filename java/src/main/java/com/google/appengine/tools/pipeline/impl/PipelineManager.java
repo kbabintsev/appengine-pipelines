@@ -22,10 +22,11 @@ import com.google.appengine.tools.pipeline.JobSetting;
 import com.google.appengine.tools.pipeline.NoSuchObjectException;
 import com.google.appengine.tools.pipeline.OrphanedObjectException;
 import com.google.appengine.tools.pipeline.Value;
+import com.google.appengine.tools.pipeline.impl.backend.AppEngineBackEnd;
 import com.google.appengine.tools.pipeline.impl.backend.AppEngineTaskQueue;
 import com.google.appengine.tools.pipeline.impl.backend.CloudTaskQueue;
 import com.google.appengine.tools.pipeline.impl.backend.PipelineBackEnd;
-import com.google.appengine.tools.pipeline.impl.backend.AppEngineBackEnd;
+import com.google.appengine.tools.pipeline.impl.backend.PipelineTaskQueue;
 import com.google.appengine.tools.pipeline.impl.backend.TaskAlreadyExistException;
 import com.google.appengine.tools.pipeline.impl.backend.UpdateSpec;
 import com.google.appengine.tools.pipeline.impl.backend.UpdateSpec.Group;
@@ -72,6 +73,8 @@ import java.util.logging.Logger;
  *
  */
 public class PipelineManager {
+
+  public static final String CLOUD_DATASTORE_ROOT_URL_PROPERTY = "clouddatastore.api.root.url";
 
   private static final Logger logger = Logger.getLogger(PipelineManager.class.getName());
 
@@ -562,11 +565,19 @@ public class PipelineManager {
 
   public synchronized static PipelineBackEnd getBackEnd() {
     if (backEnd == null) {
+      final PipelineTaskQueue pipelineTaskQueue;
       if (System.getProperty(CloudTaskQueue.CLOUDTASKS_API_ROOT_URL_PROPERTY) != null) {
-        backEnd = new AppEngineBackEnd(new CloudTaskQueue(), DatastoreOptions.getDefaultInstance().getService());
+        pipelineTaskQueue = new CloudTaskQueue();
       } else {
-        backEnd = new AppEngineBackEnd(new AppEngineTaskQueue(), DatastoreOptions.getDefaultInstance().getService());
+        pipelineTaskQueue = new AppEngineTaskQueue();
       }
+      final DatastoreOptions datastoreOptions;
+      if (System.getProperty(CLOUD_DATASTORE_ROOT_URL_PROPERTY) != null) {
+        datastoreOptions = DatastoreOptions.newBuilder().setHost(System.getProperty(CLOUD_DATASTORE_ROOT_URL_PROPERTY)).build();
+      } else {
+        datastoreOptions = DatastoreOptions.getDefaultInstance();
+      }
+      backEnd = new AppEngineBackEnd(pipelineTaskQueue, datastoreOptions.getService());
     }
     return backEnd;
   }
