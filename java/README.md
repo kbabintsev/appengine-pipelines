@@ -21,6 +21,7 @@ To use `CloudTaskQueue` you need to set following properties:
 * Optionally `cloudtasks.api.key` - If you use [local implementation](https://github.com/cloudaware/cloudmine-appengine) of Cloud Tasks use this property to set up API Key to your API
 * `cloudtasks.api.default.parent` - Used to construct correct object names for Cloud Tasks, should use following pattern `projects/{applicationId}/locations/{locationId}`
 * `clouddatastore.api.root.url` - If you want to use local Cloud Datastore emulator, e.g. `http://localhost:8080`
+* `clouddatastore.project.id` - for the Cloud Datastore too
 
 Pass properties with your `app.yaml`:
 
@@ -33,6 +34,7 @@ env_variables:
 
 # Changelog
 
+* 0.2.13.3.CLOUDTASKS-SNAPSHOT - property `clouddatastore.project.id` added, if default credentials failed fallback to no credentials 
 * 0.2.13.2.CLOUDTASKS-SNAPSHOT - property `clouddatastore.api.root.url` added
 * 0.2.13.1.CLOUDTASKS-SNAPSHOT - `google-cloud-datastore` updated to 1.0.1 
 * 0.2.13.CLOUDTASKS-SNAPSHOT - Cloud Tasks and Cloud Datastore release 

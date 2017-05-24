@@ -19,6 +19,8 @@ import com.cloudaware.deferred.DeferredTaskContext;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
+import com.google.api.client.http.HttpRequest;
+import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.cloudtasks.v2beta2.CloudTasks;
 import com.google.api.services.cloudtasks.v2beta2.CloudTasksScopes;
@@ -65,10 +67,21 @@ public class CloudTaskQueue implements PipelineTaskQueue {
     final String apiKey = System.getProperty(CLOUDTASKS_API_KEY_PROPERTY);
     this.apiKey = apiKey;
     try {
+      HttpRequestInitializer credential;
+      try{
+        credential = GoogleCredential.getApplicationDefault().createScoped(CloudTasksScopes.all());
+      }catch (IOException e){
+        logger.info("Fallback to HttpRequestInitializer, cause cannot create Application default credentials: " + e.getMessage());
+        credential = new HttpRequestInitializer(){
+          @Override
+          public void initialize(final HttpRequest request) throws IOException {
+          }
+        };
+      }
       CloudTasks.Builder builder = new CloudTasks.Builder(
           GoogleNetHttpTransport.newTrustedTransport(),
           JacksonFactory.getDefaultInstance(),
-          GoogleCredential.getApplicationDefault().createScoped(CloudTasksScopes.all())
+          credential
       ).setApplicationName("appengine-pipeline");
       if (rootUrl != null) {
         builder.setRootUrl(rootUrl);

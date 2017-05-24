@@ -53,6 +53,7 @@ import com.google.appengine.tools.pipeline.impl.tasks.Task;
 import com.google.appengine.tools.pipeline.impl.util.GUIDGenerator;
 import com.google.appengine.tools.pipeline.impl.util.StringUtils;
 import com.google.appengine.tools.pipeline.util.Pair;
+import com.google.cloud.datastore.Datastore;
 import com.google.cloud.datastore.DatastoreOptions;
 import com.google.cloud.datastore.Key;
 
@@ -75,6 +76,7 @@ import java.util.logging.Logger;
 public class PipelineManager {
 
   public static final String CLOUD_DATASTORE_ROOT_URL_PROPERTY = "clouddatastore.api.root.url";
+  public static final String CLOUD_DATASTORE_PROJECT_ID = "clouddatastore.project.id";
 
   private static final Logger logger = Logger.getLogger(PipelineManager.class.getName());
 
@@ -571,15 +573,22 @@ public class PipelineManager {
       } else {
         pipelineTaskQueue = new AppEngineTaskQueue();
       }
-      final DatastoreOptions datastoreOptions;
-      if (System.getProperty(CLOUD_DATASTORE_ROOT_URL_PROPERTY) != null) {
-        datastoreOptions = DatastoreOptions.newBuilder().setHost(System.getProperty(CLOUD_DATASTORE_ROOT_URL_PROPERTY)).build();
-      } else {
-        datastoreOptions = DatastoreOptions.getDefaultInstance();
-      }
-      backEnd = new AppEngineBackEnd(pipelineTaskQueue, datastoreOptions.getService());
+
+      backEnd = new AppEngineBackEnd(pipelineTaskQueue, getDatastore());
     }
     return backEnd;
+  }
+
+  public synchronized static Datastore getDatastore(){
+    final DatastoreOptions datastoreOptions;
+    if (System.getProperty(CLOUD_DATASTORE_ROOT_URL_PROPERTY) != null) {
+      datastoreOptions = DatastoreOptions.newBuilder()
+              .setProjectId(System.getProperty(CLOUD_DATASTORE_PROJECT_ID))
+              .setHost(System.getProperty(CLOUD_DATASTORE_ROOT_URL_PROPERTY)).build();
+    } else {
+      datastoreOptions = DatastoreOptions.getDefaultInstance();
+    }
+    return datastoreOptions.getService();
   }
 
   private static void invokePrivateJobMethod(String methodName, Job<?> job, Object... params) {

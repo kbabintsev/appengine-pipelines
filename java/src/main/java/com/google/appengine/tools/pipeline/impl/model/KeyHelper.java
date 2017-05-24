@@ -1,6 +1,6 @@
 package com.google.appengine.tools.pipeline.impl.model;
 
-import com.google.cloud.datastore.DatastoreOptions;
+import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.cloud.datastore.Entity;
 import com.google.cloud.datastore.Key;
 import com.google.cloud.datastore.KeyValue;
@@ -16,7 +16,7 @@ public class KeyHelper {
 
   private synchronized static com.google.cloud.datastore.KeyFactory getFactory() {
     if (factory == null) {
-      factory = DatastoreOptions.getDefaultInstance().getService().newKeyFactory();
+      factory = PipelineManager.getDatastore().newKeyFactory();
     }
     return factory;
   }
