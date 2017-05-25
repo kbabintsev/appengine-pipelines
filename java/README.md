@@ -34,6 +34,7 @@ env_variables:
 
 # Changelog
 
+* 0.2.13.4.CLOUDTASKS-SNAPSHOT - `com.cloudaware:deferred` update to 1.0.1 
 * 0.2.13.3.CLOUDTASKS-SNAPSHOT - property `clouddatastore.project.id` added, if default credentials failed fallback to no credentials 
 * 0.2.13.2.CLOUDTASKS-SNAPSHOT - property `clouddatastore.api.root.url` added
 * 0.2.13.1.CLOUDTASKS-SNAPSHOT - `google-cloud-datastore` updated to 1.0.1 
