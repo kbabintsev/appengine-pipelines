@@ -108,10 +108,12 @@ public class CloudTaskQueue implements PipelineTaskQueue {
     com.google.api.services.cloudtasks.v2beta2.model.Task task = new com.google.api.services.cloudtasks.v2beta2.model.Task();
     task.setAppEngineTaskTarget(new AppEngineTaskTarget());
     task.setScheduleTime(getScheduleTime(10));
-    task.getAppEngineTaskTarget().setRetryConfig(
+    task.setRetryConfig(
         new RetryConfig()
             .setMinBackoff("2s").setMaxBackoff("20s")
-    ).setAppEngineRouting(
+    )
+    .getAppEngineTaskTarget()
+    .setAppEngineRouting(
         new AppEngineRouting()
             .setService(getCurrentService())
             .setVersion(getCurrentVersion())
@@ -254,7 +256,7 @@ public class CloudTaskQueue implements PipelineTaskQueue {
       if (queueSettings.getQueueRetryMaxDoublings() != null) {
         retryConfig.setMaxDoublings(queueSettings.getQueueRetryMaxDoublings().intValue());
       }
-      taskOptions.getAppEngineTaskTarget().setRetryConfig(retryConfig);
+      taskOptions.setRetryConfig(retryConfig);
     }
 
     String taskName = task.getName();
