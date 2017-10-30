@@ -27,7 +27,6 @@ import com.google.api.services.cloudtasks.v2beta2.CloudTasksScopes;
 import com.google.api.services.cloudtasks.v2beta2.model.AppEngineRouting;
 import com.google.api.services.cloudtasks.v2beta2.model.AppEngineTaskTarget;
 import com.google.api.services.cloudtasks.v2beta2.model.CreateTaskRequest;
-import com.google.api.services.cloudtasks.v2beta2.model.RetryConfig;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 import com.google.appengine.tools.pipeline.impl.servlets.TaskHandler;
 import com.google.appengine.tools.pipeline.impl.tasks.ObjRefTask;
@@ -108,11 +107,7 @@ public class CloudTaskQueue implements PipelineTaskQueue {
     com.google.api.services.cloudtasks.v2beta2.model.Task task = new com.google.api.services.cloudtasks.v2beta2.model.Task();
     task.setAppEngineTaskTarget(new AppEngineTaskTarget());
     task.setScheduleTime(getScheduleTime(10));
-    task.setRetryConfig(
-        new RetryConfig()
-            .setMinBackoff("2s").setMaxBackoff("20s")
-    )
-    .getAppEngineTaskTarget()
+    task.getAppEngineTaskTarget()
     .setAppEngineRouting(
         new AppEngineRouting()
             .setService(getCurrentService())
@@ -234,29 +229,6 @@ public class CloudTaskQueue implements PipelineTaskQueue {
     Long delayInSeconds = queueSettings.getDelayInSeconds();
     if (null != delayInSeconds) {
       taskOptions.setScheduleTime(getScheduleTime(delayInSeconds.intValue()));
-    }
-    if (queueSettings.getQueueRetryTaskRetryLimit() != null
-        || queueSettings.getQueueRetryTaskAgeLimitSeconds() != null
-        || queueSettings.getQueueRetryMinBackoffSeconds() != null
-        || queueSettings.getQueueRetryMaxBackoffSeconds() != null
-        || queueSettings.getQueueRetryMaxDoublings() != null) {
-      RetryConfig retryConfig = new RetryConfig();
-      if (queueSettings.getQueueRetryTaskRetryLimit() != null) {
-        retryConfig.setMaxAttempts(queueSettings.getQueueRetryTaskRetryLimit().intValue());
-      }
-      if (queueSettings.getQueueRetryTaskAgeLimitSeconds() != null) {
-        retryConfig.setTaskAgeLimit(queueSettings.getQueueRetryTaskAgeLimitSeconds().toString());
-      }
-      if (queueSettings.getQueueRetryMinBackoffSeconds() != null) {
-        retryConfig.setMinBackoff(queueSettings.getQueueRetryMinBackoffSeconds().toString());
-      }
-      if (queueSettings.getQueueRetryMaxBackoffSeconds() != null) {
-        retryConfig.setMaxBackoff(queueSettings.getQueueRetryMaxBackoffSeconds().toString());
-      }
-      if (queueSettings.getQueueRetryMaxDoublings() != null) {
-        retryConfig.setMaxDoublings(queueSettings.getQueueRetryMaxDoublings().intValue());
-      }
-      taskOptions.setRetryConfig(retryConfig);
     }
 
     String taskName = task.getName();

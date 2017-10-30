@@ -9,7 +9,7 @@
   <organization>
     <name>Google</name>
   </organization>
-  <version>0.2.13.5.CLOUDTASKS-SNAPSHOT</version>
+  <version>0.2.13.6.CLOUDTASKS-SNAPSHOT</version>
   <packaging>jar</packaging>
   <licenses>
     <license>
@@ -18,6 +18,9 @@
     </license>
   </licenses>
   <properties>
+    <google-api-client.version>1.22.0</google-api-client.version>
+    <guava.version>21.0</guava.version>
+    <protobuf-java.version>3.4.0</protobuf-java.version>
     <appengine.target.version>[1.9.1,2.0)</appengine.target.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
@@ -85,11 +88,11 @@
   </build>
   <dependencies>
     <!-- Compile/Runtime Dependencies -->
-    <dependency>
-      <groupId>org.json</groupId>
-      <artifactId>json</artifactId>
-      <version>20090211</version>
-    </dependency>
+    <!--<dependency>-->
+      <!--<groupId>org.json</groupId>-->
+      <!--<artifactId>json</artifactId>-->
+      <!--<version>20090211</version>-->
+    <!--</dependency>-->
     <dependency>
       <groupId>com.google.appengine</groupId>
       <artifactId>appengine-api-1.0-sdk</artifactId>
@@ -100,7 +103,7 @@
       <artifactId>guava</artifactId>
       <!-- version number of release candidates come before the ##.0 in maven,
            use .99 to get latest release within the specified major version -->
-      <version>19.0</version>
+      <version>${guava.version}</version>
     </dependency>
     <dependency>
       <groupId>javax.servlet</groupId>
@@ -111,12 +114,12 @@
     <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-datastore</artifactId>
-      <version>1.0.1</version>
+      <version>1.8.0</version>
     </dependency>
     <dependency>
       <groupId>com.cloudaware</groupId>
       <artifactId>deferred</artifactId>
-      <version>1.0.1</version>
+      <version>1.0.2</version>
     </dependency>
     <!-- Test Dependencies -->
     <dependency>
@@ -144,4 +147,64 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.google.api-client</groupId>
+        <artifactId>google-api-client</artifactId>
+        <version>${google-api-client.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.oauth-client</groupId>
+        <artifactId>google-oauth-client</artifactId>
+        <version>${google-api-client.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.http-client</groupId>
+        <artifactId>google-http-client</artifactId>
+        <version>${google-api-client.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.http-client</groupId>
+        <artifactId>google-http-client-jackson</artifactId>
+        <version>${google-api-client.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.http-client</groupId>
+        <artifactId>google-http-client-jackson2</artifactId>
+        <version>${google-api-client.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.http-client</groupId>
+        <artifactId>google-http-client-protobuf</artifactId>
+        <version>${google-api-client.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.protobuf</groupId>
+        <artifactId>protobuf-java</artifactId>
+        <version>${protobuf-java.version}</version>
+      </dependency>
+      <!--<dependency>-->
+        <!--<groupId>com.google.auth</groupId>-->
+        <!--<artifactId>google-auth-library-credentials</artifactId>-->
+        <!--<version>0.6.1</version>-->
+      <!--</dependency>-->
+      <!--<dependency>-->
+        <!--<groupId>com.google.auth</groupId>-->
+        <!--<artifactId>google-auth-library-oauth2</artifactId>-->
+        <!--<version>0.6.1</version>-->
+      <!--</dependency>-->
+      <!--<dependency>-->
+        <!--<groupId>com.google.auth</groupId>-->
+        <!--<artifactId>google-auth-library-oauth2-http</artifactId>-->
+        <!--<version>0.6.1</version>-->
+      <!--</dependency>-->
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>${guava.version}</version>
+      </dependency>
+
+    </dependencies>
+  </dependencyManagement>
 </project>

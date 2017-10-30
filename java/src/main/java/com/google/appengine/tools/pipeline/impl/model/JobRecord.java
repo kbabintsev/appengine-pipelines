@@ -27,11 +27,6 @@ import com.google.appengine.tools.pipeline.JobSetting.OnBackend;
 import com.google.appengine.tools.pipeline.JobSetting.OnQueue;
 import com.google.appengine.tools.pipeline.JobSetting.OnService;
 import com.google.appengine.tools.pipeline.JobSetting.OnVersion;
-import com.google.appengine.tools.pipeline.JobSetting.QueueRetryMaxBackoffSeconds;
-import com.google.appengine.tools.pipeline.JobSetting.QueueRetryMaxDoublings;
-import com.google.appengine.tools.pipeline.JobSetting.QueueRetryMinBackoffSeconds;
-import com.google.appengine.tools.pipeline.JobSetting.QueueRetryTaskAgeLimitSeconds;
-import com.google.appengine.tools.pipeline.JobSetting.QueueRetryTaskRetryLimit;
 import com.google.appengine.tools.pipeline.JobSetting.StatusConsoleUrl;
 import com.google.appengine.tools.pipeline.JobSetting.WaitForSetting;
 import com.google.appengine.tools.pipeline.impl.FutureValueImpl;
@@ -142,11 +137,6 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
   private static final String ON_SERVICE_PROPERTY = "onService";
   private static final String ON_VERSION_PROPERTY = "onVersion";
   private static final String ON_QUEUE_PROPERTY = "onQueue";
-  private static final String QUEUE_RETRY_TASK_RETRY_LIMIT_PROPERTY = "queueRetryTaskRetryLimit";
-  private static final String QUEUE_RETRY_TASK_AGE_LIMIT_SECONDS_PROPERTY = "queueRetryTaskAgeLimitSeconds";
-  private static final String QUEUE_RETRY_TASK_MIN_BACKOFF_SECONDS_PROPERTY = "queueRetryMinBackoffSeconds";
-  private static final String QUEUE_RETRY_TASK_MAX_BACKOFF_SECONDS_PROPERTY = "queueRetryMaxBackoffSeconds";
-  private static final String QUEUE_RETRY_TASK_MAX_DOUBLINGS_PROPERTY = "queueRetryMaxDoublings";
   private static final String CHILD_GRAPH_GUID_PROPERTY = "childGraphGuid";
   private static final String STATUS_CONSOLE_URL = "statusConsoleUrl";
   public static final String ROOT_JOB_DISPLAY_NAME = "rootJobDisplayName";
@@ -242,21 +232,6 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
     if (entity.getNames().contains(ON_QUEUE_PROPERTY)) {
       queueSettings.setOnQueue(entity.getString(ON_QUEUE_PROPERTY));
     }
-    if (entity.getNames().contains(QUEUE_RETRY_TASK_RETRY_LIMIT_PROPERTY)) {
-      queueSettings.setQueueRetryTaskRetryLimit(entity.getLong(QUEUE_RETRY_TASK_RETRY_LIMIT_PROPERTY));
-    }
-    if (entity.getNames().contains(QUEUE_RETRY_TASK_AGE_LIMIT_SECONDS_PROPERTY)) {
-      queueSettings.setQueueRetryTaskAgeLimitSeconds(entity.getLong(QUEUE_RETRY_TASK_AGE_LIMIT_SECONDS_PROPERTY));
-    }
-    if (entity.getNames().contains(QUEUE_RETRY_TASK_MIN_BACKOFF_SECONDS_PROPERTY)) {
-      queueSettings.setQueueRetryMinBackoffSeconds(entity.getLong(QUEUE_RETRY_TASK_MIN_BACKOFF_SECONDS_PROPERTY));
-    }
-    if (entity.getNames().contains(QUEUE_RETRY_TASK_MAX_BACKOFF_SECONDS_PROPERTY)) {
-      queueSettings.setQueueRetryMaxBackoffSeconds(entity.getLong(QUEUE_RETRY_TASK_MAX_BACKOFF_SECONDS_PROPERTY));
-    }
-    if (entity.getNames().contains(QUEUE_RETRY_TASK_MAX_DOUBLINGS_PROPERTY)) {
-      queueSettings.setQueueRetryMaxDoublings(entity.getLong(QUEUE_RETRY_TASK_MAX_DOUBLINGS_PROPERTY));
-    }
     if (entity.getNames().contains(STATUS_CONSOLE_URL)) {
       statusConsoleUrl = entity.getString(STATUS_CONSOLE_URL);
     }
@@ -320,21 +295,6 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
     }
     if (queueSettings.getOnQueue() != null) {
       entity.set(ON_QUEUE_PROPERTY, queueSettings.getOnQueue());
-    }
-    if (queueSettings.getQueueRetryTaskRetryLimit() != null) {
-      entity.set(QUEUE_RETRY_TASK_RETRY_LIMIT_PROPERTY, queueSettings.getQueueRetryTaskRetryLimit());
-    }
-    if (queueSettings.getQueueRetryTaskAgeLimitSeconds() != null) {
-      entity.set(QUEUE_RETRY_TASK_AGE_LIMIT_SECONDS_PROPERTY, queueSettings.getQueueRetryTaskAgeLimitSeconds());
-    }
-    if (queueSettings.getQueueRetryMinBackoffSeconds() != null) {
-      entity.set(QUEUE_RETRY_TASK_MIN_BACKOFF_SECONDS_PROPERTY, queueSettings.getQueueRetryMinBackoffSeconds());
-    }
-    if (queueSettings.getQueueRetryMaxBackoffSeconds() != null) {
-      entity.set(QUEUE_RETRY_TASK_MAX_BACKOFF_SECONDS_PROPERTY, queueSettings.getQueueRetryMaxBackoffSeconds());
-    }
-    if (queueSettings.getQueueRetryMaxDoublings() != null) {
-      entity.set(QUEUE_RETRY_TASK_MAX_DOUBLINGS_PROPERTY, queueSettings.getQueueRetryMaxDoublings());
     }
     if (statusConsoleUrl != null) {
       entity.set(STATUS_CONSOLE_URL, statusConsoleUrl);
@@ -512,16 +472,6 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
         backoffFactor = value;
       } else if (setting instanceof MaxAttempts) {
         maxAttempts = value;
-      } else if (setting instanceof QueueRetryTaskRetryLimit) {
-        queueSettings.setQueueRetryTaskRetryLimit((long) value);
-      } else if (setting instanceof QueueRetryTaskAgeLimitSeconds) {
-        queueSettings.setQueueRetryTaskAgeLimitSeconds((long) value);
-      } else if (setting instanceof QueueRetryMinBackoffSeconds) {
-        queueSettings.setQueueRetryMinBackoffSeconds((long) value);
-      } else if (setting instanceof QueueRetryMaxBackoffSeconds) {
-        queueSettings.setQueueRetryMaxBackoffSeconds((long) value);
-      } else if (setting instanceof QueueRetryMaxDoublings) {
-        queueSettings.setQueueRetryMaxDoublings((long) value);
       } else {
         throw new RuntimeException("Unrecognized JobOption class " + setting.getClass().getName());
       }

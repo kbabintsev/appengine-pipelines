@@ -175,29 +175,6 @@ public class AppEngineTaskQueue implements PipelineTaskQueue {
       taskOptions.countdownMillis(delayInSeconds * 1000L);
       queueSettings.setDelayInSeconds(null);
     }
-    if (queueSettings.getQueueRetryTaskRetryLimit() != null
-            || queueSettings.getQueueRetryTaskAgeLimitSeconds() != null
-            || queueSettings.getQueueRetryMinBackoffSeconds() != null
-            || queueSettings.getQueueRetryMaxBackoffSeconds() != null
-            || queueSettings.getQueueRetryMaxDoublings() != null) {
-      RetryOptions retryOptions = RetryOptions.Builder.withDefaults();
-      if (queueSettings.getQueueRetryTaskRetryLimit() != null) {
-        retryOptions.taskRetryLimit(queueSettings.getQueueRetryTaskRetryLimit().intValue());
-      }
-      if (queueSettings.getQueueRetryTaskAgeLimitSeconds() != null) {
-        retryOptions.taskAgeLimitSeconds(queueSettings.getQueueRetryTaskAgeLimitSeconds().intValue());
-      }
-      if (queueSettings.getQueueRetryMinBackoffSeconds() != null) {
-        retryOptions.minBackoffSeconds(queueSettings.getQueueRetryMinBackoffSeconds().intValue());
-      }
-      if (queueSettings.getQueueRetryMaxBackoffSeconds() != null) {
-        retryOptions.maxBackoffSeconds(queueSettings.getQueueRetryMaxBackoffSeconds().intValue());
-      }
-      if (queueSettings.getQueueRetryMaxDoublings() != null) {
-        retryOptions.maxDoublings(queueSettings.getQueueRetryMaxDoublings().intValue());
-      }
-      taskOptions.retryOptions(retryOptions);
-    }
     addProperties(taskOptions, task.toProperties());
     String taskName = task.getName();
     if (null != taskName) {
