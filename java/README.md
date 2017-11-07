@@ -34,6 +34,7 @@ env_variables:
 
 # Changelog
 
+* 0.2.13.7.CLOUDTASKS-SNAPSHOT - deferred update, deprecated refactoring
 * 0.2.13.6.CLOUDTASKS-SNAPSHOT - deferred update, task RetryConfig support removed
 * 0.2.13.5.CLOUDTASKS-SNAPSHOT - updated to latest Cloud Tasks version
 * 0.2.13.4.CLOUDTASKS-SNAPSHOT - `com.cloudaware:deferred` update to 1.0.1 

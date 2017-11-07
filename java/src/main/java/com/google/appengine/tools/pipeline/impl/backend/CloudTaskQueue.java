@@ -24,8 +24,8 @@ import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.cloudtasks.v2beta2.CloudTasks;
 import com.google.api.services.cloudtasks.v2beta2.CloudTasksScopes;
+import com.google.api.services.cloudtasks.v2beta2.model.AppEngineHttpRequest;
 import com.google.api.services.cloudtasks.v2beta2.model.AppEngineRouting;
-import com.google.api.services.cloudtasks.v2beta2.model.AppEngineTaskTarget;
 import com.google.api.services.cloudtasks.v2beta2.model.CreateTaskRequest;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 import com.google.appengine.tools.pipeline.impl.servlets.TaskHandler;
@@ -105,9 +105,9 @@ public class CloudTaskQueue implements PipelineTaskQueue {
   public void enqueueDeferred(final String queueNameArg, final DeferredTask deferredTask) {
     String queueName = Optional.fromNullable(queueNameArg).or("default");
     com.google.api.services.cloudtasks.v2beta2.model.Task task = new com.google.api.services.cloudtasks.v2beta2.model.Task();
-    task.setAppEngineTaskTarget(new AppEngineTaskTarget());
+    task.setAppEngineHttpRequest(new AppEngineHttpRequest());
     task.setScheduleTime(getScheduleTime(10));
-    task.getAppEngineTaskTarget()
+    task.getAppEngineHttpRequest()
     .setAppEngineRouting(
         new AppEngineRouting()
             .setService(getCurrentService())
@@ -201,19 +201,19 @@ public class CloudTaskQueue implements PipelineTaskQueue {
     }
 
     final com.google.api.services.cloudtasks.v2beta2.model.Task taskOptions = new com.google.api.services.cloudtasks.v2beta2.model.Task();
-    taskOptions.setAppEngineTaskTarget(
-        new AppEngineTaskTarget()
+    taskOptions.setAppEngineHttpRequest(
+        new AppEngineHttpRequest()
             .setHeaders(Maps.<String, String>newHashMap())
             .setRelativeUrl(relativeUrl.toString())
     );
 
     if (queueSettings.getOnBackend() != null) {
-      taskOptions.getAppEngineTaskTarget().getHeaders().put("Host", queueSettings.getOnBackend());
+      taskOptions.getAppEngineHttpRequest().getHeaders().put("Host", queueSettings.getOnBackend());
     }
-    AppEngineRouting appEngineRouting = taskOptions.getAppEngineTaskTarget().getAppEngineRouting();
+    AppEngineRouting appEngineRouting = taskOptions.getAppEngineHttpRequest().getAppEngineRouting();
     if (appEngineRouting == null) {
       appEngineRouting = new AppEngineRouting();
-      taskOptions.getAppEngineTaskTarget().setAppEngineRouting(appEngineRouting);
+      taskOptions.getAppEngineHttpRequest().setAppEngineRouting(appEngineRouting);
     }
     String onService = queueSettings.getOnService();
     if (onService == null) {
