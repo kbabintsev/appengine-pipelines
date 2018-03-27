@@ -16,7 +16,7 @@ package com.google.appengine.tools.pipeline.impl.tasks;
 
 import static com.google.appengine.tools.pipeline.impl.util.StringUtils.UTF_8;
 
-import com.google.cloud.datastore.Key;
+import com.cloudaware.store.model.Key;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 import com.google.appengine.tools.pipeline.impl.model.KeyHelper;
 import com.google.appengine.tools.pipeline.impl.util.GUIDGenerator;

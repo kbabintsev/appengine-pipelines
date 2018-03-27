@@ -32,9 +32,9 @@ import com.google.appengine.tools.pipeline.JobSetting.WaitForSetting;
 import com.google.appengine.tools.pipeline.impl.FutureValueImpl;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 import com.google.appengine.tools.pipeline.impl.util.StringUtils;
-import com.google.cloud.Timestamp;
-import com.google.cloud.datastore.Entity;
-import com.google.cloud.datastore.Key;
+import com.cloudaware.store.model.Timestamp;
+import com.cloudaware.store.model.Entity;
+import com.cloudaware.store.model.Key;
 
 import java.lang.reflect.Method;
 import java.util.Date;

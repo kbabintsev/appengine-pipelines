@@ -21,7 +21,7 @@ import com.google.appengine.tools.pipeline.impl.model.JobRecord;
 import com.google.appengine.tools.pipeline.impl.model.PipelineModelObject;
 import com.google.appengine.tools.pipeline.impl.model.Slot;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
-import com.google.cloud.datastore.Key;
+import com.cloudaware.store.model.Key;
 
 import java.util.Collection;
 import java.util.Collections;

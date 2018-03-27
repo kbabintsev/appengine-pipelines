@@ -34,6 +34,7 @@ env_variables:
 
 # Changelog
 
+* 0.2.13.9.CLOUDTASKS-SNAPSHOT - alternative datastore implementation using MongoDB
 * 0.2.13.8.CLOUDTASKS-SNAPSHOT - deferred update
 * 0.2.13.7.CLOUDTASKS-SNAPSHOT - deferred update, deprecated refactoring
 * 0.2.13.6.CLOUDTASKS-SNAPSHOT - deferred update, task RetryConfig support removed

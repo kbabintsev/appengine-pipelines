@@ -2,22 +2,23 @@
 
 package com.google.appengine.tools.pipeline;
 
+import com.cloudaware.store.model.Entity;
+import com.cloudaware.store.model.Key;
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
-import com.google.appengine.tools.pipeline.impl.backend.AppEngineTaskQueue;
 import com.google.appengine.tools.pipeline.impl.backend.AppEngineBackEnd;
+import com.google.appengine.tools.pipeline.impl.backend.AppEngineTaskQueue;
 import com.google.appengine.tools.pipeline.impl.model.JobRecord;
 import com.google.appengine.tools.pipeline.impl.model.KeyHelper;
 import com.google.appengine.tools.pipeline.impl.model.PipelineObjects;
 import com.google.apphosting.api.ApiProxy;
-import com.google.cloud.datastore.DatastoreOptions;
-import com.google.cloud.datastore.Entity;
-import com.google.cloud.datastore.Key;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.google.appengine.tools.pipeline.impl.util.TestUtils.getFailureProperty;
+
+//import com.google.cloud.datastore.DatastoreOptions;
 
 /**
  * A test of the ability of the Pipeline framework to handle orphaned jobs.
@@ -36,7 +37,7 @@ public class OrphanedJobGraphTest extends PipelineTest {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    backend = new AppEngineBackEnd(new AppEngineTaskQueue(), DatastoreOptions.getDefaultInstance().getService());
+    backend = new AppEngineBackEnd(new AppEngineTaskQueue(), PipelineManager.getDatastore());
     GeneratorJob.runCount.set(0);
     ChildJob.runCount.set(0);
     SupplyPromisedValueRunnable.orphanedObjectExcetionCount.set(0);
@@ -143,9 +144,9 @@ public class OrphanedJobGraphTest extends PipelineTest {
       // If we are using promised-value activation then an
       // OrphanedObjectException should have been caught at least twice.
       int orphanedObjectExcetionCount =
-              SupplyPromisedValueRunnable.orphanedObjectExcetionCount.get();
+          SupplyPromisedValueRunnable.orphanedObjectExcetionCount.get();
       Assert.assertTrue("Was expecting orphanedObjectExcetionCount to be more than one, but it was "
-              + orphanedObjectExcetionCount, orphanedObjectExcetionCount >= 2);
+          + orphanedObjectExcetionCount, orphanedObjectExcetionCount >= 2);
     }
 
     // Now delete the whole Pipeline
@@ -170,7 +171,7 @@ public class OrphanedJobGraphTest extends PipelineTest {
   private static class GeneratorJob extends Job0<Void> {
 
     private static final String SHOULD_FAIL_PROPERTY =
-            getFailureProperty("AppEngineBackeEnd.saveWithJobStateCheck.beforeFinalTransaction");
+        getFailureProperty("AppEngineBackeEnd.saveWithJobStateCheck.beforeFinalTransaction");
     public static AtomicInteger runCount = new AtomicInteger(0);
     boolean usePromise;
 
@@ -188,7 +189,7 @@ public class OrphanedJobGraphTest extends PipelineTest {
       if (usePromise) {
         PromisedValue<Integer> promisedValue = newPromise();
         (new Thread(new SupplyPromisedValueRunnable(ApiProxy.getCurrentEnvironment(),
-                promisedValue.getHandle()))).start();
+            promisedValue.getHandle()))).start();
         dummyValue = promisedValue;
       } else {
         dummyValue = immediate(0);

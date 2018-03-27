@@ -25,8 +25,8 @@ import com.google.appengine.tools.pipeline.impl.model.Slot;
 import com.google.appengine.tools.pipeline.impl.tasks.FanoutTask;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
 import com.google.appengine.tools.pipeline.util.Pair;
-import com.google.cloud.datastore.Key;
-import com.google.cloud.datastore.Value;
+import com.cloudaware.store.model.Key;
+import com.cloudaware.store.model.Value;
 
 import java.io.IOException;
 import java.util.Set;
@@ -203,7 +203,7 @@ public interface PipelineBackEnd {
    * @return a Pair of job records and a next cursor (or null, if no more results).
    */
   Pair<? extends Iterable<JobRecord>, String> queryRootPipelines(
-          String classFilter, String cursor, int limit);
+          String classFilter, Integer offset, int limit);
 
   /**
    * Returns the set of all root pipelines display name.

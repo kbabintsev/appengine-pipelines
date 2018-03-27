@@ -14,7 +14,7 @@
 
 package com.google.appengine.tools.pipeline.impl;
 
-import com.google.cloud.datastore.Key;
+import com.cloudaware.store.model.Key;
 import com.google.appengine.tools.pipeline.PromisedValue;
 import com.google.appengine.tools.pipeline.impl.model.KeyHelper;
 import com.google.appengine.tools.pipeline.impl.model.Slot;

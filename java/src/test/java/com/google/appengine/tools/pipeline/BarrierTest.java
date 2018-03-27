@@ -17,7 +17,7 @@ package com.google.appengine.tools.pipeline;
 import com.google.appengine.tools.pipeline.impl.model.Barrier;
 import com.google.appengine.tools.pipeline.impl.model.KeyHelper;
 import com.google.appengine.tools.pipeline.impl.model.Slot;
-import com.google.cloud.datastore.Key;
+import com.cloudaware.store.model.Key;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.junit.Assert;

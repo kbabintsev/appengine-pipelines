@@ -9,7 +9,7 @@ import com.google.appengine.tools.pipeline.impl.model.KeyHelper;
 import com.google.appengine.tools.pipeline.impl.tasks.RunJobTask;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
 import com.google.appengine.tools.pipeline.impl.util.GUIDGenerator;
-import com.google.cloud.datastore.Key;
+import com.cloudaware.store.model.Key;
 import junit.framework.TestCase;
 
 import java.util.ArrayList;

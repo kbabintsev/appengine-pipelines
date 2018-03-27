@@ -16,11 +16,11 @@ package com.google.appengine.tools.pipeline.impl.model;
 
 import com.google.appengine.tools.pipeline.Job;
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
-import com.google.cloud.datastore.BlobValue;
-import com.google.cloud.datastore.Entity;
-import com.google.cloud.datastore.Key;
-import com.google.cloud.datastore.ListValue;
-import com.google.cloud.datastore.Value;
+import com.cloudaware.store.model.BlobValue;
+import com.cloudaware.store.model.Entity;
+import com.cloudaware.store.model.Key;
+import com.cloudaware.store.model.ListValue;
+import com.cloudaware.store.model.Value;
 
 import java.io.IOException;
 

@@ -15,13 +15,13 @@
 package com.google.appengine.tools.pipeline.impl.model;
 
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
-import com.google.cloud.Timestamp;
-import com.google.cloud.datastore.Blob;
-import com.google.cloud.datastore.BlobValue;
-import com.google.cloud.datastore.Entity;
-import com.google.cloud.datastore.Key;
-import com.google.cloud.datastore.ListValue;
-import com.google.cloud.datastore.Value;
+import com.cloudaware.store.model.Timestamp;
+import com.cloudaware.store.model.Binary;
+import com.cloudaware.store.model.BlobValue;
+import com.cloudaware.store.model.Entity;
+import com.cloudaware.store.model.Key;
+import com.cloudaware.store.model.ListValue;
+import com.cloudaware.store.model.Value;
 
 import java.io.IOException;
 import java.util.Date;
@@ -52,7 +52,7 @@ public class Slot extends PipelineModelObject {
 
   // transient
   private List<Barrier> waitingOnMeInflated;
-  private Blob serializedVersion;
+  private Binary serializedVersion;
 
   public Slot(Key rootJobKey, Key generatorJobKey, String graphGUID) {
     super(rootJobKey, generatorJobKey, graphGUID);

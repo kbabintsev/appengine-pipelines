@@ -15,6 +15,23 @@
 package com.google.appengine.tools.pipeline.impl.backend;
 
 import com.cloudaware.deferred.DeferredTask;
+import com.cloudaware.store.StoreException;
+import com.cloudaware.store.StoreService;
+import com.cloudaware.store.model.Binary;
+import com.cloudaware.store.model.BlobValue;
+import com.cloudaware.store.model.Entity;
+import com.cloudaware.store.model.EntityQuery;
+import com.cloudaware.store.model.Key;
+import com.cloudaware.store.model.KeyQuery;
+import com.cloudaware.store.model.KeyValue;
+import com.cloudaware.store.model.ListValue;
+import com.cloudaware.store.model.NullValue;
+import com.cloudaware.store.model.ProjectionEntity;
+import com.cloudaware.store.model.ProjectionEntityQuery;
+import com.cloudaware.store.model.Query;
+import com.cloudaware.store.model.QueryResults;
+import com.cloudaware.store.model.StructuredQuery;
+import com.cloudaware.store.model.Value;
 import com.google.api.core.NanoClock;
 import com.google.api.gax.retrying.RetrySettings;
 import com.google.appengine.tools.pipeline.NoSuchObjectException;
@@ -36,30 +53,10 @@ import com.google.appengine.tools.pipeline.impl.util.SerializationUtils;
 import com.google.appengine.tools.pipeline.util.Pair;
 import com.google.cloud.ExceptionHandler;
 import com.google.cloud.RetryHelper;
-import com.google.cloud.datastore.Blob;
-import com.google.cloud.datastore.BlobValue;
-import com.google.cloud.datastore.Cursor;
-import com.google.cloud.datastore.Datastore;
-import com.google.cloud.datastore.Entity;
-import com.google.cloud.datastore.EntityQuery;
-import com.google.cloud.datastore.FullEntity;
-import com.google.cloud.datastore.Key;
-import com.google.cloud.datastore.KeyQuery;
-import com.google.cloud.datastore.KeyValue;
-import com.google.cloud.datastore.ListValue;
-import com.google.cloud.datastore.NullValue;
-import com.google.cloud.datastore.ProjectionEntity;
-import com.google.cloud.datastore.ProjectionEntityQuery;
-import com.google.cloud.datastore.Query;
-import com.google.cloud.datastore.QueryResults;
-import com.google.cloud.datastore.StructuredQuery;
-import com.google.cloud.datastore.Transaction;
-import com.google.cloud.datastore.Value;
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.datastore.v1.client.DatastoreException;
 import org.threeten.bp.Duration;
 
 import javax.annotation.Nullable;
@@ -101,7 +98,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
       .setMaxRpcTimeout(Duration.ofSeconds(3))
       .build();
   private static final ExceptionHandler EXCEPTION_HANDLER = ExceptionHandler.newBuilder().retryOn(
-      ConcurrentModificationException.class, DatastoreException.class)
+      ConcurrentModificationException.class, StoreException.class)
       .abortOn(NoSuchObjectException.class).build();
   private static final Logger logger = Logger.getLogger(AppEngineBackEnd.class.getName());
 
@@ -109,9 +106,9 @@ public class AppEngineBackEnd implements PipelineBackEnd {
   private static final int MAX_ENTITY_COUNT_PUT = 500;
 
   private final PipelineTaskQueue taskQueue;
-  private final Datastore dataStore;
+  private final StoreService dataStore;
 
-  public AppEngineBackEnd(final PipelineTaskQueue taskQueue, final Datastore dataStore) {
+  public AppEngineBackEnd(final PipelineTaskQueue taskQueue, final StoreService dataStore) {
     this.taskQueue = taskQueue;
     this.dataStore = dataStore;
   }
@@ -127,7 +124,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
     }
     List<List<Entity>> partitions = Lists.partition(entityList, MAX_ENTITY_COUNT_PUT);
     for (final List<Entity> partition : partitions) {
-      dataStore.put(partition.toArray(new FullEntity[partition.size()]));
+      dataStore.put(partition);
     }
   }
 
@@ -141,68 +138,55 @@ public class AppEngineBackEnd implements PipelineBackEnd {
 
   private boolean transactionallySaveAll(UpdateSpec.Transaction transactionSpec,
       QueueSettings queueSettings, Key rootJobKey, Key jobKey, JobRecord.State... expectedStates) {
-    Transaction transaction = dataStore.newTransaction();
-    try {
-      if (jobKey != null && expectedStates != null) {
-        Entity entity;
-        entity = dataStore.get(jobKey);
-        if (entity == null) {
-          throw new RuntimeException(
-              "Fatal Pipeline corruption error. No JobRecord found with key = " + jobKey);
-        }
-        JobRecord jobRecord = new JobRecord(entity);
-        JobRecord.State state = jobRecord.getState();
-        boolean stateIsExpected = false;
-        for (JobRecord.State expectedState : expectedStates) {
-          if (state == expectedState) {
-            stateIsExpected = true;
-            break;
-          }
-        }
-        if (!stateIsExpected) {
-          logger.info("Job " + jobRecord + " is not in one of the expected states: "
-              + Arrays.asList(expectedStates)
-              + " and so transactionallySaveAll() will not continue.");
-          return false;
+//    Transaction transaction = dataStore.newTransaction();
+//    try {
+    if (jobKey != null && expectedStates != null) {
+      Entity entity;
+      entity = dataStore.get(jobKey);
+      if (entity == null) {
+        throw new RuntimeException(
+            "Fatal Pipeline corruption error. No JobRecord found with key = " + jobKey);
+      }
+      JobRecord jobRecord = new JobRecord(entity);
+      JobRecord.State state = jobRecord.getState();
+      boolean stateIsExpected = false;
+      for (JobRecord.State expectedState : expectedStates) {
+        if (state == expectedState) {
+          stateIsExpected = true;
+          break;
         }
       }
-      saveAll(transactionSpec);
-      if (transactionSpec instanceof UpdateSpec.TransactionWithTasks) {
-        UpdateSpec.TransactionWithTasks transactionWithTasks =
-            (UpdateSpec.TransactionWithTasks) transactionSpec;
-        Collection<Task> tasks = transactionWithTasks.getTasks();
-        if (tasks.size() > 0) {
-          byte[] encodedTasks = FanoutTask.encodeTasks(tasks);
-          FanoutTaskRecord ftRecord = new FanoutTaskRecord(rootJobKey, encodedTasks);
-          // Store FanoutTaskRecord outside of any transaction, but before
-          // the FanoutTask is enqueued. If the put succeeds but the
-          // enqueue fails then the FanoutTaskRecord is orphaned. But
-          // the Pipeline is still consistent.
-          dataStore.put(ftRecord.toEntity());
-          FanoutTask fannoutTask = new FanoutTask(ftRecord.getKey(), queueSettings);
-          taskQueue.enqueue(fannoutTask);
-        }
-      }
-      transaction.commit();
-    } finally {
-      if (transaction.isActive()) {
-        transaction.rollback();
+      if (!stateIsExpected) {
+        logger.info("Job " + jobRecord + " is not in one of the expected states: "
+            + Arrays.asList(expectedStates)
+            + " and so transactionallySaveAll() will not continue.");
+        return false;
       }
     }
+    saveAll(transactionSpec);
+    if (transactionSpec instanceof UpdateSpec.TransactionWithTasks) {
+      UpdateSpec.TransactionWithTasks transactionWithTasks =
+          (UpdateSpec.TransactionWithTasks) transactionSpec;
+      Collection<Task> tasks = transactionWithTasks.getTasks();
+      if (tasks.size() > 0) {
+        byte[] encodedTasks = FanoutTask.encodeTasks(tasks);
+        FanoutTaskRecord ftRecord = new FanoutTaskRecord(rootJobKey, encodedTasks);
+        // Store FanoutTaskRecord outside of any transaction, but before
+        // the FanoutTask is enqueued. If the put succeeds but the
+        // enqueue fails then the FanoutTaskRecord is orphaned. But
+        // the Pipeline is still consistent.
+        dataStore.put(ftRecord.toEntity());
+        FanoutTask fannoutTask = new FanoutTask(ftRecord.getKey(), queueSettings);
+        taskQueue.enqueue(fannoutTask);
+      }
+    }
+//      transaction.commit();
+//    } finally {
+//      if (transaction.isActive()) {
+//        transaction.rollback();
+//      }
+//    }
     return true;
-  }
-
-  private abstract class Operation<R> implements Callable<R> {
-
-    private final String name;
-
-    Operation(String name) {
-      this.name = name;
-    }
-
-    public String getName() {
-      return name;
-    }
   }
 
   private <R> R tryFiveTimes(final Operation<R> operation) {
@@ -380,7 +364,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
   public Value serializeValue(PipelineModelObject model, Object value) throws IOException {
     byte[] bytes = SerializationUtils.serialize(value);
     if (bytes.length < MAX_BLOB_BYTE_SIZE) {
-      return BlobValue.newBuilder(Blob.copyFrom(bytes)).setExcludeFromIndexes(true).build();
+      return BlobValue.newBuilder(new Binary(bytes)).setExcludeFromIndexes(true).build();
     }
     int shardId = 0;
     int offset = 0;
@@ -400,8 +384,8 @@ public class AppEngineBackEnd implements PipelineBackEnd {
           for (Entity entity : shardedValues) {
             keys.add(dataStore.put(entity).getKey());
           }
-        } catch (com.google.cloud.datastore.DatastoreException e) {
-          dataStore.delete(keys.toArray(new Key[keys.size()]));
+        } catch (StoreException e) {
+          dataStore.delete(keys);
           throw e;
         }
         return keys;
@@ -414,7 +398,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
   public Object deserializeValue(PipelineModelObject model, Value serializedVersion)
       throws IOException {
     if (serializedVersion instanceof BlobValue) {
-      return SerializationUtils.deserialize((((BlobValue) serializedVersion).get()).toByteArray());
+      return SerializationUtils.deserialize((((BlobValue) serializedVersion).get()).getData());
     } else if (serializedVersion instanceof ListValue) {
       @SuppressWarnings("unchecked")
       Collection<KeyValue> keyValues = (Collection<KeyValue>) ((ListValue) serializedVersion).get();
@@ -511,7 +495,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
 
   @Override
   public Pair<? extends Iterable<JobRecord>, String> queryRootPipelines(String classFilter,
-      String cursor, final int limit) {
+      Integer offset, final int limit) {
     final EntityQuery.Builder query = Query.newEntityQueryBuilder();
     query.setKind(JobRecord.DATA_STORE_KIND);
 
@@ -519,28 +503,32 @@ public class AppEngineBackEnd implements PipelineBackEnd {
         StructuredQuery.PropertyFilter.gt(ROOT_JOB_DISPLAY_NAME, NullValue.of())
         : StructuredQuery.PropertyFilter.eq(ROOT_JOB_DISPLAY_NAME, classFilter);
     query.setFilter(filter);
+    query.addOrderBy(StructuredQuery.OrderBy.desc(JobRecord.START_TIME_PROPERTY));
     if (limit > 0) {
       query.setLimit(limit + 1);
     }
-    if (cursor != null) {
-      query.setStartCursor(Cursor.fromUrlSafe(cursor));
+    if (offset != null) {
+      query.setOffset(offset);
     }
+//    if (cursor != null) {
+//      query.setStartCursor(Cursor.fromUrlSafe(cursor));
+//    }
     return tryFiveTimes(
         new Operation<Pair<? extends Iterable<JobRecord>, String>>("queryRootPipelines") {
           @Override
           public Pair<? extends Iterable<JobRecord>, String> call() {
             QueryResults<Entity> entities = dataStore.run(query.build());
-            Cursor dsCursor = null;
+//            Cursor dsCursor = null;
             List<JobRecord> roots = new LinkedList<>();
             while (entities.hasNext()) {
               if (limit > 0 && roots.size() >= limit) {
-                dsCursor = entities.getCursorAfter();
+//                dsCursor = entities.getCursorAfter();
                 break;
               }
               JobRecord jobRecord = new JobRecord(entities.next());
               roots.add(jobRecord);
             }
-            return Pair.of(roots, dsCursor == null ? null : dsCursor.toUrlSafe());
+            return Pair.of(roots, null);//dsCursor == null ? null : dsCursor.toUrlSafe());
           }
         });
   }
@@ -608,7 +596,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
             keys.add(iter.next());
           }
           logger.info("Deleting  " + keys.size() + " " + kind + "s with rootJobKey=" + rootJobKey);
-          dataStore.delete(keys.toArray(new Key[keys.size()]));
+          dataStore.delete(keys);
         }
         return null;
       }
@@ -661,5 +649,18 @@ public class AppEngineBackEnd implements PipelineBackEnd {
     deleteAll(Barrier.DATA_STORE_KIND, rootJobKey);
     deleteAll(JobInstanceRecord.DATA_STORE_KIND, rootJobKey);
     deleteAll(FanoutTaskRecord.DATA_STORE_KIND, rootJobKey);
+  }
+
+  private abstract class Operation<R> implements Callable<R> {
+
+    private final String name;
+
+    Operation(String name) {
+      this.name = name;
+    }
+
+    public String getName() {
+      return name;
+    }
   }
 }

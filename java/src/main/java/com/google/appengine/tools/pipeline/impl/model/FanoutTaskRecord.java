@@ -14,10 +14,10 @@
 
 package com.google.appengine.tools.pipeline.impl.model;
 
-import com.google.cloud.datastore.Blob;
-import com.google.cloud.datastore.BlobValue;
-import com.google.cloud.datastore.Entity;
-import com.google.cloud.datastore.Key;
+import com.cloudaware.store.model.Binary;
+import com.cloudaware.store.model.BlobValue;
+import com.cloudaware.store.model.Entity;
+import com.cloudaware.store.model.Key;
 
 /**
  * A datastore entity for storing data necessary for a fan-out task
@@ -41,8 +41,8 @@ public class FanoutTaskRecord extends PipelineModelObject {
 
   public FanoutTaskRecord(Entity entity) {
     super(entity);
-    Blob payloadBlob = entity.getBlob(PAYLOAD_PROPERTY);
-    payload = payloadBlob.toByteArray();
+    Binary payloadBlob = entity.getBlob(PAYLOAD_PROPERTY);
+    payload = payloadBlob.getData();
   }
 
   public byte[] getPayload() {
@@ -57,7 +57,7 @@ public class FanoutTaskRecord extends PipelineModelObject {
   @Override
   public Entity toEntity() {
     Entity.Builder entity = toProtoEntity();
-    entity.set(PAYLOAD_PROPERTY, BlobValue.newBuilder(Blob.copyFrom(payload)).setExcludeFromIndexes(true).build());
+    entity.set(PAYLOAD_PROPERTY, BlobValue.newBuilder(new Binary(payload)).setExcludeFromIndexes(true).build());
     return entity.build();
   }
 }

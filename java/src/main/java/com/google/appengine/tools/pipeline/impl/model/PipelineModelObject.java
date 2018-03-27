@@ -15,10 +15,10 @@
 package com.google.appengine.tools.pipeline.impl.model;
 
 import com.google.appengine.tools.pipeline.impl.util.GUIDGenerator;
-import com.google.cloud.datastore.DatastoreException;
-import com.google.cloud.datastore.Entity;
-import com.google.cloud.datastore.Key;
-import com.google.cloud.datastore.Value;
+import com.cloudaware.store.StoreException;
+import com.cloudaware.store.model.Entity;
+import com.cloudaware.store.model.Key;
+import com.cloudaware.store.model.Value;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -168,7 +168,7 @@ public abstract class PipelineModelObject {
   private static Key extractGeneratorJobKey(Entity entity) {
     try {
       return entity.getKey(GENERATOR_JOB_PROPERTY);
-    } catch (DatastoreException e) {
+    } catch (StoreException e) {
       return null;
     }
 
@@ -177,7 +177,7 @@ public abstract class PipelineModelObject {
   private static String extractGraphGUID(Entity entity) {
     try {
       return entity.getString(GRAPH_GUID_PROPERTY);
-    } catch (DatastoreException e) {
+    } catch (StoreException e) {
       return null;
     }
   }

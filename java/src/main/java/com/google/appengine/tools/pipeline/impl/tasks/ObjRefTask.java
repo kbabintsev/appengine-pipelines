@@ -15,7 +15,7 @@
 package com.google.appengine.tools.pipeline.impl.tasks;
 
 import com.google.appengine.api.datastore.KeyFactory;
-import com.google.cloud.datastore.Key;
+import com.cloudaware.store.model.Key;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 import com.google.appengine.tools.pipeline.impl.model.KeyHelper;
 

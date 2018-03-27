@@ -19,7 +19,7 @@ import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.appengine.tools.pipeline.impl.PromisedValueImpl;
 import com.google.appengine.tools.pipeline.impl.backend.UpdateSpec;
 import com.google.appengine.tools.pipeline.impl.model.JobRecord;
-import com.google.cloud.datastore.Key;
+import com.cloudaware.store.model.Key;
 
 import java.io.Serializable;
 import java.util.List;

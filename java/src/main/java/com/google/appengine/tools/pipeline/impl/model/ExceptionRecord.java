@@ -15,10 +15,10 @@
 package com.google.appengine.tools.pipeline.impl.model;
 
 import com.google.appengine.tools.pipeline.impl.util.SerializationUtils;
-import com.google.cloud.datastore.Blob;
-import com.google.cloud.datastore.BlobValue;
-import com.google.cloud.datastore.Entity;
-import com.google.cloud.datastore.Key;
+import com.cloudaware.store.model.Binary;
+import com.cloudaware.store.model.BlobValue;
+import com.cloudaware.store.model.Entity;
+import com.cloudaware.store.model.Key;
 
 import java.io.IOException;
 
@@ -42,8 +42,8 @@ public class ExceptionRecord extends PipelineModelObject {
 
   public ExceptionRecord(Entity entity) {
     super(entity);
-    Blob serializedExceptionBlob = entity.getBlob(EXCEPTION_PROPERTY);
-    byte[] serializedException = serializedExceptionBlob.toByteArray();
+    Binary serializedExceptionBlob = entity.getBlob(EXCEPTION_PROPERTY);
+    byte[] serializedException = serializedExceptionBlob.getData();
     try {
       exception = (Throwable) SerializationUtils.deserialize(serializedException);
     } catch (IOException e) {
@@ -65,7 +65,7 @@ public class ExceptionRecord extends PipelineModelObject {
     try {
       Entity.Builder entity = toProtoEntity();
       byte[] serializedException = SerializationUtils.serialize(exception);
-      entity.set(EXCEPTION_PROPERTY, BlobValue.newBuilder(Blob.copyFrom(serializedException)).setExcludeFromIndexes(true).build());
+      entity.set(EXCEPTION_PROPERTY, BlobValue.newBuilder(new Binary(serializedException)).setExcludeFromIndexes(true).build());
       return entity.build();
     } catch (IOException e) {
       throw new RuntimeException("Failed to serialize exception for " + getKey(), e);

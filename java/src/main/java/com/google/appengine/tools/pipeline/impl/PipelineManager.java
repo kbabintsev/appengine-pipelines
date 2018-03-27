@@ -14,6 +14,10 @@
 
 package com.google.appengine.tools.pipeline.impl;
 
+import com.cloudaware.store.StoreService;
+import com.cloudaware.store.datastore.DatastoreService;
+import com.cloudaware.store.model.Key;
+import com.cloudaware.store.mongodb.MongoStoreService;
 import com.google.appengine.tools.pipeline.FutureList;
 import com.google.appengine.tools.pipeline.ImmediateValue;
 import com.google.appengine.tools.pipeline.Job;
@@ -53,9 +57,7 @@ import com.google.appengine.tools.pipeline.impl.tasks.Task;
 import com.google.appengine.tools.pipeline.impl.util.GUIDGenerator;
 import com.google.appengine.tools.pipeline.impl.util.StringUtils;
 import com.google.appengine.tools.pipeline.util.Pair;
-import com.google.cloud.datastore.Datastore;
 import com.google.cloud.datastore.DatastoreOptions;
-import com.google.cloud.datastore.Key;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -75,6 +77,8 @@ import java.util.logging.Logger;
  */
 public class PipelineManager {
 
+  public static final String MONGODB_URI = "datastore.mongodb.uri";
+  public static final String MONGODB_DEFAULT_PROJECT_ID = "datastore.mongodb.default.project.id";
   public static final String CLOUD_DATASTORE_ROOT_URL_PROPERTY = "clouddatastore.api.root.url";
   public static final String CLOUD_DATASTORE_PROJECT_ID = "clouddatastore.project.id";
 
@@ -295,7 +299,7 @@ public class PipelineManager {
   private static void throwUnrecognizedValueException(Value<?> value) {
     throw new RuntimeException(
         "Internal logic error: Unrecognized implementation of Value interface: "
-        + value.getClass().getName());
+            + value.getClass().getName());
   }
 
   /**
@@ -332,8 +336,8 @@ public class PipelineManager {
   }
 
   public static Pair<? extends Iterable<JobRecord>, String> queryRootPipelines(
-      String classFilter, String cursor, int limit) {
-    return getBackEnd().queryRootPipelines(classFilter, cursor, limit);
+      String classFilter, Integer offset, int limit) {
+    return getBackEnd().queryRootPipelines(classFilter, offset, limit);
   }
 
   public static Set<String> getRootPipelinesDisplayName() {
@@ -470,7 +474,7 @@ public class PipelineManager {
       // had finished.
       throw new NoSuchObjectException(
           "The framework is not ready to accept the promised value yet. "
-          + "Please try again after the job that generated the promis handle has completed.");
+              + "Please try again after the job that generated the promis handle has completed.");
     }
     if (!childGraphGuid.equals(slot.getGraphGuid())) {
       // The slot has been orphaned
@@ -479,43 +483,6 @@ public class PipelineManager {
     UpdateSpec updateSpec = new UpdateSpec(slot.getRootJobKey());
     registerSlotFilled(updateSpec, generatorJob.getQueueSettings(), slot, value);
     getBackEnd().save(updateSpec, generatorJob.getQueueSettings());
-  }
-
-  /**
-   * The root job instance used to wrap a user provided root if the user
-   * provided root job has exceptionHandler specified.
-   */
-  private static final class RootJobInstance extends Job0<Object> {
-
-    private static final long serialVersionUID = -2162670129577469245L;
-
-    private final Job<?> jobInstance;
-    private final JobSetting[] settings;
-    private final Object[] params;
-
-    public RootJobInstance(Job<?> jobInstance, JobSetting[] settings, Object[] params) {
-      this.jobInstance = jobInstance;
-      this.settings = settings;
-      this.params = params;
-    }
-
-    @Override
-    public Value<Object> run() throws Exception {
-      return futureCallUnchecked(settings, jobInstance, params);
-    }
-
-    @Override
-    public String getJobDisplayName() {
-      return jobInstance.getJobDisplayName();
-    }
-  }
-
-  /**
-   * A RuntimeException which, when thrown, causes us to abandon the current
-   * task, by returning a 200.
-   */
-  private static class AbandonTaskException extends RuntimeException {
-    private static final long serialVersionUID = 358437646006972459L;
   }
 
   /**
@@ -579,16 +546,23 @@ public class PipelineManager {
     return backEnd;
   }
 
-  public synchronized static Datastore getDatastore(){
-    final DatastoreOptions datastoreOptions;
-    if (System.getProperty(CLOUD_DATASTORE_ROOT_URL_PROPERTY) != null) {
-      datastoreOptions = DatastoreOptions.newBuilder()
-              .setProjectId(System.getProperty(CLOUD_DATASTORE_PROJECT_ID))
-              .setHost(System.getProperty(CLOUD_DATASTORE_ROOT_URL_PROPERTY)).build();
+  public synchronized static StoreService getDatastore() {
+
+    if (System.getProperty(MONGODB_URI) != null && System.getProperty(MONGODB_DEFAULT_PROJECT_ID) != null) {
+      return new MongoStoreService(System.getProperty(MONGODB_URI), System.getProperty(MONGODB_DEFAULT_PROJECT_ID));
     } else {
-      datastoreOptions = DatastoreOptions.getDefaultInstance();
+      final DatastoreOptions datastoreOptions;
+      if (System.getProperty(CLOUD_DATASTORE_ROOT_URL_PROPERTY) != null) {
+        datastoreOptions = DatastoreOptions.newBuilder()
+            .setProjectId(System.getProperty(CLOUD_DATASTORE_PROJECT_ID))
+            .setHost(System.getProperty(CLOUD_DATASTORE_ROOT_URL_PROPERTY)).build();
+      } else {
+        datastoreOptions = DatastoreOptions.getDefaultInstance();
+      }
+      return new DatastoreService(datastoreOptions.getService());
     }
-    return datastoreOptions.getService();
+
+
   }
 
   private static void invokePrivateJobMethod(String methodName, Job<?> job, Object... params) {
@@ -1126,7 +1100,6 @@ public class PipelineManager {
     return fillerJobKey;
   }
 
-
   /**
    * Handle the fact that the slot with the given key has been filled.
    * <p>
@@ -1274,5 +1247,42 @@ public class PipelineManager {
     QueueSettings queueSettings = generatorJobRecord.getQueueSettings();
     DelayedSlotFillTask task = new DelayedSlotFillTask(slot, delaySec, rootKey, queueSettings);
     spec.getFinalTransaction().registerTask(task);
+  }
+
+  /**
+   * The root job instance used to wrap a user provided root if the user
+   * provided root job has exceptionHandler specified.
+   */
+  private static final class RootJobInstance extends Job0<Object> {
+
+    private static final long serialVersionUID = -2162670129577469245L;
+
+    private final Job<?> jobInstance;
+    private final JobSetting[] settings;
+    private final Object[] params;
+
+    public RootJobInstance(Job<?> jobInstance, JobSetting[] settings, Object[] params) {
+      this.jobInstance = jobInstance;
+      this.settings = settings;
+      this.params = params;
+    }
+
+    @Override
+    public Value<Object> run() throws Exception {
+      return futureCallUnchecked(settings, jobInstance, params);
+    }
+
+    @Override
+    public String getJobDisplayName() {
+      return jobInstance.getJobDisplayName();
+    }
+  }
+
+  /**
+   * A RuntimeException which, when thrown, causes us to abandon the current
+   * task, by returning a 200.
+   */
+  private static class AbandonTaskException extends RuntimeException {
+    private static final long serialVersionUID = 358437646006972459L;
   }
 }

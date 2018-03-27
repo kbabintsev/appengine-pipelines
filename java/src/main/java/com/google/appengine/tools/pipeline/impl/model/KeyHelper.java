@@ -1,10 +1,10 @@
 package com.google.appengine.tools.pipeline.impl.model;
 
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
-import com.google.cloud.datastore.Entity;
-import com.google.cloud.datastore.Key;
-import com.google.cloud.datastore.KeyValue;
-import com.google.cloud.datastore.LongValue;
+import com.cloudaware.store.model.Entity;
+import com.cloudaware.store.model.Key;
+import com.cloudaware.store.model.KeyValue;
+import com.cloudaware.store.model.LongValue;
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.Lists;
 import com.google.common.io.BaseEncoding;
@@ -12,9 +12,9 @@ import com.google.common.io.BaseEncoding;
 import java.util.List;
 
 public class KeyHelper {
-  private static com.google.cloud.datastore.KeyFactory factory;
+  private static com.cloudaware.store.model.KeyFactory factory;
 
-  private synchronized static com.google.cloud.datastore.KeyFactory getFactory() {
+  private synchronized static com.cloudaware.store.model.KeyFactory getFactory() {
     if (factory == null) {
       factory = PipelineManager.getDatastore().newKeyFactory();
     }

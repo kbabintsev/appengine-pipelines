@@ -9,7 +9,7 @@
   <organization>
     <name>Google</name>
   </organization>
-  <version>0.2.13.8.CLOUDTASKS-SNAPSHOT</version>
+  <version>0.2.13.9.CLOUDTASKS-SNAPSHOT</version>
   <packaging>jar</packaging>
   <licenses>
     <license>
@@ -72,11 +72,17 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.20</version>
         <configuration>
+          <reuseForks>false</reuseForks>
           <excludes>
             <exclude>com/google/appengine/tools/pipeline/PipelineTest.java</exclude>
             <exclude>com/google/appengine/tools/pipeline/BaseEnvTest.java</exclude>
           </excludes>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-report-plugin</artifactId>
+        <version>2.21.0</version>
       </plugin>
     </plugins>
     <resources>
@@ -89,9 +95,9 @@
   <dependencies>
     <!-- Compile/Runtime Dependencies -->
     <!--<dependency>-->
-      <!--<groupId>org.json</groupId>-->
-      <!--<artifactId>json</artifactId>-->
-      <!--<version>20090211</version>-->
+    <!--<groupId>org.json</groupId>-->
+    <!--<artifactId>json</artifactId>-->
+    <!--<version>20090211</version>-->
     <!--</dependency>-->
     <dependency>
       <groupId>com.google.appengine</groupId>
@@ -115,6 +121,21 @@
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-datastore</artifactId>
       <version>1.8.0</version>
+    </dependency>
+    <!--<dependency>-->
+      <!--<groupId>com.google.cloud</groupId>-->
+      <!--<artifactId>google-cloud-core</artifactId>-->
+      <!--<version>1.20.0</version>-->
+    <!--</dependency>-->
+    <dependency>
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+      <version>20160810</version>
+    </dependency>
+    <dependency>
+      <groupId>com.cloudaware</groupId>
+      <artifactId>datastore-mongodb-impl</artifactId>
+      <version>0.0.0-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.cloudaware</groupId>
@@ -144,6 +165,12 @@
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
       <version>1.8.4</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>de.flapdoodle.embed</groupId>
+      <artifactId>de.flapdoodle.embed.mongo</artifactId>
+      <version>2.0.3</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -185,19 +212,19 @@
         <version>${protobuf-java.version}</version>
       </dependency>
       <!--<dependency>-->
-        <!--<groupId>com.google.auth</groupId>-->
-        <!--<artifactId>google-auth-library-credentials</artifactId>-->
-        <!--<version>0.6.1</version>-->
+      <!--<groupId>com.google.auth</groupId>-->
+      <!--<artifactId>google-auth-library-credentials</artifactId>-->
+      <!--<version>0.6.1</version>-->
       <!--</dependency>-->
       <!--<dependency>-->
-        <!--<groupId>com.google.auth</groupId>-->
-        <!--<artifactId>google-auth-library-oauth2</artifactId>-->
-        <!--<version>0.6.1</version>-->
+      <!--<groupId>com.google.auth</groupId>-->
+      <!--<artifactId>google-auth-library-oauth2</artifactId>-->
+      <!--<version>0.6.1</version>-->
       <!--</dependency>-->
       <!--<dependency>-->
-        <!--<groupId>com.google.auth</groupId>-->
-        <!--<artifactId>google-auth-library-oauth2-http</artifactId>-->
-        <!--<version>0.6.1</version>-->
+      <!--<groupId>com.google.auth</groupId>-->
+      <!--<artifactId>google-auth-library-oauth2-http</artifactId>-->
+      <!--<version>0.6.1</version>-->
       <!--</dependency>-->
       <dependency>
         <groupId>com.google.guava</groupId>
@@ -207,4 +234,26 @@
 
     </dependencies>
   </dependencyManagement>
+  <repositories>
+    <repository>
+      <id>goldmine-releases</id>
+      <url>https://nexus.cloudaware.com/content/repositories/releases/</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>goldmine-snapshots</id>
+      <url>https://nexus.cloudaware.com/content/repositories/snapshots/</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
 </project>

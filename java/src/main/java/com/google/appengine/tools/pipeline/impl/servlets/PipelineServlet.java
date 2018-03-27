@@ -15,7 +15,7 @@
 package com.google.appengine.tools.pipeline.impl.servlets;
 
 import com.google.appengine.tools.pipeline.util.Pair;
-import com.google.cloud.datastore.Key;
+import com.cloudaware.store.model.Key;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
