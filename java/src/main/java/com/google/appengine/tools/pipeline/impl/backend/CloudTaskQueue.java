@@ -36,14 +36,10 @@ import com.google.common.collect.Maps;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
-import java.util.TimeZone;
 import java.util.logging.Logger;
 
 /**
@@ -245,12 +241,7 @@ public class CloudTaskQueue implements PipelineTaskQueue {
    * @return date in ISO 8601
    */
   private String getScheduleTime(final int seconds) {
-    TimeZone tz = TimeZone.getTimeZone("UTC");
-    DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");
-    df.setTimeZone(tz);
-    Calendar calendar = Calendar.getInstance();
-    calendar.add(Calendar.SECOND, seconds);
-    return df.format(calendar.getTime());
+    return DeferredTaskContext.getScheduleTime(seconds * 1000l);
   }
 
   private static String getCurrentService() {
