@@ -1,3 +1,4 @@
+[![Build Status](https://jenkins.cloudaware.com/buildStatus/icon?style=plastic&job=appengine-pipeline)](https://jenkins.cloudaware.com/job/appengine-pipeline)
 # About
 
 This version of appengine-pipeline library adapted for [AppEngine Flexible](https://cloud.google.com/appengine/docs/flexible/) environment.
@@ -34,6 +35,7 @@ env_variables:
 
 # Changelog
 
+* 0.2.13.11.CLOUDTASKS-SNAPSHOT - fix scheduleTime, new version of deferred 
 * 0.2.13.10.CLOUDTASKS-SNAPSHOT - support for millis in scheduleTime 
 * 0.2.13.9.CLOUDTASKS-SNAPSHOT - alternative datastore implementation using MongoDB
 * 0.2.13.8.CLOUDTASKS-SNAPSHOT - deferred update

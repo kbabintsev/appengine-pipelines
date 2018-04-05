@@ -241,7 +241,7 @@ public class CloudTaskQueue implements PipelineTaskQueue {
    * @return date in ISO 8601
    */
   private String getScheduleTime(final int seconds) {
-    return DeferredTaskContext.getScheduleTime(seconds * 1000l);
+    return DeferredTaskContext.getScheduleTime(System.currentTimeMillis() + seconds * 1000l);
   }
 
   private static String getCurrentService() {
