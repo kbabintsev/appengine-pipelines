@@ -35,6 +35,7 @@ env_variables:
 
 # Changelog
 
+* 0.2.13.12.CLOUDTASKS-SNAPSHOT - new version of deferred, change version of google-api-client
 * 0.2.13.11.CLOUDTASKS-SNAPSHOT - fix scheduleTime, new version of deferred 
 * 0.2.13.10.CLOUDTASKS-SNAPSHOT - support for millis in scheduleTime 
 * 0.2.13.9.CLOUDTASKS-SNAPSHOT - alternative datastore implementation using MongoDB
