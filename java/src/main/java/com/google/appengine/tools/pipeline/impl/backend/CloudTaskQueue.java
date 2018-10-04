@@ -22,11 +22,11 @@ import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.json.jackson2.JacksonFactory;
-import com.google.api.services.cloudtasks.v2beta2.CloudTasks;
-import com.google.api.services.cloudtasks.v2beta2.CloudTasksScopes;
-import com.google.api.services.cloudtasks.v2beta2.model.AppEngineHttpRequest;
-import com.google.api.services.cloudtasks.v2beta2.model.AppEngineRouting;
-import com.google.api.services.cloudtasks.v2beta2.model.CreateTaskRequest;
+import com.google.api.services.cloudtasks.v2beta3.CloudTasks;
+import com.google.api.services.cloudtasks.v2beta3.CloudTasksScopes;
+import com.google.api.services.cloudtasks.v2beta3.model.AppEngineHttpRequest;
+import com.google.api.services.cloudtasks.v2beta3.model.AppEngineRouting;
+import com.google.api.services.cloudtasks.v2beta3.model.CreateTaskRequest;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 import com.google.appengine.tools.pipeline.impl.servlets.TaskHandler;
 import com.google.appengine.tools.pipeline.impl.tasks.ObjRefTask;
@@ -100,7 +100,7 @@ public class CloudTaskQueue implements PipelineTaskQueue {
   @Override
   public void enqueueDeferred(final String queueNameArg, final DeferredTask deferredTask) {
     String queueName = Optional.fromNullable(queueNameArg).or("default");
-    com.google.api.services.cloudtasks.v2beta2.model.Task task = new com.google.api.services.cloudtasks.v2beta2.model.Task();
+    com.google.api.services.cloudtasks.v2beta3.model.Task task = new com.google.api.services.cloudtasks.v2beta3.model.Task();
     task.setAppEngineHttpRequest(new AppEngineHttpRequest());
     task.setScheduleTime(getScheduleTime(10));
     task.getAppEngineHttpRequest()
@@ -115,7 +115,7 @@ public class CloudTaskQueue implements PipelineTaskQueue {
   @Override
   public void enqueue(Task task) {
     logger.finest("Enqueueing: " + task);
-    com.google.api.services.cloudtasks.v2beta2.model.Task taskOptions = toTaskOptions(task);
+    com.google.api.services.cloudtasks.v2beta3.model.Task taskOptions = toTaskOptions(task);
     try {
       cloudTask
           .projects()
@@ -141,8 +141,8 @@ public class CloudTaskQueue implements PipelineTaskQueue {
   }
 
   //VisibleForTesting
-  List<com.google.api.services.cloudtasks.v2beta2.model.Task> addToQueue(final Collection<Task> tasks) {
-    List<com.google.api.services.cloudtasks.v2beta2.model.Task> handles = new ArrayList<>();
+  List<com.google.api.services.cloudtasks.v2beta3.model.Task> addToQueue(final Collection<Task> tasks) {
+    List<com.google.api.services.cloudtasks.v2beta3.model.Task> handles = new ArrayList<>();
     for (Task task : tasks) {
       logger.finest("Enqueueing: " + task);
       String queueName = task.getQueueSettings().getOnQueue();
@@ -179,7 +179,7 @@ public class CloudTaskQueue implements PipelineTaskQueue {
     return queueName;
   }
 
-  private com.google.api.services.cloudtasks.v2beta2.model.Task toTaskOptions(Task task) {
+  private com.google.api.services.cloudtasks.v2beta3.model.Task toTaskOptions(Task task) {
     final QueueSettings queueSettings = task.getQueueSettings();
 
 
@@ -196,11 +196,11 @@ public class CloudTaskQueue implements PipelineTaskQueue {
       relativeUrl.append("&").append(paramName).append("=").append(props.getProperty(paramName));
     }
 
-    final com.google.api.services.cloudtasks.v2beta2.model.Task taskOptions = new com.google.api.services.cloudtasks.v2beta2.model.Task();
+    final com.google.api.services.cloudtasks.v2beta3.model.Task taskOptions = new com.google.api.services.cloudtasks.v2beta3.model.Task();
     taskOptions.setAppEngineHttpRequest(
         new AppEngineHttpRequest()
             .setHeaders(Maps.<String, String>newHashMap())
-            .setRelativeUrl(relativeUrl.toString())
+            .setRelativeUri(relativeUrl.toString())
     );
 
     if (queueSettings.getOnBackend() != null) {
