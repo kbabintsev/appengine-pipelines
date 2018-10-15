@@ -35,6 +35,7 @@ env_variables:
 
 # Changelog
 
+* 0.2.13.14.CLOUDTASKS-SNAPSHOT - new version of google-cloud-datastore
 * 0.2.13.13.CLOUDTASKS-SNAPSHOT - new version of deferred, change version of google-api-services-cloudtasks
 * 0.2.13.12.CLOUDTASKS-SNAPSHOT - new version of deferred, change version of google-api-client
 * 0.2.13.11.CLOUDTASKS-SNAPSHOT - fix scheduleTime, new version of deferred 
