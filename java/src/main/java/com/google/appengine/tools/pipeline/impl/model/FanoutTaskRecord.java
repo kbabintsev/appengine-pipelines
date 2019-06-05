@@ -16,7 +16,7 @@ package com.google.appengine.tools.pipeline.impl.model;
 
 import com.google.appengine.api.datastore.Blob;
 import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.Key;
+import java.util.UUID;
 
 /**
  * A datastore entity for storing data necessary for a fan-out task
@@ -30,7 +30,7 @@ public class FanoutTaskRecord extends PipelineModelObject {
 
   private final byte[] payload;
 
-  public FanoutTaskRecord(Key rootJobKey, byte[] payload) {
+  public FanoutTaskRecord(UUID rootJobKey, byte[] payload) {
     super(rootJobKey, null, null);
     if (payload == null) {
       throw new RuntimeException("Payload must not be null");

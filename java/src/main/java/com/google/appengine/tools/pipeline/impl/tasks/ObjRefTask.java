@@ -14,11 +14,10 @@
 
 package com.google.appengine.tools.pipeline.impl.tasks;
 
-import com.google.appengine.api.datastore.Key;
-import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 
 import java.util.Properties;
+import java.util.UUID;
 
 /**
  * A subclass of {@code Task} for tasks which need to reference a particular
@@ -34,7 +33,7 @@ public abstract class ObjRefTask extends Task {
   /**
    * The {@code Key} of the object to which this {@code ObjRefTask} refers.
    */
-  private final Key key;
+  private final UUID key;
 
   /**
    * This constructor is used on the sending side. That is, it is used to
@@ -46,19 +45,19 @@ public abstract class ObjRefTask extends Task {
    *        will refer. It will be used as part of the task name if
    *        combined with {@code namePrefix}.
    */
-  protected ObjRefTask(Type type, String namePrefix, Key key, QueueSettings queueSettings) {
+  protected ObjRefTask(Type type, String namePrefix, UUID key, QueueSettings queueSettings) {
     super(type, createTaskName(namePrefix, key), queueSettings.clone());
     this.key = key;
   }
 
-  private static String createTaskName(String namePrefix, Key key) {
+  private static String createTaskName(String namePrefix, UUID key) {
     if (null == key) {
       throw new IllegalArgumentException("key is null.");
     }
     if (namePrefix == null) {
       throw new IllegalArgumentException("namePrix is null.");
     }
-    return namePrefix + KeyFactory.keyToString(key);
+    return namePrefix + key.toString();
   }
 
   /**
@@ -75,16 +74,16 @@ public abstract class ObjRefTask extends Task {
    */
   protected ObjRefTask(Type type, String taskName, Properties properties) {
     super(type, taskName, properties);
-    key = KeyFactory.stringToKey(properties.getProperty(KEY_PARAM));
+    key = UUID.fromString(properties.getProperty(KEY_PARAM));
   }
 
-  public Key getKey() {
+  public UUID getKey() {
     return key;
   }
 
   @Override
   protected void addProperties(Properties properties) {
-    String keyString = KeyFactory.keyToString(key);
+    String keyString = key.toString();
     properties.setProperty(KEY_PARAM, keyString);
   }
 

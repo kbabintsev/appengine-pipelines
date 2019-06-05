@@ -17,7 +17,6 @@ package com.google.appengine.tools.pipeline.impl.model;
 import com.google.appengine.api.backends.BackendService;
 import com.google.appengine.api.backends.BackendServiceFactory;
 import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.Text;
 import com.google.appengine.api.modules.ModulesService;
 import com.google.appengine.api.modules.ModulesServiceFactory;
@@ -43,6 +42,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * The Pipeline model object corresponding to a job.
@@ -64,7 +64,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
   /**
    * This enum serves as an input parameter to the method
    * {@link com.google.appengine.tools.pipeline.impl.backend.PipelineBackEnd#queryJob(
-   * Key, InflationType)}. When fetching an
+   * UUID, InflationType)}. When fetching an
    * instance of {@code JobRecord} from the data store this enum specifies how
    * much auxiliary data should also be queried and used to inflate the instance
    * of {@code JobRecord}.
@@ -143,22 +143,22 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
   public static final String ROOT_JOB_DISPLAY_NAME = "rootJobDisplayName";
 
   // persistent fields
-  private final Key jobInstanceKey;
-  private final Key runBarrierKey;
-  private final Key finalizeBarrierKey;
-  private Key outputSlotKey;
+  private final UUID jobInstanceKey;
+  private final UUID runBarrierKey;
+  private final UUID finalizeBarrierKey;
+  private UUID outputSlotKey;
   private State state;
-  private Key exceptionHandlingAncestorKey;
+  private UUID exceptionHandlingAncestorKey;
   private boolean exceptionHandlerSpecified;
-  private Key exceptionHandlerJobKey;
+  private UUID exceptionHandlerJobKey;
   private String exceptionHandlerJobGraphGuid;
   private boolean callExceptionHandler;
   private boolean ignoreException;
-  private Key exceptionKey;
+  private UUID exceptionKey;
   private Date startTime;
   private Date endTime;
   private String childGraphGuid;
-  private List<Key> childKeys;
+  private List<UUID> childKeys;
   private long attemptNumber;
   private long maxAttempts = JobSetting.MaxAttempts.DEFAULT;
   private long backoffSeconds = JobSetting.BackoffSeconds.DEFAULT;
@@ -181,19 +181,19 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
    */
   public JobRecord(Entity entity) {
     super(entity);
-    jobInstanceKey = (Key) entity.getProperty(JOB_INSTANCE_PROPERTY);
-    finalizeBarrierKey = (Key) entity.getProperty(FINALIZE_BARRIER_PROPERTY);
-    runBarrierKey = (Key) entity.getProperty(RUN_BARRIER_PROPERTY);
-    outputSlotKey = (Key) entity.getProperty(OUTPUT_SLOT_PROPERTY);
+    jobInstanceKey = (UUID) entity.getProperty(JOB_INSTANCE_PROPERTY);
+    finalizeBarrierKey = (UUID) entity.getProperty(FINALIZE_BARRIER_PROPERTY);
+    runBarrierKey = (UUID) entity.getProperty(RUN_BARRIER_PROPERTY);
+    outputSlotKey = (UUID) entity.getProperty(OUTPUT_SLOT_PROPERTY);
     state = State.valueOf((String) entity.getProperty(STATE_PROPERTY));
     exceptionHandlingAncestorKey =
-        (Key) entity.getProperty(EXCEPTION_HANDLING_ANCESTOR_KEY_PROPERTY);
+        (UUID) entity.getProperty(EXCEPTION_HANDLING_ANCESTOR_KEY_PROPERTY);
     Object exceptionHandlerSpecifiedProperty =
         entity.getProperty(EXCEPTION_HANDLER_SPECIFIED_PROPERTY);
     if (null != exceptionHandlerSpecifiedProperty) {
       exceptionHandlerSpecified = (Boolean) exceptionHandlerSpecifiedProperty;
     }
-    exceptionHandlerJobKey = (Key) entity.getProperty(EXCEPTION_HANDLER_JOB_KEY_PROPERTY);
+    exceptionHandlerJobKey = (UUID) entity.getProperty(EXCEPTION_HANDLER_JOB_KEY_PROPERTY);
     Text exceptionHandlerGraphGuidText =
         (Text) entity.getProperty(EXCEPTION_HANDLER_JOB_GRAPH_GUID_PROPERTY);
     if (null != exceptionHandlerGraphGuidText) {
@@ -211,10 +211,10 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
     if (null != childGraphGuidText) {
       childGraphGuid = childGraphGuidText.getValue();
     }
-    exceptionKey = (Key) entity.getProperty(EXCEPTION_KEY_PROPERTY);
+    exceptionKey = (UUID) entity.getProperty(EXCEPTION_KEY_PROPERTY);
     startTime = (Date) entity.getProperty(START_TIME_PROPERTY);
     endTime = (Date) entity.getProperty(END_TIME_PROPERTY);
-    childKeys = (List<Key>) entity.getProperty(CHILD_KEYS_PROPERTY);
+    childKeys = (List<UUID>) entity.getProperty(CHILD_KEYS_PROPERTY);
     if (null == childKeys) {
       childKeys = new LinkedList<>();
     }
@@ -323,7 +323,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
     }
   }
 
-  private JobRecord(Key rootJobKey, Key thisKey, Key generatorJobKey, String graphGUID,
+  private JobRecord(UUID rootJobKey, UUID thisKey, UUID generatorJobKey, String graphGUID,
       Job<?> jobInstance, boolean callExceptionHandler, JobSetting[] settings,
       QueueSettings parentQueueSettings) {
     super(rootJobKey, null, thisKey, generatorJobKey, graphGUID);
@@ -385,7 +385,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
   }
 
   // Constructor for Root Jobs (called by {@link #createRootJobRecord}).
-  private JobRecord(Key key, Job<?> jobInstance, JobSetting[] settings) {
+  private JobRecord(UUID key, Job<?> jobInstance, JobSetting[] settings) {
     // Root Jobs have their rootJobKey the same as their keys and provide null for generatorKey
     // and graphGUID. Also, callExceptionHandler is always false.
     this(key, key, null, null, jobInstance, false, settings, null);
@@ -401,7 +401,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
    *        JobRecord.
    */
   public static JobRecord createRootJobRecord(Job<?> jobInstance, JobSetting[] settings) {
-    Key key = generateKey(null, DATA_STORE_KIND);
+    UUID key = generateKey(null, DATA_STORE_KIND);
     return new JobRecord(key, jobInstance, settings);
   }
 
@@ -458,7 +458,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
     return DATA_STORE_KIND;
   }
 
-  private static boolean checkForInflate(PipelineModelObject obj, Key expectedGuid, String name) {
+  private static boolean checkForInflate(PipelineModelObject obj, UUID expectedGuid, String name) {
     if (null == obj) {
       return false;
     }
@@ -488,7 +488,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
     }
   }
 
-  public Key getRunBarrierKey() {
+  public UUID getRunBarrierKey() {
     return runBarrierKey;
   }
 
@@ -496,7 +496,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
     return runBarrierInflated;
   }
 
-  public Key getFinalizeBarrierKey() {
+  public UUID getFinalizeBarrierKey() {
     return finalizeBarrierKey;
   }
 
@@ -504,7 +504,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
     return finalizeBarrierInflated;
   }
 
-  public Key getOutputSlotKey() {
+  public UUID getOutputSlotKey() {
     return outputSlotKey;
   }
 
@@ -520,7 +520,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
     return outputSlotInflated;
   }
 
-  public Key getJobInstanceKey() {
+  public UUID getJobInstanceKey() {
     return jobInstanceKey;
   }
 
@@ -566,11 +566,11 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
    * Returns key of the nearest ancestor that has exceptionHandler method
    * overridden or <code>null</code> if none of them has it.
    */
-  public Key getExceptionHandlingAncestorKey() {
+  public UUID getExceptionHandlingAncestorKey() {
     return exceptionHandlingAncestorKey;
   }
 
-  public Key getExceptionHandlerJobKey() {
+  public UUID getExceptionHandlerJobKey() {
     return exceptionHandlerJobKey;
   }
 
@@ -639,11 +639,11 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
     this.statusConsoleUrl = statusConsoleUrl;
   }
 
-  public void appendChildKey(Key key) {
+  public void appendChildKey(UUID key) {
     childKeys.add(key);
   }
 
-  public List<Key> getChildKeys() {
+  public List<UUID> getChildKeys() {
     return childKeys;
   }
 
@@ -651,7 +651,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
     return childGraphGuid;
   }
 
-  public void setExceptionKey(Key exceptionKey) {
+  public void setExceptionKey(UUID exceptionKey) {
     this.exceptionKey = exceptionKey;
   }
 
@@ -700,7 +700,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
     return exceptionInflated;
   }
 
-  public Key getExceptionKey() {
+  public UUID getExceptionKey() {
     return exceptionKey;
   }
 
@@ -720,8 +720,8 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
   public String toString() {
     return "JobRecord [" + getKeyName(getKey()) + ", " + state + ", " + getJobInstanceString()
         + ", callExceptionJHandler=" + callExceptionHandler + ", runBarrier="
-        + runBarrierKey.getName() + ", finalizeBarrier=" + finalizeBarrierKey.getName()
-        + ", outputSlot=" + outputSlotKey.getName() + ", rootJobDisplayName="
+        + runBarrierKey + ", finalizeBarrier=" + finalizeBarrierKey
+        + ", outputSlot=" + outputSlotKey + ", rootJobDisplayName="
         + rootJobDisplayName + ", parent=" + getKeyName(getGeneratorJobKey()) + ", guid="
         + getGraphGuid() + ", childGuid=" + childGraphGuid + "]";
   }

@@ -14,10 +14,10 @@
 
 package com.google.appengine.tools.pipeline.impl.tasks;
 
-import com.google.appengine.api.datastore.Key;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 
 import java.util.Properties;
+import java.util.UUID;
 
 /**
  * A subclass of {@link ObjRefTask} used to request that the Pipeline framework
@@ -35,7 +35,7 @@ public class HandleSlotFilledTask extends ObjRefTask {
    *
    * @param slotKey The key of the Slot whose filling is to be handled
    */
-  public HandleSlotFilledTask(Key slotKey, QueueSettings queueSettings) {
+  public HandleSlotFilledTask(UUID slotKey, QueueSettings queueSettings) {
     super(Type.HANDLE_SLOT_FILLED, "handleSlotFilled", slotKey, queueSettings);
   }
 
@@ -43,7 +43,7 @@ public class HandleSlotFilledTask extends ObjRefTask {
     super(type, taskName, properties);
   }
 
-  public Key getSlotKey() {
+  public UUID getSlotKey() {
     return getKey();
   }
 }

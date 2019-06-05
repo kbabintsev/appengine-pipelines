@@ -14,12 +14,11 @@
 
 package com.google.appengine.tools.pipeline.impl.tasks;
 
-import com.google.appengine.api.datastore.Key;
-import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 import com.google.appengine.tools.pipeline.impl.model.Slot;
 
 import java.util.Properties;
+import java.util.UUID;
 
 /**
  * A subclass of {@link ObjRefTask} used to implement delayed value.
@@ -31,7 +30,7 @@ public class DelayedSlotFillTask extends ObjRefTask {
 
   private static final String ROOT_JOB_KEY_PARAM = "rootJobKey";
 
-  private final Key rootJobKey;
+  private final UUID rootJobKey;
 
   /**
    * This constructor is used on the sending side. That is, it is used to
@@ -43,7 +42,7 @@ public class DelayedSlotFillTask extends ObjRefTask {
    * @param rootJobKey The key of the root job of the pipeline
    * @param queueSettings The queue settings
    */
-  public DelayedSlotFillTask(Slot slot, long delay, Key rootJobKey, QueueSettings queueSettings) {
+  public DelayedSlotFillTask(Slot slot, long delay, UUID rootJobKey, QueueSettings queueSettings) {
     super(Type.DELAYED_SLOT_FILL, "delayedSlotFillTask", slot.getKey(), queueSettings);
     getQueueSettings().setDelayInSeconds(delay);
     this.rootJobKey = rootJobKey;
@@ -51,13 +50,13 @@ public class DelayedSlotFillTask extends ObjRefTask {
 
   protected DelayedSlotFillTask(Type type, String taskName, Properties properties) {
     super(type, taskName, properties);
-    rootJobKey = KeyFactory.stringToKey(properties.getProperty(ROOT_JOB_KEY_PARAM));
+    rootJobKey = UUID.fromString(properties.getProperty(ROOT_JOB_KEY_PARAM));
   }
 
   @Override
   protected void addProperties(Properties properties) {
     super.addProperties(properties);
-    properties.setProperty(ROOT_JOB_KEY_PARAM, KeyFactory.keyToString(rootJobKey));
+    properties.setProperty(ROOT_JOB_KEY_PARAM, rootJobKey.toString());
   }
 
   @Override
@@ -65,11 +64,11 @@ public class DelayedSlotFillTask extends ObjRefTask {
     return super.propertiesAsString() + ", rootJobKey=" + rootJobKey;
   }
 
-  public Key getSlotKey() {
+  public UUID getSlotKey() {
     return getKey();
   }
 
-  public Key getRootJobKey() {
+  public UUID getRootJobKey() {
     return rootJobKey;
   }
 }

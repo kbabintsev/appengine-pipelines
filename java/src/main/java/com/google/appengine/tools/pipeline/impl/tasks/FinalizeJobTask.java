@@ -14,7 +14,7 @@
 
 package com.google.appengine.tools.pipeline.impl.tasks;
 
-import com.google.appengine.api.datastore.Key;
+import java.util.UUID;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 
 import java.util.Properties;
@@ -27,7 +27,7 @@ import java.util.Properties;
  */
 public class FinalizeJobTask extends ObjRefTask {
 
-  public FinalizeJobTask(Key jobKey, QueueSettings queueSettings) {
+  public FinalizeJobTask(UUID jobKey, QueueSettings queueSettings) {
     super(Type.FINALIZE_JOB, "finalizeJob", jobKey, queueSettings);
   }
 
@@ -35,7 +35,7 @@ public class FinalizeJobTask extends ObjRefTask {
     super(type, taskName, properties);
   }
 
-  public Key getJobKey() {
+  public UUID getJobKey() {
     return getKey();
   }
 }

@@ -14,7 +14,6 @@
 
 package com.google.appengine.tools.pipeline;
 
-import com.google.appengine.api.datastore.Key;
 import com.google.appengine.tools.pipeline.impl.FutureValueImpl;
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.appengine.tools.pipeline.impl.PromisedValueImpl;
@@ -23,6 +22,7 @@ import com.google.appengine.tools.pipeline.impl.model.JobRecord;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * The abstract ancestor class of all user job classes. A <b>job</b> is by
@@ -516,7 +516,7 @@ public abstract class Job<E> implements Serializable {
    *
    * @return the Key uniquely identifying this job
    */
-  public Key getJobKey() {
+  public UUID getJobKey() {
     return thisJobRecord.getKey();
   }
 
@@ -527,7 +527,7 @@ public abstract class Job<E> implements Serializable {
    * @return the Key uniquely identifying the Pipeline that this job is a member
    *         of
    */
-  public Key getPipelineKey() {
+  public UUID getPipelineKey() {
     return thisJobRecord.getRootJobKey();
   }
 

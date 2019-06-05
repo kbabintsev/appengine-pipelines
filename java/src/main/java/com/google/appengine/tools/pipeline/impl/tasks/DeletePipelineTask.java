@@ -14,10 +14,10 @@
 
 package com.google.appengine.tools.pipeline.impl.tasks;
 
-import com.google.appengine.api.datastore.Key;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 
 import java.util.Properties;
+import java.util.UUID;
 
 /**
  * A subclass of {@code ObjRefTask} used for the purpose of requesting
@@ -35,7 +35,7 @@ public class DeletePipelineTask extends ObjRefTask {
 
   private final boolean force;
 
-  public DeletePipelineTask(Key rootJobKey, boolean force, QueueSettings queueSettings) {
+  public DeletePipelineTask(UUID rootJobKey, boolean force, QueueSettings queueSettings) {
     super(Type.DELETE_PIPELINE, "deletePipeline", rootJobKey, queueSettings);
     this.force = force;
   }
@@ -56,7 +56,7 @@ public class DeletePipelineTask extends ObjRefTask {
     return super.propertiesAsString() + ", force=" + force;
   }
 
-  public Key getRootJobKey() {
+  public UUID getRootJobKey() {
     return getKey();
   }
 

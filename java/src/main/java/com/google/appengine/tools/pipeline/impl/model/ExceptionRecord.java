@@ -16,10 +16,10 @@ package com.google.appengine.tools.pipeline.impl.model;
 
 import com.google.appengine.api.datastore.Blob;
 import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.Key;
 import com.google.appengine.tools.pipeline.impl.util.SerializationUtils;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * A datastore entity for storing information about job failure.
@@ -34,7 +34,7 @@ public class ExceptionRecord extends PipelineModelObject {
   private final Throwable exception;
 
   public ExceptionRecord(
-      Key rootJobKey, Key generatorJobKey, String graphGUID, Throwable exception) {
+      UUID rootJobKey, UUID generatorJobKey, String graphGUID, Throwable exception) {
     super(rootJobKey, generatorJobKey, graphGUID);
     this.exception = exception;
   }

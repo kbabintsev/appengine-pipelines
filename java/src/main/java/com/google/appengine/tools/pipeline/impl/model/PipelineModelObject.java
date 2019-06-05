@@ -15,7 +15,7 @@
 package com.google.appengine.tools.pipeline.impl.model;
 
 import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.Key;
+import java.util.UUID;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.tools.pipeline.impl.util.GUIDGenerator;
 
@@ -39,20 +39,20 @@ public abstract class PipelineModelObject {
   /**
    * Datastore key of this object
    */
-  private final Key key;
+  private final UUID key;
 
   /**
    * Datastore key of the root job identifying the Pipeline to which this object
    * belongs.
    */
-  private final Key rootJobKey;
+  private final UUID rootJobKey;
 
   /**
    * Datastore key of the generator job of this object. Your generator job is
    * the job whose run() method created you and the rest of your local job
    * graph. The generator of the objects in the root job graph is null.
    */
-  private final Key generatorJobKey;
+  private final UUID generatorJobKey;
 
   /**
    * A GUID generated during the execution of a run() method of a generator job.
@@ -89,7 +89,7 @@ public abstract class PipelineModelObject {
    *        its barriers or slots.
    */
   protected PipelineModelObject(
-      Key rootJobKey, Key egParentKey, Key thisKey, Key generatorJobKey, String graphGUID) {
+      UUID rootJobKey, UUID egParentKey, UUID thisKey, UUID generatorJobKey, String graphGUID) {
     if (null == rootJobKey) {
       throw new IllegalArgumentException("rootJobKey is null");
     }
@@ -130,7 +130,7 @@ public abstract class PipelineModelObject {
    *        object is part of the root job graph---i.e. the root job, or one of
    *        its barriers or slots.
    */
-  protected PipelineModelObject(Key rootJobKey, Key generatorJobKey, String graphGUID) {
+  protected PipelineModelObject(UUID rootJobKey, UUID generatorJobKey, String graphGUID) {
     this(rootJobKey, null, null, generatorJobKey, graphGUID);
   }
 
@@ -149,9 +149,9 @@ public abstract class PipelineModelObject {
     }
   }
 
-  protected static Key generateKey(Key parentKey, String kind) {
+  protected static UUID generateKey(UUID parentKey, String kind) {
     String name = GUIDGenerator.nextGUID();
-    Key key;
+    UUID key;
     if (null == parentKey) {
       key = KeyFactory.createKey(kind, name);
     } else {
@@ -160,12 +160,12 @@ public abstract class PipelineModelObject {
     return key;
   }
 
-  private static Key extractRootJobKey(Entity entity) {
-    return (Key) entity.getProperty(ROOT_JOB_KEY_PROPERTY);
+  private static UUID extractRootJobKey(Entity entity) {
+    return (UUID) entity.getProperty(ROOT_JOB_KEY_PROPERTY);
   }
 
-  private static Key extractGeneratorJobKey(Entity entity) {
-    return (Key) entity.getProperty(GENERATOR_JOB_PROPERTY);
+  private static UUID extractGeneratorJobKey(Entity entity) {
+    return (UUID) entity.getProperty(GENERATOR_JOB_PROPERTY);
   }
 
   private static String extractGraphGUID(Entity entity) {
@@ -176,7 +176,7 @@ public abstract class PipelineModelObject {
     return entity.getKind();
   }
 
-  private static Key extractKey(Entity entity) {
+  private static UUID extractKey(Entity entity) {
     return entity.getKey();
   }
 
@@ -194,15 +194,15 @@ public abstract class PipelineModelObject {
     return entity;
   }
 
-  public Key getKey() {
+  public UUID getKey() {
     return key;
   }
 
-  public Key getRootJobKey() {
+  public UUID getRootJobKey() {
     return rootJobKey;
   }
 
-  public Key getGeneratorJobKey() {
+  public UUID getGeneratorJobKey() {
     return generatorJobKey;
   }
 
@@ -212,9 +212,9 @@ public abstract class PipelineModelObject {
 
   protected abstract String getDatastoreKind();
 
-  protected static <E> List<E> buildInflated(Collection<Key> listOfIds, Map<Key, E> pool) {
+  protected static <E> List<E> buildInflated(Collection<UUID> listOfIds, Map<UUID, E> pool) {
     ArrayList<E> list = new ArrayList<>(listOfIds.size());
-    for (Key id : listOfIds) {
+    for (UUID id : listOfIds) {
       E x = pool.get(id);
       if (null == x) {
         throw new RuntimeException("No object found in pool with id=" + id);
@@ -230,7 +230,7 @@ public abstract class PipelineModelObject {
     return list == null ? new LinkedList<E>() : list;
   }
 
-  protected static String getKeyName(Key key) {
-    return key == null ? "null" : key.getName();
+  protected static String getKeyName(UUID key) {
+    return key == null ? "null" : key.toString();
   }
 }

@@ -29,7 +29,7 @@ import com.google.appengine.api.datastore.DatastoreTimeoutException;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.FetchOptions;
-import com.google.appengine.api.datastore.Key;
+import java.util.UUID;
 import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.PropertyProjection;
 import com.google.appengine.api.datastore.Query;
@@ -128,7 +128,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
   }
 
   private boolean transactionallySaveAll(UpdateSpec.Transaction transactionSpec,
-      QueueSettings queueSettings, Key rootJobKey, Key jobKey, JobRecord.State... expectedStates) {
+      QueueSettings queueSettings, UUID rootJobKey, UUID jobKey, JobRecord.State... expectedStates) {
     Transaction transaction = dataStore.beginTransaction();
     try {
       if (jobKey != null && expectedStates != null) {
@@ -215,7 +215,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
 
   @Override
   public boolean saveWithJobStateCheck(final UpdateSpec updateSpec,
-      final QueueSettings queueSettings, final Key jobKey,
+      final QueueSettings queueSettings, final UUID jobKey,
       final JobRecord.State... expectedStates) {
     tryFiveTimes(new Operation<Void>("save") {
       @Override
@@ -256,7 +256,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
   }
 
   @Override
-  public JobRecord queryJob(final Key jobKey, final JobRecord.InflationType inflationType)
+  public JobRecord queryJob(final UUID jobKey, final JobRecord.InflationType inflationType)
       throws NoSuchObjectException {
     Entity entity = getEntity("queryJob", jobKey);
     JobRecord jobRecord = new JobRecord(entity);
@@ -279,7 +279,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
         break;
       case FOR_OUTPUT:
         outputSlot = querySlot(jobRecord.getOutputSlotKey(), false);
-        Key failureKey = jobRecord.getExceptionKey();
+        UUID failureKey = jobRecord.getExceptionKey();
         failureRecord = queryFailure(failureKey);
         break;
       default:
@@ -293,7 +293,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
    * {@code inflate = true} means that {@link Barrier#getWaitingOnInflated()}
    * will not return {@code null}.
    */
-  private Barrier queryBarrier(Key barrierKey, boolean inflate) throws NoSuchObjectException {
+  private Barrier queryBarrier(UUID barrierKey, boolean inflate) throws NoSuchObjectException {
     Entity entity = getEntity("queryBarrier", barrierKey);
     Barrier barrier = new Barrier(entity);
     if (inflate) {
@@ -314,18 +314,18 @@ public class AppEngineBackEnd implements PipelineBackEnd {
    */
   private void inflateBarriers(Collection<Barrier> barriers) {
     // Step 1. Build the set of keys corresponding to the slots.
-    Set<Key> keySet = new HashSet<>(barriers.size() * 5);
+    Set<UUID> keySet = new HashSet<>(barriers.size() * 5);
     for (Barrier barrier : barriers) {
-      for (Key key : barrier.getWaitingOnKeys()) {
+      for (UUID key : barrier.getWaitingOnKeys()) {
         keySet.add(key);
       }
     }
     // Step 2. Query the datastore for the Slot entities
-    Map<Key, Entity> entityMap = getEntities("inflateBarriers", keySet);
+    Map<UUID, Entity> entityMap = getEntities("inflateBarriers", keySet);
 
     // Step 3. Convert into map from key to Slot
-    Map<Key, Slot> slotMap = new HashMap<>(entityMap.size());
-    for (Key key : keySet) {
+    Map<UUID, Slot> slotMap = new HashMap<>(entityMap.size());
+    for (UUID key : keySet) {
       Slot s = new Slot(entityMap.get(key));
       slotMap.put(key, s);
     }
@@ -336,13 +336,13 @@ public class AppEngineBackEnd implements PipelineBackEnd {
   }
 
   @Override
-  public Slot querySlot(Key slotKey, boolean inflate) throws NoSuchObjectException {
+  public Slot querySlot(UUID slotKey, boolean inflate) throws NoSuchObjectException {
     Entity entity = getEntity("querySlot", slotKey);
     Slot slot = new Slot(entity);
     if (inflate) {
-      Map<Key, Entity> entities = getEntities("querySlot", slot.getWaitingOnMeKeys());
-      Map<Key, Barrier> barriers = new HashMap<>(entities.size());
-      for (Map.Entry<Key, Entity> entry : entities.entrySet()) {
+      Map<UUID, Entity> entities = getEntities("querySlot", slot.getWaitingOnMeKeys());
+      Map<UUID, Barrier> barriers = new HashMap<>(entities.size());
+      for (Map.Entry<UUID, Entity> entry : entities.entrySet()) {
         barriers.put(entry.getKey(), new Barrier(entry.getValue()));
       }
       slot.inflate(barriers);
@@ -352,7 +352,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
   }
 
   @Override
-  public ExceptionRecord queryFailure(Key failureKey) throws NoSuchObjectException {
+  public ExceptionRecord queryFailure(UUID failureKey) throws NoSuchObjectException {
     if (failureKey == null) {
       return null;
     }
@@ -375,11 +375,11 @@ public class AppEngineBackEnd implements PipelineBackEnd {
       offset = limit;
       shardedValues.add(new ShardedValue(model, shardId++, chunk).toEntity());
     }
-    return tryFiveTimes(new Operation<List<Key>>("serializeValue") {
+    return tryFiveTimes(new Operation<List<UUID>>("serializeValue") {
       @Override
-      public List<Key> call() {
+      public List<UUID> call() {
         Transaction tx = dataStore.beginTransaction();
-        List<Key> keys;
+        List<UUID> keys;
         try {
           keys = dataStore.put(tx, shardedValues);
           tx.commit();
@@ -400,12 +400,12 @@ public class AppEngineBackEnd implements PipelineBackEnd {
       return SerializationUtils.deserialize(((Blob) serializedVersion).getBytes());
     } else {
       @SuppressWarnings("unchecked")
-      Collection<Key> keys = (Collection<Key>) serializedVersion;
-      Map<Key, Entity> entities = getEntities("deserializeValue", keys);
+      Collection<UUID> keys = (Collection<UUID>) serializedVersion;
+      Map<UUID, Entity> entities = getEntities("deserializeValue", keys);
       ShardedValue[] shardedValues = new ShardedValue[entities.size()];
       int totalSize = 0;
       int index = 0;
-      for (Key key : keys) {
+      for (UUID key : keys) {
         Entity entity = entities.get(key);
         ShardedValue shardedValue = new ShardedValue(entity);
         shardedValues[index++] = shardedValue;
@@ -422,22 +422,22 @@ public class AppEngineBackEnd implements PipelineBackEnd {
     }
   }
 
-  private Map<Key, Entity> getEntities(String logString, final Collection<Key> keys) {
-    Map<Key, Entity> result = tryFiveTimes(new Operation<Map<Key, Entity>>(logString) {
+  private Map<UUID, Entity> getEntities(String logString, final Collection<UUID> keys) {
+    Map<UUID, Entity> result = tryFiveTimes(new Operation<Map<UUID, Entity>>(logString) {
       @Override
-      public Map<Key, Entity> call() {
+      public Map<UUID, Entity> call() {
         return dataStore.get(null, keys);
       }
     });
     if (keys.size() != result.size()) {
-      List<Key> missing = new ArrayList<>(keys);
+      List<UUID> missing = new ArrayList<>(keys);
       missing.removeAll(result.keySet());
       throw new RuntimeException("Missing entities for keys: " + missing);
     }
     return result;
   }
 
-  private Entity getEntity(String logString, final Key key) throws NoSuchObjectException {
+  private Entity getEntity(String logString, final UUID key) throws NoSuchObjectException {
     try {
       return tryFiveTimes(new Operation<Entity>(logString) {
         @Override
@@ -457,7 +457,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
 
   @Override
   public void handleFanoutTask(FanoutTask fanoutTask) throws NoSuchObjectException {
-    Key fanoutTaskRecordKey = fanoutTask.getRecordKey();
+    UUID fanoutTaskRecordKey = fanoutTask.getRecordKey();
     // Fetch the fanoutTaskRecord outside of any transaction
     Entity entity = getEntity("handleFanoutTask", fanoutTaskRecordKey);
     FanoutTaskRecord ftRecord = new FanoutTaskRecord(entity);
@@ -465,7 +465,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
     taskQueue.enqueue(FanoutTask.decodeTasks(encodedBytes));
   }
 
-  public List<Entity> queryAll(final String kind, final Key rootJobKey) {
+  public List<Entity> queryAll(final String kind, final UUID rootJobKey) {
     Query query = new Query(kind);
     query.setFilter(new FilterPredicate(ROOT_JOB_KEY_PROPERTY, EQUAL, rootJobKey));
     final PreparedQuery preparedQuery = dataStore.prepare(query);
@@ -535,12 +535,12 @@ public class AppEngineBackEnd implements PipelineBackEnd {
   }
 
   @Override
-  public PipelineObjects queryFullPipeline(final Key rootJobKey) {
-    final Map<Key, JobRecord> jobs = new HashMap<>();
-    final Map<Key, Slot> slots = new HashMap<>();
-    final Map<Key, Barrier> barriers = new HashMap<>();
-    final Map<Key, JobInstanceRecord> jobInstanceRecords = new HashMap<>();
-    final Map<Key, ExceptionRecord> failureRecords = new HashMap<>();
+  public PipelineObjects queryFullPipeline(final UUID rootJobKey) {
+    final Map<UUID, JobRecord> jobs = new HashMap<>();
+    final Map<UUID, Slot> slots = new HashMap<>();
+    final Map<UUID, Barrier> barriers = new HashMap<>();
+    final Map<UUID, JobInstanceRecord> jobInstanceRecords = new HashMap<>();
+    final Map<UUID, ExceptionRecord> failureRecords = new HashMap<>();
 
     for (Entity entity : queryAll(Barrier.DATA_STORE_KIND, rootJobKey)) {
       barriers.put(entity.getKey(), new Barrier(entity));
@@ -561,7 +561,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
         rootJobKey, jobs, slots, barriers, jobInstanceRecords, failureRecords);
   }
 
-  private void deleteAll(final String kind, final Key rootJobKey) {
+  private void deleteAll(final String kind, final UUID rootJobKey) {
     logger.info("Deleting all " + kind + " with rootJobKey=" + rootJobKey);
     final int chunkSize = 100;
     final FetchOptions fetchOptions = FetchOptions.Builder.withChunkSize(chunkSize);
@@ -572,7 +572,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
       public Void call() {
         Iterator<Entity> iter = preparedQuery.asIterator(fetchOptions);
         while (iter.hasNext()) {
-          ArrayList<Key> keys = new ArrayList<>(chunkSize);
+          ArrayList<UUID> keys = new ArrayList<>(chunkSize);
           for (int i = 0; i < chunkSize && iter.hasNext(); i++) {
             keys.add(iter.next().getKey());
           }
@@ -601,7 +601,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
    *         {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#STOPPED} state.
    */
   @Override
-  public void deletePipeline(Key rootJobKey, boolean force, boolean async)
+  public void deletePipeline(UUID rootJobKey, boolean force, boolean async)
       throws IllegalStateException {
     if (!force) {
       try {

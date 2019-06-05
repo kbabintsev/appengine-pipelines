@@ -14,7 +14,7 @@
 
 package com.google.appengine.tools.pipeline.impl.model;
 
-import com.google.appengine.api.datastore.Key;
+import java.util.UUID;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -32,23 +32,23 @@ public class PipelineObjects {
   private static final Logger log = Logger.getLogger(PipelineObjects.class.getName());
 
   public JobRecord rootJob;
-  public Map<Key, JobRecord> jobs;
-  public Map<Key, Slot> slots;
-  public Map<Key, Barrier> barriers;
-  public Map<Key, JobInstanceRecord> jobInstanceRecords;
+  public Map<UUID, JobRecord> jobs;
+  public Map<UUID, Slot> slots;
+  public Map<UUID, Barrier> barriers;
+  public Map<UUID, JobInstanceRecord> jobInstanceRecords;
 
   /**
    * The {@code PipelineObjects} takes ownership of the objects passed in. The
    * caller should not hold references to them.
    */
-  public PipelineObjects(Key rootJobKey, Map<Key, JobRecord> jobs, Map<Key, Slot> slots,
-      Map<Key, Barrier> barriers, Map<Key, JobInstanceRecord> jobInstanceRecords,
-      Map<Key, ExceptionRecord> failureRecords) {
+  public PipelineObjects(UUID rootJobKey, Map<UUID, JobRecord> jobs, Map<UUID, Slot> slots,
+      Map<UUID, Barrier> barriers, Map<UUID, JobInstanceRecord> jobInstanceRecords,
+      Map<UUID, ExceptionRecord> failureRecords) {
     this.jobInstanceRecords = jobInstanceRecords;
     this.barriers = barriers;
     this.jobs = jobs;
     this.slots = slots;
-    Map<Key, String> jobToChildGuid = new HashMap<>();
+    Map<UUID, String> jobToChildGuid = new HashMap<>();
     for (JobRecord job : jobs.values()) {
       jobToChildGuid.put(job.getKey(), job.getChildGraphGuid());
       if (job.getKey().equals(rootJobKey)) {
@@ -58,7 +58,7 @@ public class PipelineObjects {
     for (Iterator<JobRecord> iter = jobs.values().iterator(); iter.hasNext(); ) {
       JobRecord job = iter.next();
       if (job != rootJob) {
-        Key parentKey = job.getGeneratorJobKey();
+        UUID parentKey = job.getGeneratorJobKey();
         String graphGuid = job.getGraphGuid();
         if (parentKey == null || graphGuid == null) {
           log.info("Ignoring a non root job with no parent or graphGuid -> " + job);
@@ -75,7 +75,7 @@ public class PipelineObjects {
     }
     for (Iterator<Slot> iter = slots.values().iterator(); iter.hasNext(); ) {
       Slot slot = iter.next();
-      Key parentKey = slot.getGeneratorJobKey();
+      UUID parentKey = slot.getGeneratorJobKey();
       String parentGuid = slot.getGraphGuid();
       if (parentKey == null && parentGuid == null
           || parentGuid != null && parentGuid.equals(jobToChildGuid.get(parentKey))) {
@@ -87,7 +87,7 @@ public class PipelineObjects {
     }
     for (Iterator<Barrier> iter = barriers.values().iterator(); iter.hasNext(); ) {
       Barrier barrier = iter.next();
-      Key parentKey = barrier.getGeneratorJobKey();
+      UUID parentKey = barrier.getGeneratorJobKey();
       String parentGuid = barrier.getGraphGuid();
       if (parentKey == null && parentGuid == null
           || parentGuid != null && parentGuid.equals(jobToChildGuid.get(parentKey))) {
@@ -103,7 +103,7 @@ public class PipelineObjects {
       Slot outputSlot = slots.get(jobRec.getOutputSlotKey());
       JobInstanceRecord jobInstanceRecord = jobInstanceRecords.get(jobRec.getJobInstanceKey());
       ExceptionRecord failureRecord = null;
-      Key failureKey = jobRec.getExceptionKey();
+      UUID failureKey = jobRec.getExceptionKey();
       if (null != failureKey) {
         failureRecord = failureRecords.get(failureKey);
       }

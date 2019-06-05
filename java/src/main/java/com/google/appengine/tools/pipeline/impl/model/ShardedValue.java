@@ -68,7 +68,7 @@ public class ShardedValue extends PipelineModelObject {
 
   @Override
   public String toString() {
-    return "ShardedValue[" + getKey().getName() + ", shardId=" + shardId + ", value="
+    return "ShardedValue[" + getKey() + ", shardId=" + shardId + ", value="
         + getValueForDisplay() + "]";
   }
 

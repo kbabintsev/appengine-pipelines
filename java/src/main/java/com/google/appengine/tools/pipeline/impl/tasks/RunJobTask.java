@@ -14,10 +14,10 @@
 
 package com.google.appengine.tools.pipeline.impl.tasks;
 
-import com.google.appengine.api.datastore.Key;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 
 import java.util.Properties;
+import java.util.UUID;
 
 /**
  * A subclass of {@link ObjRefTask} used to request that the job
@@ -29,12 +29,12 @@ public class RunJobTask extends ObjRefTask {
 
   private final Integer attemptNumber;
 
-  public RunJobTask(Key jobKey, Integer attemptNumber, QueueSettings queueSettings) {
+  public RunJobTask(UUID jobKey, Integer attemptNumber, QueueSettings queueSettings) {
     super(Type.RUN_JOB, "runJob", jobKey, queueSettings);
     this.attemptNumber = attemptNumber;
   }
 
-  public RunJobTask(Key jobKey, QueueSettings queueSettings) {
+  public RunJobTask(UUID jobKey, QueueSettings queueSettings) {
     this(jobKey, null, queueSettings);
   }
 
@@ -52,7 +52,7 @@ public class RunJobTask extends ObjRefTask {
     return name;
   }
 
-  public Key getJobKey() {
+  public UUID getJobKey() {
     return getKey();
   }
 }

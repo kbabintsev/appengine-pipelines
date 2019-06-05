@@ -14,7 +14,6 @@
 
 package com.google.appengine.tools.pipeline.impl.util;
 
-import com.google.appengine.api.datastore.Key;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
 
 import java.io.PrintWriter;
@@ -22,6 +21,7 @@ import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.util.ConcurrentModificationException;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -45,8 +45,8 @@ public class StringUtils {
   }
 
   public static String toString(Object x) {
-    if (x instanceof Key) {
-      return ((Key) x).getName();
+    if (x instanceof UUID) {
+      return ((UUID) x).toString();
     }
     return x == null ? "null" : x.toString();
   }

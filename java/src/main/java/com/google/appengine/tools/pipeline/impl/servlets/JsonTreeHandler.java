@@ -19,11 +19,10 @@ import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.appengine.tools.pipeline.impl.model.JobRecord;
 import com.google.appengine.tools.pipeline.impl.model.PipelineObjects;
 
-import java.io.IOException;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 /**
  * @author rudominer@google.com (Mitch Rudominer)
@@ -48,7 +47,7 @@ public class JsonTreeHandler {
         resp.sendError(HttpServletResponse.SC_NOT_FOUND);
         return;
       }
-      String rootJobKey = jobInfo.getRootJobKey().getName();
+      String rootJobKey = jobInfo.getRootJobKey().toString();
       if (!rootJobKey.equals(rootJobHandle)) {
         resp.addHeader(ROOT_PIPELINE_ID, rootJobKey);
         resp.sendError(449, rootJobKey);

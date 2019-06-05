@@ -14,7 +14,6 @@
 
 package com.google.appengine.tools.pipeline.impl.backend;
 
-import com.google.appengine.api.datastore.Key;
 import com.google.appengine.tools.pipeline.impl.model.Barrier;
 import com.google.appengine.tools.pipeline.impl.model.ExceptionRecord;
 import com.google.appengine.tools.pipeline.impl.model.JobInstanceRecord;
@@ -29,6 +28,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * A specification of multiple updates to the state of the Pipeline model
@@ -70,17 +70,17 @@ public class UpdateSpec {
   private Group nonTransactionalGroup = new Group();
   private Map<String, Transaction> transactions = new HashMap<>(10);
   private TransactionWithTasks finalTransaction = new TransactionWithTasks();
-  private Key rootJobKey;
+  private UUID rootJobKey;
 
-  public UpdateSpec(Key rootJobKey) {
+  public UpdateSpec(UUID rootJobKey) {
     this.rootJobKey = rootJobKey;
   }
 
-  public void setRootJobKey(Key rootJobKey) {
+  public void setRootJobKey(UUID rootJobKey) {
     this.rootJobKey = rootJobKey;
   }
 
-  public Key getRootJobKey() {
+  public UUID getRootJobKey() {
     return rootJobKey;
   }
 
@@ -116,7 +116,7 @@ public class UpdateSpec {
    * <li> {@link JobRecord}
    * <li> {@link JobInstanceRecord}
    * </ol>
-   * The objects are stored in maps keyed by their {@link Key}, so there is no
+   * The objects are stored in maps keyed by their {@link UUID}, so there is no
    * danger of inadvertently adding the same object twice.
    *
    * @author rudominer@google.com (Mitch Rudominer)
@@ -124,13 +124,13 @@ public class UpdateSpec {
   public static class Group {
     private static final int INITIAL_SIZE = 20;
 
-    private Map<Key, JobRecord> jobMap = new HashMap<>(INITIAL_SIZE);
-    private Map<Key, Barrier> barrierMap = new HashMap<>(INITIAL_SIZE);
-    private Map<Key, Slot> slotMap = new HashMap<>(INITIAL_SIZE);
-    private Map<Key, JobInstanceRecord> jobInstanceMap = new HashMap<>(INITIAL_SIZE);
-    private Map<Key, ExceptionRecord> failureMap = new HashMap<>(INITIAL_SIZE);
+    private Map<UUID, JobRecord> jobMap = new HashMap<>(INITIAL_SIZE);
+    private Map<UUID, Barrier> barrierMap = new HashMap<>(INITIAL_SIZE);
+    private Map<UUID, Slot> slotMap = new HashMap<>(INITIAL_SIZE);
+    private Map<UUID, JobInstanceRecord> jobInstanceMap = new HashMap<>(INITIAL_SIZE);
+    private Map<UUID, ExceptionRecord> failureMap = new HashMap<>(INITIAL_SIZE);
 
-    private static <E extends PipelineModelObject> void put(Map<Key, E> map, E object) {
+    private static <E extends PipelineModelObject> void put(Map<UUID, E> map, E object) {
       map.put(object.getKey(), object);
     }
 

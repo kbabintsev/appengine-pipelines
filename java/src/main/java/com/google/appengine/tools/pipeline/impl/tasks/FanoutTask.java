@@ -14,10 +14,6 @@
 
 package com.google.appengine.tools.pipeline.impl.tasks;
 
-import static com.google.appengine.tools.pipeline.impl.util.StringUtils.UTF_8;
-
-import com.google.appengine.api.datastore.Key;
-import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 import com.google.appengine.tools.pipeline.impl.util.GUIDGenerator;
 
@@ -25,6 +21,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
+
+import static com.google.appengine.tools.pipeline.impl.util.StringUtils.UTF_8;
 
 /**
  * A Task that represent a set of other tasks.
@@ -63,13 +62,13 @@ public class FanoutTask extends Task {
   private static final String TASK_SEPERATOR = ";;";
   private static final String RECORD_KEY_PROPERTY = "recordKey";
 
-  private final Key recordKey;
+  private final UUID recordKey;
 
   /**
    * Construct a new FanoutTask that contains the given data store Key. This
    * constructor is used to construct an instance to be enqueued.
    */
-  public FanoutTask(Key recordKey, QueueSettings queueSettings) {
+  public FanoutTask(UUID recordKey, QueueSettings queueSettings) {
     super(Type.FAN_OUT, null, queueSettings.clone());
     this.recordKey = recordKey;
   }
@@ -80,15 +79,15 @@ public class FanoutTask extends Task {
    */
   public FanoutTask(Type type, String taskName, Properties properties) {
     super(type, taskName, properties);
-    this.recordKey = KeyFactory.stringToKey(properties.getProperty(RECORD_KEY_PROPERTY));
+    this.recordKey = UUID.fromString(properties.getProperty(RECORD_KEY_PROPERTY));
   }
 
   @Override
   protected void addProperties(Properties properties) {
-    properties.setProperty(RECORD_KEY_PROPERTY, KeyFactory.keyToString(recordKey));
+    properties.setProperty(RECORD_KEY_PROPERTY, recordKey.toString());
   }
 
-  public Key getRecordKey() {
+  public UUID getRecordKey() {
     return recordKey;
   }
 

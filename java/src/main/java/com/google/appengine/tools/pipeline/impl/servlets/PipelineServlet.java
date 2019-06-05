@@ -14,15 +14,14 @@
 
 package com.google.appengine.tools.pipeline.impl.servlets;
 
-import com.google.appengine.api.datastore.Key;
 import com.google.appengine.tools.pipeline.util.Pair;
-
-import java.io.IOException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Servlet that handles all requests for the Pipeline framework.
@@ -50,8 +49,8 @@ public class PipelineServlet extends HttpServlet {
     return baseURL;
   }
 
-  public static String makeViewerUrl(Key rootJobKey, Key jobKey) {
-    return baseUrl() + "status.html?root=" + rootJobKey.getName() + "#pipeline-" + jobKey.getName();
+  public static String makeViewerUrl(UUID rootJobKey, UUID jobKey) {
+    return baseUrl() + "status.html?root=" + rootJobKey + "#pipeline-" + jobKey;
   }
 
   private static enum RequestType {

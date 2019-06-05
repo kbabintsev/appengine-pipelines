@@ -14,11 +14,10 @@
 
 package com.google.appengine.tools.pipeline.impl.tasks;
 
-import com.google.appengine.api.datastore.Key;
-import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 
 import java.util.Properties;
+import java.util.UUID;
 
 /**
  * A subclass of {@link ObjRefTask} used to report that the job with the
@@ -31,9 +30,9 @@ public class HandleChildExceptionTask extends ObjRefTask {
 
   private static final String FAILED_CHILD_KEY_PARAM = "failedChildKey";
 
-  private final Key failedChildKey;
+  private final UUID failedChildKey;
 
-  public HandleChildExceptionTask(Key jobKey, Key failedChildKey, QueueSettings queueSettings) {
+  public HandleChildExceptionTask(UUID jobKey, UUID failedChildKey, QueueSettings queueSettings) {
     super(Type.HANDLE_CHILD_EXCEPTION, "handleChildFailure", jobKey, queueSettings);
     if (null == failedChildKey) {
       throw new NullPointerException("failedChildKey");
@@ -43,13 +42,13 @@ public class HandleChildExceptionTask extends ObjRefTask {
 
   protected HandleChildExceptionTask(Type type, String taskName, Properties properties) {
     super(type, taskName, properties);
-    failedChildKey = KeyFactory.stringToKey(properties.getProperty(FAILED_CHILD_KEY_PARAM));
+    failedChildKey = UUID.fromString(properties.getProperty(FAILED_CHILD_KEY_PARAM));
   }
 
   @Override
   protected void addProperties(Properties properties) {
     super.addProperties(properties);
-    properties.setProperty(FAILED_CHILD_KEY_PARAM, KeyFactory.keyToString(failedChildKey));
+    properties.setProperty(FAILED_CHILD_KEY_PARAM, failedChildKey.toString());
   }
 
   @Override
@@ -60,7 +59,7 @@ public class HandleChildExceptionTask extends ObjRefTask {
   /**
    * @return the failedChildKey
    */
-  public Key getFailedChildKey() {
+  public UUID getFailedChildKey() {
     return failedChildKey;
   }
 }

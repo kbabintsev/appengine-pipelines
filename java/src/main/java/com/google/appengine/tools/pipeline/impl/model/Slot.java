@@ -15,7 +15,6 @@
 package com.google.appengine.tools.pipeline.impl.model;
 
 import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.Key;
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
 
 import java.io.IOException;
@@ -23,6 +22,7 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * A slot to be filled in with a value.
@@ -42,15 +42,15 @@ public class Slot extends PipelineModelObject {
   private boolean filled;
   private Date fillTime;
   private Object value;
-  private Key sourceJobKey;
-  private final List<Key> waitingOnMeKeys;
+  private UUID sourceJobKey;
+  private final List<UUID> waitingOnMeKeys;
 
   // transient
   private List<Barrier> waitingOnMeInflated;
   private Object serializedVersion;
 
 
-  public Slot(Key rootJobKey, Key generatorJobKey, String graphGUID) {
+  public Slot(UUID rootJobKey, UUID generatorJobKey, String graphGUID) {
     super(rootJobKey, generatorJobKey, graphGUID);
     waitingOnMeKeys = new LinkedList<>();
   }
@@ -63,7 +63,7 @@ public class Slot extends PipelineModelObject {
     super(entity);
     filled = (Boolean) entity.getProperty(FILLED_PROPERTY);
     fillTime = (Date) entity.getProperty(FILL_TIME_PROPERTY);
-    sourceJobKey = (Key) entity.getProperty(SOURCE_JOB_KEY_PROPERTY);
+    sourceJobKey = (UUID) entity.getProperty(SOURCE_JOB_KEY_PROPERTY);
     waitingOnMeKeys = getListProperty(WAITING_ON_ME_PROPERTY, entity);
     if (lazy) {
       serializedVersion = entity.getProperty(VALUE_PROPERTY);
@@ -109,7 +109,7 @@ public class Slot extends PipelineModelObject {
     return DATA_STORE_KIND;
   }
 
-  public void inflate(Map<Key, Barrier> pool) {
+  public void inflate(Map<UUID, Barrier> pool) {
     waitingOnMeInflated = buildInflated(waitingOnMeKeys, pool);
   }
 
@@ -140,11 +140,11 @@ public class Slot extends PipelineModelObject {
     return fillTime;
   }
 
-  public Key getSourceJobKey() {
+  public UUID getSourceJobKey() {
     return sourceJobKey;
   }
 
-  public void setSourceJobKey(Key key) {
+  public void setSourceJobKey(UUID key) {
     sourceJobKey = key;
   }
 
@@ -155,7 +155,7 @@ public class Slot extends PipelineModelObject {
     fillTime = new Date();
   }
 
-  public List<Key> getWaitingOnMeKeys() {
+  public List<UUID> getWaitingOnMeKeys() {
     return waitingOnMeKeys;
   }
 

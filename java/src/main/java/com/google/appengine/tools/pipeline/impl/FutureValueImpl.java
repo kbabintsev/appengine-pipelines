@@ -37,12 +37,12 @@ public class FutureValueImpl<E> implements FutureValue<E> {
 
   @Override
   public String getSourceJobHandle() {
-    return slot.getSourceJobKey().getName();
+    return slot.getSourceJobKey().toString();
   }
 
   @Override
   public String getPipelineHandle() {
-    return slot.getRootJobKey().getName();
+    return slot.getRootJobKey().toString();
   }
 
   @Override

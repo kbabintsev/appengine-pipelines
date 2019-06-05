@@ -15,14 +15,13 @@
 package com.google.appengine.tools.pipeline.impl.model;
 
 import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.Key;
-import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.tools.pipeline.impl.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * A {@code Barrier} represents a list of slots that need to be filled before
@@ -64,9 +63,9 @@ public class Barrier extends PipelineModelObject {
 
   // persistent
   private final Type type;
-  private final Key jobKey;
+  private final UUID jobKey;
   private boolean released;
-  private final List<Key> waitingOnKeys;
+  private final List<UUID> waitingOnKeys;
   private final List<Long> waitingOnGroupSizes;
 
   // transient
@@ -79,7 +78,7 @@ public class Barrier extends PipelineModelObject {
    * model</a>: If B is the finalize barrier of a Job J, then the entity group
    * parent of B is J. Run barriers do not have an entity group parent.
    */
-  private static Key getEgParentKey(Type type, Key jobKey) {
+  private static UUID getEgParentKey(Type type, UUID jobKey) {
     switch (type) {
       case RUN:
         return null;
@@ -92,7 +91,7 @@ public class Barrier extends PipelineModelObject {
     return jobKey;
   }
 
-  private Barrier(Type type, Key rootJobKey, Key jobKey, Key generatorJobKey, String graphGUID) {
+  private Barrier(Type type, UUID rootJobKey, UUID jobKey, UUID generatorJobKey, String graphGUID) {
     super(rootJobKey, getEgParentKey(type, jobKey), null, generatorJobKey, graphGUID);
     this.jobKey = jobKey;
     this.type = type;
@@ -102,7 +101,7 @@ public class Barrier extends PipelineModelObject {
   }
 
   public static Barrier dummyInstanceForTesting() {
-    Key dummyKey = KeyFactory.createKey("dummy", "dummy");
+    UUID dummyKey = UUID.fromString("00000000-0000-0000-0000-000000000bad");
     return new Barrier(Type.RUN, dummyKey, dummyKey, dummyKey, "abc");
   }
 
@@ -113,7 +112,7 @@ public class Barrier extends PipelineModelObject {
 
   public Barrier(Entity entity) {
     super(entity);
-    jobKey = (Key) entity.getProperty(JOB_KEY_PROPERTY);
+    jobKey = (UUID) entity.getProperty(JOB_KEY_PROPERTY);
     type = Type.valueOf((String) entity.getProperty(TYPE_PROPERTY));
     released = (Boolean) entity.getProperty(RELEASED_PROPERTY);
     waitingOnKeys = getListProperty(WAITING_ON_KEYS_PROPERTY, entity);
@@ -136,11 +135,11 @@ public class Barrier extends PipelineModelObject {
     return DATA_STORE_KIND;
   }
 
-  public void inflate(Map<Key, Slot> pool) {
+  public void inflate(Map<UUID, Slot> pool) {
     int numSlots = waitingOnKeys.size();
     waitingOnInflated = new ArrayList<>(numSlots);
     for (int i = 0; i < numSlots; i++) {
-      Key key = waitingOnKeys.get(i);
+      UUID key = waitingOnKeys.get(i);
       int groupSize = waitingOnGroupSizes.get(i).intValue();
       Slot slot = pool.get(key);
       if (null == slot) {
@@ -151,7 +150,7 @@ public class Barrier extends PipelineModelObject {
     }
   }
 
-  public Key getJobKey() {
+  public UUID getJobKey() {
     return jobKey;
   }
 
@@ -167,7 +166,7 @@ public class Barrier extends PipelineModelObject {
     released = true;
   }
 
-  public List<Key> getWaitingOnKeys() {
+  public List<UUID> getWaitingOnKeys() {
     return waitingOnKeys;
   }
 
@@ -281,7 +280,7 @@ public class Barrier extends PipelineModelObject {
   @Override
   public String toString() {
     return "Barrier[" + getKeyName(getKey()) + ", " + type + ", released=" + released + ", "
-        + jobKey.getName() + ", waitingOn="
+        + jobKey + ", waitingOn="
         + StringUtils.toStringParallel(waitingOnKeys, waitingOnGroupSizes) + ", job="
         + getKeyName(getJobKey()) + ", parent="
         + getKeyName(getGeneratorJobKey()) + ", guid=" + getGraphGuid() + "]";

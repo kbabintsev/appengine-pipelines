@@ -14,7 +14,6 @@
 
 package com.google.appengine.tools.pipeline.impl.backend;
 
-import com.google.appengine.api.datastore.Key;
 import com.google.appengine.tools.pipeline.NoSuchObjectException;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 import com.google.appengine.tools.pipeline.impl.model.ExceptionRecord;
@@ -28,6 +27,7 @@ import com.google.appengine.tools.pipeline.util.Pair;
 
 import java.io.IOException;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * An interface that gives access to data store and task queue operations that
@@ -58,7 +58,7 @@ public interface PipelineBackEnd {
    * @return {@code true} iff the transaction was applied successfully.
    */
   boolean saveWithJobStateCheck(UpdateSpec updateSpec, QueueSettings queueSettings,
-      Key jobKey, JobRecord.State... expectedStates);
+      UUID jobKey, JobRecord.State... expectedStates);
 
   /**
    * Get the JobRecord with the given Key from the data store, and optionally
@@ -72,7 +72,7 @@ public interface PipelineBackEnd {
    * @throws NoSuchObjectException If Either the JobRecord or any of the
    *         associated Slots or Barriers are not found in the data store.
    */
-  JobRecord queryJob(Key key, JobRecord.InflationType inflationType) throws NoSuchObjectException;
+  JobRecord queryJob(UUID key, JobRecord.InflationType inflationType) throws NoSuchObjectException;
 
   /**
    * Get the Slot with the given Key from the data store, and optionally also
@@ -94,7 +94,7 @@ public interface PipelineBackEnd {
    *         of objects.
    * @throws NoSuchObjectException
    */
-  Slot querySlot(Key key, boolean inflate) throws NoSuchObjectException;
+  Slot querySlot(UUID key, boolean inflate) throws NoSuchObjectException;
 
   /**
    * Get the Failure with the given Key from the data store.
@@ -103,7 +103,7 @@ public interface PipelineBackEnd {
    * @return A {@code FailureRecord}
    * @throws NoSuchObjectException
    */
-  ExceptionRecord queryFailure(Key key) throws NoSuchObjectException;
+  ExceptionRecord queryFailure(UUID key) throws NoSuchObjectException;
 
   /**
    * Given an arbitrary Java Object, returns another object that encodes the
@@ -149,7 +149,7 @@ public interface PipelineBackEnd {
    * Queries the data store for all Pipeline objects associated with the given
    * root Job Key
    */
-  PipelineObjects queryFullPipeline(Key rootJobKey);
+  PipelineObjects queryFullPipeline(UUID rootJobKey);
 
   /**
    * Delete all datastore entities corresponding to the given pipeline.
@@ -172,7 +172,7 @@ public interface PipelineBackEnd {
    *         {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#STOPPED}
    *         state.
    */
-  void deletePipeline(Key rootJobKey, boolean force, boolean async)
+  void deletePipeline(UUID rootJobKey, boolean force, boolean async)
       throws IllegalStateException;
 
   /**

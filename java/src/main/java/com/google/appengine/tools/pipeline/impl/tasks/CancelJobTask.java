@@ -14,10 +14,10 @@
 
 package com.google.appengine.tools.pipeline.impl.tasks;
 
-import com.google.appengine.api.datastore.Key;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 
 import java.util.Properties;
+import java.util.UUID;
 
 /**
  * A subclass of {@link ObjRefTask} used to request that the job with the specified key should be
@@ -27,7 +27,7 @@ import java.util.Properties;
  */
 public class CancelJobTask extends ObjRefTask {
 
-  public CancelJobTask(Key jobKey, QueueSettings queueSettings) {
+  public CancelJobTask(UUID jobKey, QueueSettings queueSettings) {
     super(Type.CANCEL_JOB, "cancelJob", jobKey, queueSettings);
   }
 
@@ -35,7 +35,7 @@ public class CancelJobTask extends ObjRefTask {
     super(type, taskName, properties);
   }
 
-  public Key getJobKey() {
+  public UUID getJobKey() {
     return getKey();
   }
 }

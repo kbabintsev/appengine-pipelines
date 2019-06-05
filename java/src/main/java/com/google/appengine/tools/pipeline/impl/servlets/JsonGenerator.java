@@ -14,8 +14,6 @@
 
 package com.google.appengine.tools.pipeline.impl.servlets;
 
-import com.google.appengine.api.datastore.Key;
-import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.tools.pipeline.impl.model.Barrier;
 import com.google.appengine.tools.pipeline.impl.model.JobInstanceRecord;
 import com.google.appengine.tools.pipeline.impl.model.JobRecord;
@@ -31,6 +29,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * This class is responsible for generating the Json that is consumed by the
@@ -40,8 +39,8 @@ import java.util.Map;
  */
 public class JsonGenerator {
 
-  private static String toString(Key key) {
-    return KeyFactory.keyToString(key);
+  private static String toString(UUID key) {
+    return key.toString();
   }
 
   private static final String PIPELINE_ID = "pipelineId";
@@ -107,14 +106,14 @@ public class JsonGenerator {
     Map<String, Map<String, Object>> slotMap = new HashMap<>(pipelineObjects.slots.size());
     Map<String, Map<String, Object>> jobMap = new HashMap<>(pipelineObjects.jobs.size());
     Map<String, Object> topLevel = new HashMap<>(4);
-    topLevel.put(ROOT_PIPELINE_ID, pipelineObjects.rootJob.getKey().getName());
+    topLevel.put(ROOT_PIPELINE_ID, pipelineObjects.rootJob.getKey().toString());
     topLevel.put(SLOTS, slotMap);
     topLevel.put(PIPELINES, jobMap);
     for (Slot slot : pipelineObjects.slots.values()) {
       slotMap.put(toString(slot.getKey()), buildMapRepresentation(slot));
     }
     for (JobRecord jobRecord : pipelineObjects.jobs.values()) {
-      jobMap.put(jobRecord.getKey().getName(), buildMapRepresentation(jobRecord));
+      jobMap.put(jobRecord.getKey().toString(), buildMapRepresentation(jobRecord));
     }
     return topLevel;
   }
@@ -125,7 +124,7 @@ public class JsonGenerator {
     Map<String, Object> topLevel = new HashMap<>(3);
     for (JobRecord rootRecord : pipelineRoots.getFirst()) {
       Map<String, Object> mapRepresentation = buildMapRepresentation(rootRecord);
-      mapRepresentation.put(PIPELINE_ID, rootRecord.getKey().getName());
+      mapRepresentation.put(PIPELINE_ID, rootRecord.getKey().toString());
       jobList.add(mapRepresentation);
     }
     topLevel.put(PIPELINES, jobList);
@@ -148,9 +147,9 @@ public class JsonGenerator {
     if (null != fillTime) {
       map.put(SLOT_FILL_TIME, fillTime.getTime());
     }
-    Key sourceJobKey = slot.getSourceJobKey();
+    UUID sourceJobKey = slot.getSourceJobKey();
     if (null != sourceJobKey) {
-      map.put(SLOT_SOURCE_JOB, sourceJobKey.getName());
+      map.put(SLOT_SOURCE_JOB, sourceJobKey.toString());
     }
     return map;
   }
@@ -271,11 +270,11 @@ public class JsonGenerator {
     return map;
   }
 
-  private static String[] buildArrayRepresentation(List<Key> listOfKeys) {
+  private static String[] buildArrayRepresentation(List<UUID> listOfKeys) {
     String[] arrayOfIds = new String[listOfKeys.size()];
     int i = 0;
-    for (Key key : listOfKeys) {
-      arrayOfIds[i++] = key.getName();
+    for (UUID key : listOfKeys) {
+      arrayOfIds[i++] = key.toString();
     }
     return arrayOfIds;
   }

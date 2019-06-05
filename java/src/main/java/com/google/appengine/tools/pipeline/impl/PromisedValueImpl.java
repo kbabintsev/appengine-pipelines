@@ -14,10 +14,10 @@
 
 package com.google.appengine.tools.pipeline.impl;
 
-import com.google.appengine.api.datastore.Key;
-import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.tools.pipeline.PromisedValue;
 import com.google.appengine.tools.pipeline.impl.model.Slot;
+
+import java.util.UUID;
 
 /**
  * Implements {@link PromisedValue} by wrapping a newly created {@link Slot}
@@ -29,13 +29,13 @@ import com.google.appengine.tools.pipeline.impl.model.Slot;
  */
 public class PromisedValueImpl<E> extends FutureValueImpl<E> implements PromisedValue<E> {
 
-  public PromisedValueImpl(Key rootJobGuid, Key generatorJobKey, String graphGUID) {
+  public PromisedValueImpl(UUID rootJobGuid, UUID generatorJobKey, String graphGUID) {
     super(new Slot(rootJobGuid, generatorJobKey, graphGUID));
   }
 
   @Override
   public String getHandle() {
-    return KeyFactory.keyToString(slot.getKey());
+    return slot.getKey().toString();
   }
 
 }

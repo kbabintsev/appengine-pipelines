@@ -14,9 +14,6 @@
 
 package com.google.appengine.tools.pipeline;
 
-import static com.google.appengine.tools.pipeline.Job.immediate;
-import static com.google.appengine.tools.pipeline.Job.waitFor;
-
 import com.google.appengine.api.taskqueue.DeferredTask;
 import com.google.appengine.api.taskqueue.DeferredTaskContext;
 import com.google.appengine.api.taskqueue.Queue;
@@ -27,11 +24,13 @@ import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.servlet.http.HttpServletRequest;
+import static com.google.appengine.tools.pipeline.Job.immediate;
+import static com.google.appengine.tools.pipeline.Job.waitFor;
 
 /**
  * A collection of common jobs and utilities.
@@ -97,12 +96,12 @@ public class Jobs {
   public static <T> Value<T> waitForAllAndDelete(
       Job<?> caller, Value<T> value, Value<?>... values) {
     return caller.futureCall(
-        new DeletePipelineJob<T>(caller.getPipelineKey().getName()),
+        new DeletePipelineJob<T>(caller.getPipelineKey().toString()),
         value, createWaitForSettingArray(values));
   }
 
   public static <T> Value<T> waitForAllAndDelete(Job<?> caller, T value, Value<?>... values) {
-    return caller.futureCall(new DeletePipelineJob<T>(caller.getPipelineKey().getName()),
+    return caller.futureCall(new DeletePipelineJob<T>(caller.getPipelineKey().toString()),
         immediate(value), createWaitForSettingArray(values));
   }
 

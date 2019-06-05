@@ -15,11 +15,11 @@
 package com.google.appengine.tools.pipeline.impl.model;
 
 import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.Key;
 import com.google.appengine.tools.pipeline.Job;
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Job's state persistence.
@@ -36,7 +36,7 @@ public class JobInstanceRecord extends PipelineModelObject {
   private static final String INSTANCE_VALUE_PROPERTY = "value";
 
   // persistent
-  private final Key jobKey;
+  private final UUID jobKey;
   private final String jobClassName;
   private final String jobDisplayName;
   private final Object value;
@@ -59,7 +59,7 @@ public class JobInstanceRecord extends PipelineModelObject {
 
   public JobInstanceRecord(Entity entity) {
     super(entity);
-    jobKey = (Key) entity.getProperty(JOB_KEY_PROPERTY);
+    jobKey = (UUID) entity.getProperty(JOB_KEY_PROPERTY);
     jobClassName = (String) entity.getProperty(JOB_CLASS_NAME_PROPERTY);
     if (entity.hasProperty(JOB_DISPLAY_NAME_PROPERTY)) {
       jobDisplayName = (String) entity.getProperty(JOB_DISPLAY_NAME_PROPERTY);
@@ -88,7 +88,7 @@ public class JobInstanceRecord extends PipelineModelObject {
     return DATA_STORE_KIND;
   }
 
-  public Key getJobKey() {
+  public UUID getJobKey() {
     return jobKey;
   }
 
