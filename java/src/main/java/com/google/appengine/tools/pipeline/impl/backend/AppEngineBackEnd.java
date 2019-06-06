@@ -133,35 +133,50 @@ public class AppEngineBackEnd implements PipelineBackEnd {
         spanner.close();
     }
 
-    private void addAll(Collection<? extends PipelineModelObject> objects, MutationsAndBlobs allMutations) {
+    private void addAll(Collection<? extends PipelineModelObject> objects, MutationsAndBlobs allMutations, boolean runTransaction) {
         if (objects.isEmpty()) {
             return;
         }
         for (PipelineModelObject x : objects) {
             logger.finest("Storing: " + x);
             final PipelineMutation m = x.toEntity();
-            allMutations.addMutation(m.getDatabaseMutation().build());
+            final Mutation mutation = m.getDatabaseMutation().build();
+            allMutations.addMutation(mutation);
             if (m.getBlobMutation() != null) {
                 allMutations.addBlob(m.getBlobMutation());
+            }
+
+            if (runTransaction) {
+                databaseClient.readWriteTransaction().run(new TransactionRunner.TransactionCallable<Void>() {
+                    @Nullable
+                    @Override
+                    public Void run(final TransactionContext transaction) {
+                        transaction.buffer(mutation);
+                        return null;
+                    }
+                });
             }
         }
     }
 
-    private void addAll(UpdateSpec.Group group, MutationsAndBlobs allMutations) {
-        addAll(group.getBarriers(), allMutations);
-        addAll(group.getJobs(), allMutations);
-        addAll(group.getSlots(), allMutations);
-        addAll(group.getJobInstanceRecords(), allMutations);
-        addAll(group.getFailureRecords(), allMutations);
+    private void addAll(UpdateSpec.Group group, MutationsAndBlobs allMutations, boolean runTransaction) {
+        addAll(group.getBarriers(), allMutations, runTransaction);
+        addAll(group.getJobs(), allMutations, runTransaction);
+        addAll(group.getSlots(), allMutations, runTransaction);
+        addAll(group.getJobInstanceRecords(), allMutations, runTransaction);
+        addAll(group.getFailureRecords(), allMutations, runTransaction);
     }
 
-    private void saveAll(UpdateSpec.Group transactionSpec, TransactionContext transaction) {
+    private void saveAll(UpdateSpec.Group transactionSpec, @Nullable TransactionContext parentTransaction) {
         MutationsAndBlobs allMutations = new MutationsAndBlobs();
-        addAll(transactionSpec, allMutations);
+        addAll(transactionSpec, allMutations, parentTransaction == null);
         for (PipelineMutation.BlobMutation blob : allMutations.getBlobs()) {
             saveBlob(blob.getRootJobKey(), blob.getKey(), blob.getValue());
         }
-        transaction.buffer(allMutations.getMutations());
+
+        if (parentTransaction != null) {
+            parentTransaction.buffer(allMutations.getMutations());
+        }
     }
 
     private boolean transactionallySaveAll(UpdateSpec.Transaction transactionSpec,
@@ -297,14 +312,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
                                          final QueueSettings queueSettings, final UUID jobKey,
                                          final JobRecord.State... expectedStates) {
         // tryFiveTimes was here
-        databaseClient.readWriteTransaction().run(new TransactionRunner.TransactionCallable<Void>() {
-            @Nullable
-            @Override
-            public Void run(final TransactionContext transaction) throws Exception {
-                saveAll(updateSpec.getNonTransactionalGroup(), transaction);
-                return null;
-            }
-        });
+        saveAll(updateSpec.getNonTransactionalGroup(), null);
         for (final UpdateSpec.Transaction transactionSpec : updateSpec.getTransactions()) {
             //tryFiveTimes was here
             transactionallySaveAll(transactionSpec, queueSettings, updateSpec.getRootJobKey(), null);
