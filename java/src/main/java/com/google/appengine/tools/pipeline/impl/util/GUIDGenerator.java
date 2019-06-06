@@ -21,17 +21,30 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author rudominer@google.com (Mitch Rudominer)
  *
+ * Test UUIDs:
+ *
+ * |       | - always zeros for ease of identification
+ *          |  | - random number assigned statically to minimize clash with other developers
+ *               |       | - not used
+ *                         |          | - incremental part
+ * 00000000-0000-0000-0000-000000000000
  */
 public class GUIDGenerator {
-  public static final String TEST_PREFIX = "00000000-";
+
+  private static final String TEST_PREFIX = "00000000";
   private static AtomicInteger counter = new AtomicInteger();
+  private static int runId = (int) (Math.random() * 10000);
+
+  public static String getTestPrefix() {
+    return TEST_PREFIX + "-" + String.format("%04d", runId) + "-";
+  }
 
   public static final String USE_SIMPLE_GUIDS_FOR_DEBUGGING =
       "com.google.appengine.api.pipeline.use-simple-guids-for-debugging";
 
   public static synchronized UUID nextGUID() {
     if (Boolean.getBoolean(USE_SIMPLE_GUIDS_FOR_DEBUGGING)) {
-      return UUID.fromString(TEST_PREFIX + "0000-0000-0000-" + String.format("%012d", counter.getAndIncrement()));
+      return UUID.fromString(getTestPrefix() + "0000-0000-" + String.format("%012d", counter.getAndIncrement()));
     }
     UUID uuid = UUID.randomUUID();
     return uuid;

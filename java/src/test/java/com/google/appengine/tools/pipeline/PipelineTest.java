@@ -84,7 +84,7 @@ public class PipelineTest extends TestCase {
     System.setProperty(USE_SIMPLE_GUIDS_FOR_DEBUGGING, "true");
     taskQueue = LocalTaskQueueTestConfig.getLocalTaskQueue();
     PipelineService service = PipelineServiceFactory.newPipelineService();
-    service.cleanBobs(GUIDGenerator.TEST_PREFIX);
+    service.cleanBobs(GUIDGenerator.getTestPrefix());
     final Set<UUID> testPipelines = service.getTestPipelines();
     for (UUID pipelineId : testPipelines) {
       service.deletePipelineRecords(pipelineId, true, false);

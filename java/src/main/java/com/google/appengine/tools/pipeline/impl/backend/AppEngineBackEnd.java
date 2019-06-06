@@ -258,7 +258,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
                 if (objects == null || objects.getItems() == null || objects.getItems().isEmpty()) {
                     break;
                 }
-                logger.info("Deleting " + objects.getItems().size() + " blobs");
+                logger.info("Deleting " + objects.getItems().size() + " blobs from prefix " + prefix);
                 for (StorageObject object : objects.getItems()) {
                     storage.objects().delete(object.getBucket(), object.getName()).execute();
                 }
@@ -565,11 +565,12 @@ public class AppEngineBackEnd implements PipelineBackEnd {
     @Override
     public Set<UUID> getTestPipelines() {
         Set<UUID> pipelines = new LinkedHashSet<>();
+        final String prefix = GUIDGenerator.getTestPrefix();
         try (ResultSet rs = databaseClient.singleUse().executeQuery(
                 Statement.newBuilder(
                         "SELECT DISTINCT " + JobRecord.ROOT_JOB_KEY_PROPERTY + " "
                                 + "FROM " + JobRecord.DATA_STORE_KIND + " "
-                                + "WHERE " + JobRecord.ROOT_JOB_KEY_PROPERTY + " LIKE '" + GUIDGenerator.TEST_PREFIX + "%'"
+                                + "WHERE " + JobRecord.ROOT_JOB_KEY_PROPERTY + " LIKE '" + prefix + "%'"
                 ).build()
         )) {
             {
@@ -578,6 +579,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
                 }
             }
         }
+        logger.info("Retrieved " + pipelines.size() + " test pipelines with prefix " + prefix);
         return pipelines;
     }
 
