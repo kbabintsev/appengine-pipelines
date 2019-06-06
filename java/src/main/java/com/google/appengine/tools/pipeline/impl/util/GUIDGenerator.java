@@ -23,17 +23,18 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  */
 public class GUIDGenerator {
+  public static final String TEST_PREFIX = "00000000-";
   private static AtomicInteger counter = new AtomicInteger();
 
   public static final String USE_SIMPLE_GUIDS_FOR_DEBUGGING =
       "com.google.appengine.api.pipeline.use-simple-guids-for-debugging";
 
-  public static synchronized String nextGUID() {
+  public static synchronized UUID nextGUID() {
     if (Boolean.getBoolean(USE_SIMPLE_GUIDS_FOR_DEBUGGING)) {
-      return "" + counter.getAndIncrement();
+      return UUID.fromString(TEST_PREFIX + "0000-0000-0000-" + String.format("%012d", counter.getAndIncrement()));
     }
     UUID uuid = UUID.randomUUID();
-    return uuid.toString();
+    return uuid;
   }
 
   public static void main(String[] args) {

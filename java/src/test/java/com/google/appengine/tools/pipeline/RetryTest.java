@@ -14,8 +14,6 @@
 
 package com.google.appengine.tools.pipeline;
 
-import static com.google.appengine.tools.pipeline.impl.util.GUIDGenerator.USE_SIMPLE_GUIDS_FOR_DEBUGGING;
-
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalModulesServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
@@ -23,12 +21,14 @@ import com.google.appengine.tools.development.testing.LocalTaskQueueTestConfig;
 import com.google.appengine.tools.pipeline.JobSetting.BackoffFactor;
 import com.google.appengine.tools.pipeline.JobSetting.BackoffSeconds;
 import com.google.appengine.tools.pipeline.JobSetting.MaxAttempts;
-
 import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;
 
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import static com.google.appengine.tools.pipeline.impl.util.GUIDGenerator.USE_SIMPLE_GUIDS_FOR_DEBUGGING;
 
 /**
  * @author rudominer@google.com (Mitch Rudominer)
@@ -89,7 +89,7 @@ public class RetryTest extends TestCase {
 
   private void doMaxAttemptsTest(boolean succeedTheLastTime) throws Exception {
     PipelineService service = PipelineServiceFactory.newPipelineService();
-    String pipelineId = runJob(1, 4, 10, succeedTheLastTime);
+    UUID pipelineId = runJob(1, 4, 10, succeedTheLastTime);
     // Wait for framework to save Job information
     Thread.sleep(1000L);
     JobInfo jobInfo = service.getJobInfo(pipelineId);
@@ -99,12 +99,12 @@ public class RetryTest extends TestCase {
     assertEquals(expectedState, jobInfo.getJobState());
   }
 
-  private String runJob(int backoffFactor, int maxAttempts, int awaitSeconds,
+  private UUID runJob(int backoffFactor, int maxAttempts, int awaitSeconds,
       boolean succeedTheLastTime) throws Exception {
     PipelineService service = PipelineServiceFactory.newPipelineService();
     countdownLatch = new CountDownLatch(maxAttempts);
 
-    String pipelineId = service.startNewPipeline(
+    UUID pipelineId = service.startNewPipeline(
         new InvokesFailureJob(succeedTheLastTime, maxAttempts, backoffFactor));
     assertTrue(countdownLatch.await(awaitSeconds, TimeUnit.SECONDS));
     return pipelineId;

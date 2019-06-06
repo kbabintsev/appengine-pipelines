@@ -18,6 +18,7 @@ import com.google.appengine.tools.pipeline.AsyncGCDExample.PrintGCDJob;
 import com.google.appengine.tools.pipeline.demo.GCDExample.GCDJob;
 import com.google.apphosting.api.ApiProxy;
 
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -44,7 +45,7 @@ public class GCDTest extends PipelineTest {
 
   private void doGcdTest(int x, int y, int expectedGcd) throws Exception {
     PipelineService service = PipelineServiceFactory.newPipelineService();
-    String pipelineId = service.startNewPipeline(new GCDJob(), x, y);
+    UUID pipelineId = service.startNewPipeline(new GCDJob(), x, y);
     int calculatedGcd = waitForJobToComplete(pipelineId);
     logger.info("The GCD of " + x + " and " + y + " is " + calculatedGcd);
     assertEquals(expectedGcd, calculatedGcd);
@@ -83,7 +84,7 @@ public class GCDTest extends PipelineTest {
       }
     };
     PipelineService service = PipelineServiceFactory.newPipelineService();
-    String pipelineId = service.startNewPipeline(new PrintGCDJob());
+    UUID pipelineId = service.startNewPipeline(new PrintGCDJob());
     assertTrue(latch.await(3, TimeUnit.MINUTES));
     assertEquals(expectedMessage, builder.toString());
     // Wait for job task thread to complete

@@ -1,7 +1,5 @@
 package com.google.appengine.tools.pipeline.impl.backend;
 
-import com.google.appengine.api.datastore.Key;
-import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.taskqueue.TaskHandle;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalModulesServiceTestConfig;
@@ -11,12 +9,12 @@ import com.google.appengine.tools.pipeline.impl.QueueSettings;
 import com.google.appengine.tools.pipeline.impl.tasks.RunJobTask;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
 import com.google.appengine.tools.pipeline.impl.util.GUIDGenerator;
-
 import junit.framework.TestCase;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * @author tkaitchuck
@@ -117,8 +115,7 @@ public class AppEngineTaskQueueTest extends TestCase {
   }
 
   private Task createTask() {
-    String name = GUIDGenerator.nextGUID();
-    Key key = KeyFactory.createKey("testType", name);
+    UUID key = GUIDGenerator.nextGUID();
     Task task = new RunJobTask(key, new QueueSettings().setModuleVersion("m1"));
     return task;
   }

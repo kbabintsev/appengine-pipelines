@@ -20,6 +20,7 @@ import com.google.appengine.tools.pipeline.demo.LetterCountExample.LetterCounter
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.UUID;
 
 /**
  * @author rudominer@google.com (Mitch Rudominer)
@@ -93,7 +94,7 @@ public class LetterCounterTest extends PipelineTest {
 
   private void doLetterCounterTest(String text) throws Exception {
     PipelineService service = PipelineServiceFactory.newPipelineService();
-    String pipelineId = service.startNewPipeline(new LetterCounter(), text);
+    UUID pipelineId = service.startNewPipeline(new LetterCounter(), text);
     SortedMap<Character, Integer> counts = waitForJobToComplete(pipelineId);
     SortedMap<Character, Integer> expectedCounts = LetterCountExample.countLetters(text);
     SortedMap<Character, Integer> expectedCountsLettersOnly = new TreeMap<>();

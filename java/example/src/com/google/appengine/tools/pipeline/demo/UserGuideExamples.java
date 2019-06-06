@@ -10,6 +10,8 @@ import com.google.appengine.tools.pipeline.Job3;
 import com.google.appengine.tools.pipeline.PromisedValue;
 import com.google.appengine.tools.pipeline.Value;
 
+import java.util.UUID;
+
 /**
  * This class contains the example Pipelines from the User Guide
  *
@@ -92,7 +94,7 @@ public class UserGuideExamples {
 
     @SuppressWarnings("unused")
     public static void getIntFromUser(
-        String prompt, String userEmail, String promiseHandle) {
+        String prompt, String userEmail, UUID promiseHandle) {
       // 1. Send the user an e-mail containing the prompt.
       // 2. Ask user to submit one more integer on some web page.
       // 3. promiseHandle is a query string argument

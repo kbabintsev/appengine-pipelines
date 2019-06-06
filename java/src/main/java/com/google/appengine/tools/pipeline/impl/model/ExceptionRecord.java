@@ -14,11 +14,14 @@
 
 package com.google.appengine.tools.pipeline.impl.model;
 
-import com.google.appengine.api.datastore.Blob;
-import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.tools.pipeline.impl.util.SerializationUtils;
+import com.google.cloud.ByteArray;
+import com.google.cloud.spanner.Mutation;
+import com.google.cloud.spanner.StructReader;
+import com.google.common.collect.ImmutableList;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -28,21 +31,27 @@ import java.util.UUID;
  */
 public class ExceptionRecord extends PipelineModelObject {
 
-  public static final String DATA_STORE_KIND = "pipeline-exception";
-  private static final String EXCEPTION_PROPERTY = "exception";
+  public static final String DATA_STORE_KIND = "Exception";
+  private static final String EXCEPTION_PROPERTY = "exceptionBytes";
+  public static final List<String> PROPERTIES = ImmutableList.<String>builder()
+          .addAll(BASE_PROPERTIES)
+          .add(
+                  EXCEPTION_PROPERTY
+          )
+          .build();
 
   private final Throwable exception;
 
   public ExceptionRecord(
       UUID rootJobKey, UUID generatorJobKey, String graphGUID, Throwable exception) {
-    super(rootJobKey, generatorJobKey, graphGUID);
+    super(DATA_STORE_KIND, rootJobKey, generatorJobKey, graphGUID);
     this.exception = exception;
   }
 
-  public ExceptionRecord(Entity entity) {
-    super(entity);
-    Blob serializedExceptionBlob = (Blob) entity.getProperty(EXCEPTION_PROPERTY);
-    byte[] serializedException = serializedExceptionBlob.getBytes();
+  public ExceptionRecord(StructReader entity) {
+    super(DATA_STORE_KIND, entity);
+    ByteArray serializedExceptionBlob = entity.getBytes(EXCEPTION_PROPERTY);
+    byte[] serializedException = serializedExceptionBlob.toByteArray();
     try {
       exception = (Throwable) SerializationUtils.deserialize(serializedException);
     } catch (IOException e) {
@@ -60,12 +69,13 @@ public class ExceptionRecord extends PipelineModelObject {
   }
 
   @Override
-  public Entity toEntity() {
+  public PipelineMutation toEntity() {
     try {
-      Entity entity = toProtoEntity();
+      PipelineMutation mutation = toProtoEntity();
+      final Mutation.WriteBuilder entity = mutation.getDatabaseMutation();
       byte[] serializedException = SerializationUtils.serialize(exception);
-      entity.setUnindexedProperty(EXCEPTION_PROPERTY, new Blob(serializedException));
-      return entity;
+      entity.set(EXCEPTION_PROPERTY).to(ByteArray.copyFrom(serializedException));
+      return mutation;
     } catch (IOException e) {
       throw new RuntimeException("Failed to serialize exception for " + getKey(), e);
     }

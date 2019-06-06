@@ -15,15 +15,20 @@
 package com.google.appengine.tools.pipeline.impl.model;
 
 import com.google.appengine.api.datastore.Entity;
-import java.util.UUID;
-import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.tools.pipeline.impl.util.GUIDGenerator;
+import com.google.cloud.spanner.Mutation;
+import com.google.cloud.spanner.StructReader;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * The parent class of all Pipeline model objects.
@@ -33,9 +38,17 @@ import java.util.Map;
 public abstract class PipelineModelObject {
 
   public static final String ROOT_JOB_KEY_PROPERTY = "rootJobKey";
+  public static final String ID_PROPERTY = "id";
   private static final String GENERATOR_JOB_PROPERTY = "generatorJobKey";
-  private static final String GRAPH_GUID_PROPERTY = "graphGUID";
+  private static final String GRAPH_GUID_PROPERTY = "graphGuid";
+  protected static final List<String> BASE_PROPERTIES = ImmutableList.of(
+          ROOT_JOB_KEY_PROPERTY,
+          ID_PROPERTY,
+          GENERATOR_JOB_PROPERTY,
+          GRAPH_GUID_PROPERTY
+  );
 
+  private final String tableName;
   /**
    * Datastore key of this object
    */
@@ -67,6 +80,7 @@ public abstract class PipelineModelObject {
   /**
    * Construct a new PipelineModelObject from the provided data.
    *
+   * @param tableName
    * @param rootJobKey The key of the root job for this pipeline. This must be
    *        non-null, except in the case that we are currently constructing the
    *        root job. In that case {@code thisKey} and {@code egParentKey} must
@@ -89,7 +103,10 @@ public abstract class PipelineModelObject {
    *        its barriers or slots.
    */
   protected PipelineModelObject(
-      UUID rootJobKey, UUID egParentKey, UUID thisKey, UUID generatorJobKey, String graphGUID) {
+      String tableName, UUID rootJobKey, UUID egParentKey, UUID thisKey, UUID generatorJobKey, String graphGUID) {
+    if (null == tableName) {
+      throw new IllegalArgumentException("tableName is null");
+    }
     if (null == rootJobKey) {
       throw new IllegalArgumentException("rootJobKey is null");
     }
@@ -98,7 +115,7 @@ public abstract class PipelineModelObject {
       throw new IllegalArgumentException(
           "Either neither or both of generatorParentJobKey and graphGUID must be set.");
     }
-
+    this.tableName = tableName;
     this.rootJobKey = rootJobKey;
     this.generatorJobKey = generatorJobKey;
     this.graphGUID = graphGUID;
@@ -117,6 +134,7 @@ public abstract class PipelineModelObject {
    * generatorJobKey, and graphGUID, a newly generated key, and no entity group
    * parent.
    *
+   * @param tableName
    * @param rootJobKey The key of the root job for this pipeline. This must be
    *        non-null, except in the case that we are currently constructing the
    *        root job. In that case this must be a {@link JobRecord}.
@@ -130,68 +148,63 @@ public abstract class PipelineModelObject {
    *        object is part of the root job graph---i.e. the root job, or one of
    *        its barriers or slots.
    */
-  protected PipelineModelObject(UUID rootJobKey, UUID generatorJobKey, String graphGUID) {
-    this(rootJobKey, null, null, generatorJobKey, graphGUID);
+  protected PipelineModelObject(String tableName, UUID rootJobKey, UUID generatorJobKey, String graphGUID) {
+    this(tableName, rootJobKey, null, null, generatorJobKey, graphGUID);
   }
 
   /**
    * Construct a new PipelineModelObject from the previously saved Entity.
    *
+   * @param tableName
    * @param entity An Entity obtained previously from a call to
    *    {@link #toEntity()}.
    */
-  protected PipelineModelObject(Entity entity) {
-    this(extractRootJobKey(entity), null, extractKey(entity), extractGeneratorJobKey(entity),
+  protected PipelineModelObject(String tableName, StructReader entity) {
+    this(tableName, extractRootJobKey(entity), null, extractKey(entity), extractGeneratorJobKey(entity),
         extractGraphGUID(entity));
     String expectedEntityType = getDatastoreKind();
-    if (!expectedEntityType.equals(extractType(entity))) {
+    if (!expectedEntityType.equals(tableName)) {
       throw new IllegalArgumentException("The entity is not of kind " + expectedEntityType);
     }
   }
 
   protected static UUID generateKey(UUID parentKey, String kind) {
-    String name = GUIDGenerator.nextGUID();
-    UUID key;
     if (null == parentKey) {
-      key = KeyFactory.createKey(kind, name);
+      return GUIDGenerator.nextGUID(); //key = KeyFactory.createKey(kind, name);
     } else {
-      key = parentKey.getChild(kind, name);
+      return GUIDGenerator.nextGUID(); //key = parentKey.getChild(kind, name);
     }
-    return key;
   }
 
-  private static UUID extractRootJobKey(Entity entity) {
-    return (UUID) entity.getProperty(ROOT_JOB_KEY_PROPERTY);
+  private static UUID extractRootJobKey(StructReader entity) {
+    return entity.isNull(ROOT_JOB_KEY_PROPERTY) ? null : UUID.fromString(entity.getString(ROOT_JOB_KEY_PROPERTY));
   }
 
-  private static UUID extractGeneratorJobKey(Entity entity) {
-    return (UUID) entity.getProperty(GENERATOR_JOB_PROPERTY);
+  private static UUID extractGeneratorJobKey(StructReader entity) {
+    return entity.isNull(GENERATOR_JOB_PROPERTY) ? null : UUID.fromString(entity.getString(GENERATOR_JOB_PROPERTY));
   }
 
-  private static String extractGraphGUID(Entity entity) {
-    return (String) entity.getProperty(GRAPH_GUID_PROPERTY);
+  private static String extractGraphGUID(StructReader entity) {
+    return entity.isNull(GRAPH_GUID_PROPERTY) ? null : entity.getString(GRAPH_GUID_PROPERTY);
   }
 
-  private static String extractType(Entity entity) {
-    return entity.getKind();
+  private static UUID extractKey(StructReader entity) {
+    return UUID.fromString(entity.getString(ID_PROPERTY));
   }
 
-  private static UUID extractKey(Entity entity) {
-    return entity.getKey();
-  }
+  public abstract PipelineMutation toEntity();
 
-  public abstract Entity toEntity();
-
-  protected Entity toProtoEntity() {
-    Entity entity = new Entity(key);
-    entity.setProperty(ROOT_JOB_KEY_PROPERTY, rootJobKey);
+  protected PipelineMutation toProtoEntity() {
+    final Mutation.WriteBuilder writeBuilder = Mutation.newInsertOrUpdateBuilder(tableName);
+    writeBuilder.set(ID_PROPERTY).to(key.toString());
+    writeBuilder.set(ROOT_JOB_KEY_PROPERTY).to(rootJobKey.toString());
     if (generatorJobKey != null) {
-      entity.setProperty(GENERATOR_JOB_PROPERTY, generatorJobKey);
+      writeBuilder.set(GENERATOR_JOB_PROPERTY).to(generatorJobKey.toString());
     }
     if (graphGUID != null) {
-      entity.setUnindexedProperty(GRAPH_GUID_PROPERTY, graphGUID);
+      writeBuilder.set(GRAPH_GUID_PROPERTY).to(graphGUID);
     }
-    return entity;
+    return new PipelineMutation(writeBuilder);
   }
 
   public UUID getKey() {
@@ -222,6 +235,20 @@ public abstract class PipelineModelObject {
       list.add(x);
     }
     return list;
+  }
+
+  protected static Optional<List<Long>> getLongListProperty(String propertyName, StructReader entity) {
+    if (entity.isNull(propertyName)) {
+      return Optional.empty();
+    }
+    return Optional.of(Lists.newArrayList(entity.getLongList(propertyName)));
+  }
+
+  protected static Optional<List<UUID>> getUuidListProperty(String propertyName, StructReader entity) {
+    if (entity.isNull(propertyName)) {
+      return Optional.empty();
+    }
+    return Optional.of(entity.getStringList(propertyName).stream().map(UUID::fromString).collect(Collectors.toList()));
   }
 
   protected static <E> List<E> getListProperty(String propertyName, Entity entity) {

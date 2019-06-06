@@ -105,7 +105,7 @@ public class FanoutTask extends Task {
   }
 
   private static void encodeTask(StringBuilder builder, Task task) {
-    String taskName = GUIDGenerator.nextGUID();
+    String taskName = GUIDGenerator.nextGUID().toString();
     builder.append(taskName);
     builder.append(TASK_NAME_DELIMITTER);
     Properties taskProps = task.toProperties();

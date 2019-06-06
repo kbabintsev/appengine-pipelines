@@ -14,8 +14,9 @@
 
 package com.google.appengine.tools.pipeline;
 
-
 import com.google.appengine.tools.pipeline.demo.GCDExample;
+
+import java.util.UUID;
 
 /**
  *
@@ -60,7 +61,7 @@ public class AsyncGCDExample {
       return null;
     }
 
-    private void asyncAskUserForTwoIntegers(final String aHandle, final String bHandle) {
+    private void asyncAskUserForTwoIntegers(final UUID aHandle, final UUID bHandle) {
       final PipelineService service = PipelineServiceFactory.newPipelineService();
       Thread thread = new Thread() {
         @Override
@@ -99,7 +100,7 @@ public class AsyncGCDExample {
       return userName;
     }
 
-    private void asyncAskUserForName(final String handle) {
+    private void asyncAskUserForName(final UUID handle) {
       final PipelineService service = PipelineServiceFactory.newPipelineService();
       Thread thread = new Thread() {
         @Override

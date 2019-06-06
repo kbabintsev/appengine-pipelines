@@ -67,6 +67,9 @@ public class SerializationUtils {
   }
 
   public static Object deserialize(byte[] bytes) throws IOException {
+    if (bytes == null) {
+      return null;
+    }
     if (bytes.length < 2) {
       throw new IOException("Invalid bytes content");
     }

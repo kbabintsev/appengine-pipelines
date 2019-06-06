@@ -14,8 +14,12 @@
 
 package com.google.appengine.tools.pipeline.impl.model;
 
-import com.google.appengine.api.datastore.Blob;
-import com.google.appengine.api.datastore.Entity;
+import com.google.cloud.ByteArray;
+import com.google.cloud.spanner.Mutation;
+import com.google.cloud.spanner.StructReader;
+import com.google.common.collect.ImmutableList;
+
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -25,23 +29,29 @@ import java.util.UUID;
  */
 public class FanoutTaskRecord extends PipelineModelObject {
 
-  public static final String DATA_STORE_KIND = "pipeline-fanoutTask";
+  public static final String DATA_STORE_KIND = "FanoutTask";
   private static final String PAYLOAD_PROPERTY = "payload";
+  public static final List<String> PROPERTIES = ImmutableList.<String>builder()
+          .addAll(BASE_PROPERTIES)
+          .add(
+                  PAYLOAD_PROPERTY
+          )
+          .build();
 
   private final byte[] payload;
 
   public FanoutTaskRecord(UUID rootJobKey, byte[] payload) {
-    super(rootJobKey, null, null);
+    super(DATA_STORE_KIND, rootJobKey, null, null);
     if (payload == null) {
       throw new RuntimeException("Payload must not be null");
     }
     this.payload = payload;
   }
 
-  public FanoutTaskRecord(Entity entity) {
-    super(entity);
-    Blob payloadBlob = (Blob) entity.getProperty(PAYLOAD_PROPERTY);
-    payload = payloadBlob.getBytes();
+  public FanoutTaskRecord(StructReader entity) {
+    super(DATA_STORE_KIND, entity);
+    ByteArray payloadBlob = entity.getBytes(PAYLOAD_PROPERTY);
+    payload = payloadBlob.toByteArray();
   }
 
   public byte[] getPayload() {
@@ -54,9 +64,10 @@ public class FanoutTaskRecord extends PipelineModelObject {
   }
 
   @Override
-  public Entity toEntity() {
-    Entity entity = toProtoEntity();
-    entity.setUnindexedProperty(PAYLOAD_PROPERTY, new Blob(payload));
-    return entity;
+  public PipelineMutation toEntity() {
+    PipelineMutation mutation = toProtoEntity();
+    final Mutation.WriteBuilder entity = mutation.getDatabaseMutation();
+    entity.set(PAYLOAD_PROPERTY).to(ByteArray.copyFrom(payload));
+    return mutation;
   }
 }

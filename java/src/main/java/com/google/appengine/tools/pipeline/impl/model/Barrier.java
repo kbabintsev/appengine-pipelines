@@ -14,14 +14,17 @@
 
 package com.google.appengine.tools.pipeline.impl.model;
 
-import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.tools.pipeline.impl.util.StringUtils;
+import com.google.cloud.spanner.Mutation;
+import com.google.cloud.spanner.StructReader;
+import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * A {@code Barrier} represents a list of slots that need to be filled before
@@ -54,12 +57,22 @@ public class Barrier extends PipelineModelObject {
     RUN, FINALIZE
   }
 
-  public static final String DATA_STORE_KIND = "pipeline-barrier";
+  public static final String DATA_STORE_KIND = "Barrier";
   private static final String TYPE_PROPERTY = "barrierType";
   private static final String JOB_KEY_PROPERTY = "jobKey";
   private static final String RELEASED_PROPERTY = "released";
   private static final String WAITING_ON_KEYS_PROPERTY = "waitingOnKeys";
   private static final String WAITING_ON_GROUP_SIZES_PROPERTY = "waitingOnGroupSizes";
+  public static final List<String> PROPERTIES = ImmutableList.<String>builder()
+          .addAll(BASE_PROPERTIES)
+          .add(
+                  TYPE_PROPERTY,
+                  JOB_KEY_PROPERTY,
+                  RELEASED_PROPERTY,
+                  WAITING_ON_KEYS_PROPERTY,
+                  WAITING_ON_GROUP_SIZES_PROPERTY
+          )
+          .build();
 
   // persistent
   private final Type type;
@@ -92,7 +105,7 @@ public class Barrier extends PipelineModelObject {
   }
 
   private Barrier(Type type, UUID rootJobKey, UUID jobKey, UUID generatorJobKey, String graphGUID) {
-    super(rootJobKey, getEgParentKey(type, jobKey), null, generatorJobKey, graphGUID);
+    super(DATA_STORE_KIND, rootJobKey, getEgParentKey(type, jobKey), null, generatorJobKey, graphGUID);
     this.jobKey = jobKey;
     this.type = type;
     waitingOnGroupSizes = new LinkedList<>();
@@ -110,24 +123,25 @@ public class Barrier extends PipelineModelObject {
         jobRecord.getGraphGuid());
   }
 
-  public Barrier(Entity entity) {
-    super(entity);
-    jobKey = (UUID) entity.getProperty(JOB_KEY_PROPERTY);
-    type = Type.valueOf((String) entity.getProperty(TYPE_PROPERTY));
-    released = (Boolean) entity.getProperty(RELEASED_PROPERTY);
-    waitingOnKeys = getListProperty(WAITING_ON_KEYS_PROPERTY, entity);
-    waitingOnGroupSizes = getListProperty(WAITING_ON_GROUP_SIZES_PROPERTY, entity);
+  public Barrier(StructReader entity) {
+    super(DATA_STORE_KIND, entity);
+    jobKey = UUID.fromString(entity.getString(JOB_KEY_PROPERTY)); // probably not null?
+    type = Type.valueOf(entity.getString(TYPE_PROPERTY)); // probably not null?
+    released = entity.getBoolean(RELEASED_PROPERTY); // probably not null?
+    waitingOnKeys = getUuidListProperty(WAITING_ON_KEYS_PROPERTY, entity).orElse(null);
+    waitingOnGroupSizes = getLongListProperty(WAITING_ON_GROUP_SIZES_PROPERTY, entity).orElse(null);
   }
 
   @Override
-  public Entity toEntity() {
-    Entity entity = toProtoEntity();
-    entity.setProperty(JOB_KEY_PROPERTY, jobKey);
-    entity.setUnindexedProperty(TYPE_PROPERTY, type.toString());
-    entity.setUnindexedProperty(RELEASED_PROPERTY, released);
-    entity.setUnindexedProperty(WAITING_ON_KEYS_PROPERTY, waitingOnKeys);
-    entity.setUnindexedProperty(WAITING_ON_GROUP_SIZES_PROPERTY, waitingOnGroupSizes);
-    return entity;
+  public PipelineMutation toEntity() {
+    PipelineMutation mutation = toProtoEntity();
+    final Mutation.WriteBuilder entity = mutation.getDatabaseMutation();
+    entity.set(JOB_KEY_PROPERTY).to(jobKey.toString());
+    entity.set(TYPE_PROPERTY).to(type.toString());
+    entity.set(RELEASED_PROPERTY).to(released);
+    entity.set(WAITING_ON_KEYS_PROPERTY).toStringArray(waitingOnKeys.stream().map(UUID::toString).collect(Collectors.toList()));
+    entity.set(WAITING_ON_GROUP_SIZES_PROPERTY).toInt64Array(waitingOnGroupSizes);
+    return mutation;
   }
 
   @Override

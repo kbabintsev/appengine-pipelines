@@ -2,18 +2,16 @@
 
 package com.google.appengine.tools.pipeline;
 
-import static com.google.appengine.tools.pipeline.impl.util.TestUtils.getFailureProperty;
-
-import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.Key;
-import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.appengine.tools.pipeline.impl.backend.AppEngineBackEnd;
 import com.google.appengine.tools.pipeline.impl.model.JobRecord;
 import com.google.appengine.tools.pipeline.impl.model.PipelineObjects;
 import com.google.apphosting.api.ApiProxy;
 
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.google.appengine.tools.pipeline.impl.util.TestUtils.getFailureProperty;
 
 /**
  * A test of the ability of the Pipeline framework to handle orphaned jobs.
@@ -56,13 +54,13 @@ public class OrphanedJobGraphTest extends PipelineTest {
 
   /**
    * Tests that the method
-   * {@link PipelineService#submitPromisedValue(String, Object)} behaves
+   * {@link PipelineService#submitPromisedValue(UUID, Object)} behaves
    * properly if the promise handle has been orphaned.
    * <p>
    * This test is similar to {@link #testOrphanedJobGraph()} except that this
    * time the child job graph is supposed to be activated asynchronously vai a
    * promised value. We test that
-   * {@link PipelineService#submitPromisedValue(String, Object)} will throw a
+   * {@link PipelineService#submitPromisedValue(UUID, Object)} will throw a
    * {@link OrphanedObjectException} when {@code submitPromisedValue()} is
    * invoked on an orphaned promise handle.
    */
@@ -82,7 +80,7 @@ public class OrphanedJobGraphTest extends PipelineTest {
 
     // Run GeneratorJob
     PipelineService service = PipelineServiceFactory.newPipelineService();
-    String pipelineHandle = service.startNewPipeline(new GeneratorJob(usePromisedValue));
+    UUID pipelineHandle = service.startNewPipeline(new GeneratorJob(usePromisedValue));
     waitForJobToComplete(pipelineHandle);
 
     // The GeneratorJob run() should have failed twice just before the final
@@ -96,7 +94,7 @@ public class OrphanedJobGraphTest extends PipelineTest {
     // Get all of the Pipeline objects so we can confirm the orphaned jobs are
     // really there
     PipelineObjects allObjects = PipelineManager.queryFullPipeline(pipelineHandle);
-    Key rootJobKey = KeyFactory.createKey(JobRecord.DATA_STORE_KIND, pipelineHandle);
+    UUID rootJobKey = pipelineHandle;
     JobRecord rootJob = allObjects.jobs.get(rootJobKey);
     assertNotNull(rootJob);
     String graphGuid = rootJob.getChildGraphGuid();
@@ -145,13 +143,11 @@ public class OrphanedJobGraphTest extends PipelineTest {
 
     // Check that all jobs have been deleted
     AppEngineBackEnd backend = new AppEngineBackEnd();
-    Iterable<Entity> jobs = backend.queryAll(JobRecord.DATA_STORE_KIND, rootJobKey);
-    numJobs = 0;
-    // TODO(user): replace with Iterables.size once b/11899553 is fixed
-    for (@SuppressWarnings("unused") Entity entity : jobs) {
-      numJobs++;
-    }
-    assertEquals(0, numJobs);
+    AtomicInteger numJobs2 = new AtomicInteger(0);
+    backend.queryAll(JobRecord.DATA_STORE_KIND, JobRecord.PROPERTIES, rootJobKey, (struct) -> {
+      numJobs2.addAndGet(1);
+    });
+    assertEquals(0, numJobs2.get());
   }
 
   /**
@@ -208,16 +204,16 @@ public class OrphanedJobGraphTest extends PipelineTest {
 
   /**
    * A {@code Runnable} for invoking the method
-   * {@link PipelineService#submitPromisedValue(String, Object)}.
+   * {@link PipelineService#submitPromisedValue(UUID, Object)}.
    *
    */
   private static class SupplyPromisedValueRunnable implements Runnable {
 
-    private String promiseHandle;
+    private UUID promiseHandle;
     private ApiProxy.Environment apiProxyEnvironment;
     public static AtomicInteger orphanedObjectExcetionCount = new AtomicInteger(0);
 
-    public SupplyPromisedValueRunnable(ApiProxy.Environment environment, String promiseHandle) {
+    public SupplyPromisedValueRunnable(ApiProxy.Environment environment, UUID promiseHandle) {
       this.promiseHandle = promiseHandle;
       this.apiProxyEnvironment = environment;
     }

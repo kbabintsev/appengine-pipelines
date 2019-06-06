@@ -14,11 +14,14 @@
 
 package com.google.appengine.tools.pipeline.impl.model;
 
-import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.tools.pipeline.Job;
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
+import com.google.cloud.spanner.Mutation;
+import com.google.cloud.spanner.StructReader;
+import com.google.common.collect.ImmutableList;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -28,59 +31,63 @@ import java.util.UUID;
  */
 public class JobInstanceRecord extends PipelineModelObject {
 
-  public static final String DATA_STORE_KIND = "pipeline-jobInstanceRecord";
+  public static final String DATA_STORE_KIND = "JobInstanceRecord";
   private static final String JOB_KEY_PROPERTY = "jobKey";
   private static final String JOB_CLASS_NAME_PROPERTY = "jobClassName";
   public static final String JOB_DISPLAY_NAME_PROPERTY = "jobDisplayName";
-  private static final String INSTANCE_BYTES_PROPERTY = "bytes"; // legacy (blob)
-  private static final String INSTANCE_VALUE_PROPERTY = "value";
+    public static final List<String> PROPERTIES = ImmutableList.<String>builder()
+            .addAll(BASE_PROPERTIES)
+            .add(
+                    JOB_KEY_PROPERTY,
+                    JOB_CLASS_NAME_PROPERTY,
+                    JOB_DISPLAY_NAME_PROPERTY
+            )
+            .build();
 
   // persistent
   private final UUID jobKey;
   private final String jobClassName;
   private final String jobDisplayName;
-  private final Object value;
+  private final byte[] value;
 
   // transient
   private Job<?> jobInstance;
 
   public JobInstanceRecord(JobRecord job, Job<?> jobInstance) {
-    super(job.getRootJobKey(), job.getGeneratorJobKey(), job.getGraphGuid());
+    super(DATA_STORE_KIND, job.getRootJobKey(), job.getGeneratorJobKey(), job.getGraphGuid());
     jobKey = job.getKey();
     jobClassName = jobInstance.getClass().getName();
     jobDisplayName = jobInstance.getJobDisplayName();
     try {
-      value = PipelineManager.getBackEnd().serializeValue(this, jobInstance);
+        value = PipelineManager.getBackEnd().serializeValue(this, jobInstance);
     } catch (IOException e) {
       throw new RuntimeException("Exception while attempting to serialize the jobInstance "
           + jobInstance, e);
     }
  }
 
-  public JobInstanceRecord(Entity entity) {
-    super(entity);
-    jobKey = (UUID) entity.getProperty(JOB_KEY_PROPERTY);
-    jobClassName = (String) entity.getProperty(JOB_CLASS_NAME_PROPERTY);
-    if (entity.hasProperty(JOB_DISPLAY_NAME_PROPERTY)) {
-      jobDisplayName = (String) entity.getProperty(JOB_DISPLAY_NAME_PROPERTY);
+  public JobInstanceRecord(StructReader entity) {
+    super(DATA_STORE_KIND, entity);
+    jobKey = UUID.fromString(entity.getString(JOB_KEY_PROPERTY)); // probably not null?
+    jobClassName = entity.getString(JOB_CLASS_NAME_PROPERTY); // probably not null?
+    if (!entity.isNull(JOB_DISPLAY_NAME_PROPERTY)) {
+      jobDisplayName = entity.getString(JOB_DISPLAY_NAME_PROPERTY);
     } else {
       jobDisplayName = jobClassName;
     }
-    if (entity.hasProperty(INSTANCE_BYTES_PROPERTY)) {
-      value = entity.getProperty(INSTANCE_BYTES_PROPERTY);
-    } else {
-      value = entity.getProperty(INSTANCE_VALUE_PROPERTY);
-    }
+
+    value = PipelineManager.getBackEnd().retrieveBlob(getRootJobKey(), getKey());
   }
 
   @Override
-  public Entity toEntity() {
-    Entity entity = toProtoEntity();
-    entity.setProperty(JOB_KEY_PROPERTY, jobKey);
-    entity.setProperty(JOB_CLASS_NAME_PROPERTY, jobClassName);
-    entity.setUnindexedProperty(INSTANCE_VALUE_PROPERTY, value);
-    entity.setUnindexedProperty(JOB_DISPLAY_NAME_PROPERTY, jobDisplayName);
-    return entity;
+  public PipelineMutation toEntity() {
+    PipelineMutation mutation = toProtoEntity();
+    final Mutation.WriteBuilder entity = mutation.getDatabaseMutation();
+    entity.set(JOB_KEY_PROPERTY).to(jobKey.toString());
+    entity.set(JOB_CLASS_NAME_PROPERTY).to(jobClassName);
+    entity.set(JOB_DISPLAY_NAME_PROPERTY).to(jobDisplayName);
+    mutation.setBlobMutation(new PipelineMutation.BlobMutation(getRootJobKey(), getKey(), value));
+    return mutation;
   }
 
   @Override

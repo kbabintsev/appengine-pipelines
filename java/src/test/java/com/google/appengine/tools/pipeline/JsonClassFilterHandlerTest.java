@@ -14,19 +14,18 @@
 
 package com.google.appengine.tools.pipeline;
 
-import static org.mockito.Mockito.when;
-
 import com.google.appengine.tools.pipeline.impl.servlets.JsonClassFilterHandler;
-
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
+import java.util.UUID;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import static org.mockito.Mockito.when;
 
 /**
  * Test for {@link JsonClassFilterHandler}.
@@ -105,9 +104,9 @@ public class JsonClassFilterHandlerTest extends PipelineTest {
 
   public void testHandlerWithResults() throws Exception {
     PipelineService service = PipelineServiceFactory.newPipelineService();
-    String pipelineId1 = service.startNewPipeline(new Main1Job());
-    String pipelineId2 = service.startNewPipeline(new Main2Job(false));
-    String pipelineId3 = service.startNewPipeline(new Main2Job(true),
+    UUID pipelineId1 = service.startNewPipeline(new Main1Job());
+    UUID pipelineId2 = service.startNewPipeline(new Main2Job(false));
+    UUID pipelineId3 = service.startNewPipeline(new Main2Job(true),
         new JobSetting.BackoffSeconds(0), new JobSetting.MaxAttempts(2));
     String helloWorld = (String) waitForJobToComplete(pipelineId1);
     assertEquals("hello world", helloWorld);

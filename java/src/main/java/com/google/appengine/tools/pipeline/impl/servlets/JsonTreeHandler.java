@@ -23,6 +23,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * @author rudominer@google.com (Mitch Rudominer)
@@ -35,7 +36,7 @@ public class JsonTreeHandler {
   public static void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException {
 
-    String rootJobHandle = req.getParameter(ROOT_PIPELINE_ID);
+    UUID rootJobHandle = UUID.fromString(req.getParameter(ROOT_PIPELINE_ID));
     if (null == rootJobHandle) {
       throw new ServletException(ROOT_PIPELINE_ID + " parameter not found.");
     }
@@ -47,10 +48,10 @@ public class JsonTreeHandler {
         resp.sendError(HttpServletResponse.SC_NOT_FOUND);
         return;
       }
-      String rootJobKey = jobInfo.getRootJobKey().toString();
+      UUID rootJobKey = jobInfo.getRootJobKey();
       if (!rootJobKey.equals(rootJobHandle)) {
-        resp.addHeader(ROOT_PIPELINE_ID, rootJobKey);
-        resp.sendError(449, rootJobKey);
+        resp.addHeader(ROOT_PIPELINE_ID, rootJobKey.toString());
+        resp.sendError(449, rootJobKey.toString());
         return;
       }
       PipelineObjects pipelineObjects = PipelineManager.queryFullPipeline(rootJobKey);

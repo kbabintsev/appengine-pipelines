@@ -14,19 +14,21 @@
 
 package com.google.appengine.tools.pipeline;
 
-import static com.google.appengine.tools.pipeline.impl.util.GUIDGenerator.USE_SIMPLE_GUIDS_FOR_DEBUGGING;
-
 import com.google.appengine.api.taskqueue.dev.LocalTaskQueue;
 import com.google.appengine.api.taskqueue.dev.QueueStateInfo;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalModulesServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.appengine.tools.development.testing.LocalTaskQueueTestConfig;
+import com.google.appengine.tools.pipeline.impl.util.GUIDGenerator;
 import com.google.apphosting.api.ApiProxy;
-
 import junit.framework.TestCase;
 
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import static com.google.appengine.tools.pipeline.impl.util.GUIDGenerator.USE_SIMPLE_GUIDS_FOR_DEBUGGING;
 
 /**
  * @author rudominer@google.com (Mitch Rudominer)
@@ -81,6 +83,12 @@ public class PipelineTest extends TestCase {
     apiProxyEnvironment = ApiProxy.getCurrentEnvironment();
     System.setProperty(USE_SIMPLE_GUIDS_FOR_DEBUGGING, "true");
     taskQueue = LocalTaskQueueTestConfig.getLocalTaskQueue();
+    PipelineService service = PipelineServiceFactory.newPipelineService();
+    service.cleanBobs(GUIDGenerator.TEST_PREFIX);
+    final Set<UUID> testPipelines = service.getTestPipelines();
+    for (UUID pipelineId : testPipelines) {
+      service.deletePipelineRecords(pipelineId, true, false);
+    }
   }
 
   @Override
@@ -107,7 +115,7 @@ public class PipelineTest extends TestCase {
   }
 
 
-  protected JobInfo waitUntilJobComplete(String pipelineId) throws Exception {
+  protected JobInfo waitUntilJobComplete(UUID pipelineId) throws Exception {
     PipelineService service = PipelineServiceFactory.newPipelineService();
     while (true) {
       Thread.sleep(2000);
@@ -123,7 +131,7 @@ public class PipelineTest extends TestCase {
   }
 
   @SuppressWarnings("unchecked")
-  protected <T> T waitForJobToComplete(String pipelineId) throws Exception {
+  protected <T> T waitForJobToComplete(UUID pipelineId) throws Exception {
     JobInfo jobInfo = waitUntilJobComplete(pipelineId);
     switch (jobInfo.getJobState()) {
       case COMPLETED_SUCCESSFULLY:

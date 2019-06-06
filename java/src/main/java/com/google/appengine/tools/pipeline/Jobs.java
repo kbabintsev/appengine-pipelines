@@ -26,6 +26,7 @@ import com.google.common.base.Preconditions;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -96,12 +97,12 @@ public class Jobs {
   public static <T> Value<T> waitForAllAndDelete(
       Job<?> caller, Value<T> value, Value<?>... values) {
     return caller.futureCall(
-        new DeletePipelineJob<T>(caller.getPipelineKey().toString()),
+        new DeletePipelineJob<T>(caller.getPipelineKey()),
         value, createWaitForSettingArray(values));
   }
 
   public static <T> Value<T> waitForAllAndDelete(Job<?> caller, T value, Value<?>... values) {
-    return caller.futureCall(new DeletePipelineJob<T>(caller.getPipelineKey().toString()),
+    return caller.futureCall(new DeletePipelineJob<T>(caller.getPipelineKey()),
         immediate(value), createWaitForSettingArray(values));
   }
 
@@ -109,9 +110,9 @@ public class Jobs {
 
     private static final long serialVersionUID = -5440838671291502355L;
     private static final Logger log = Logger.getLogger(DeletePipelineJob.class.getName());
-    private final String key;
+    private final UUID key;
 
-    DeletePipelineJob(String rootJobKey) {
+    DeletePipelineJob(UUID rootJobKey) {
       this.key = rootJobKey;
     }
 

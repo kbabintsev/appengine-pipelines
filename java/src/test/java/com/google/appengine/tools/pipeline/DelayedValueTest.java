@@ -14,6 +14,7 @@
 
 package com.google.appengine.tools.pipeline;
 
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -55,7 +56,7 @@ public class DelayedValueTest extends PipelineTest {
   }
 
   public void testDelayedValue() throws Exception {
-    String pipelineId = service.startNewPipeline(new TestDelayedValueJob());
+    UUID pipelineId = service.startNewPipeline(new TestDelayedValueJob());
     Integer five = waitForJobToComplete(pipelineId);
     assertEquals(EXPECTED_RESULT, five.intValue());
     assertEquals("TestDelayedValueJob.run DelayedJob.run", trace());

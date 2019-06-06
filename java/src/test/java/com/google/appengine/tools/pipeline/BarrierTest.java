@@ -14,21 +14,19 @@
 
 package com.google.appengine.tools.pipeline;
 
-import static com.google.appengine.tools.pipeline.impl.util.GUIDGenerator.USE_SIMPLE_GUIDS_FOR_DEBUGGING;
-
-import com.google.appengine.api.datastore.Key;
-import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.appengine.tools.pipeline.impl.model.Barrier;
 import com.google.appengine.tools.pipeline.impl.model.Slot;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-
 import junit.framework.TestCase;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+
+import static com.google.appengine.tools.pipeline.impl.util.GUIDGenerator.USE_SIMPLE_GUIDS_FOR_DEBUGGING;
 
 /**
  * @author rudominer@google.com (Mitch Rudominer)
@@ -124,7 +122,7 @@ public class BarrierTest extends TestCase {
   }
 
   public static Slot createDummySlot() {
-    Key dummyKey = KeyFactory.createKey("dummy", "dummy");
+    UUID dummyKey = UUID.fromString("00000000-0000-0000-0000-000000000bad");
     return new Slot(dummyKey, dummyKey, "abc");
   }
 }

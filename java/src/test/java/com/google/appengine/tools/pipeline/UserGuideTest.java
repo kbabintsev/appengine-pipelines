@@ -14,15 +14,16 @@
 
 package com.google.appengine.tools.pipeline;
 
-import static com.google.appengine.tools.pipeline.impl.util.GUIDGenerator.USE_SIMPLE_GUIDS_FOR_DEBUGGING;
-
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalModulesServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.appengine.tools.development.testing.LocalTaskQueueTestConfig;
 import com.google.appengine.tools.pipeline.demo.UserGuideExamples.ComplexJob;
-
 import junit.framework.TestCase;
+
+import java.util.UUID;
+
+import static com.google.appengine.tools.pipeline.impl.util.GUIDGenerator.USE_SIMPLE_GUIDS_FOR_DEBUGGING;
 
 /**
  * Tests for the sample code in the User Guide
@@ -62,7 +63,7 @@ public class UserGuideTest extends TestCase {
 
   private void doComplexJobTest(int x, int y, int z) throws Exception {
     PipelineService service = PipelineServiceFactory.newPipelineService();
-    String pipelineId = service.startNewPipeline(new ComplexJob(), x, y, z);
+    UUID pipelineId = service.startNewPipeline(new ComplexJob(), x, y, z);
     JobInfo jobInfo = service.getJobInfo(pipelineId);
     JobInfo.State state = jobInfo.getJobState();
     if (JobInfo.State.COMPLETED_SUCCESSFULLY == state) {
@@ -73,7 +74,7 @@ public class UserGuideTest extends TestCase {
   }
 
   @SuppressWarnings("unchecked")
-  private <E> E waitForJobToComplete(String pipelineId) throws Exception {
+  private <E> E waitForJobToComplete(UUID pipelineId) throws Exception {
     PipelineService service = PipelineServiceFactory.newPipelineService();
     while (true) {
       Thread.sleep(2000);

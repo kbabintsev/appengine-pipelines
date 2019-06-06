@@ -16,6 +16,7 @@ package com.google.appengine.tools.pipeline;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Note the difference between testFutureList() and testReturnFutureList(). In
@@ -27,14 +28,14 @@ public class FutureListTest extends PipelineTest {
 
   public void testFutureList() throws Exception {
     PipelineService service = PipelineServiceFactory.newPipelineService();
-    String pipelineId = service.startNewPipeline(new SumsListJob1());
+    UUID pipelineId = service.startNewPipeline(new SumsListJob1());
     Integer sum = waitForJobToComplete(pipelineId);
     assertEquals(21, sum.intValue());
   }
 
   public void testReturnFutureList() throws Exception {
     PipelineService service = PipelineServiceFactory.newPipelineService();
-    String pipelineId = service.startNewPipeline(new SumsListJob2());
+    UUID pipelineId = service.startNewPipeline(new SumsListJob2());
     Integer sum = waitForJobToComplete(pipelineId);
     assertEquals(21, sum.intValue());
   }
@@ -43,7 +44,7 @@ public class FutureListTest extends PipelineTest {
   // suggesting this.
   public void testEmptyFutureList() throws Exception {
     PipelineService service = PipelineServiceFactory.newPipelineService();
-    String pipelineId = service.startNewPipeline(new SumsEmptyListJob());
+    UUID pipelineId = service.startNewPipeline(new SumsEmptyListJob());
     Integer sum = waitForJobToComplete(pipelineId);
     assertEquals(0, sum.intValue());
   }

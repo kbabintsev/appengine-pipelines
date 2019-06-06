@@ -17,11 +17,11 @@ package com.google.appengine.tools.pipeline.impl.servlets;
 import com.google.appengine.tools.pipeline.NoSuchObjectException;
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
 
-import java.io.IOException;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.UUID;
 
 /**
  * @author ozarov@google.com (Arie Ozarov)
@@ -33,7 +33,7 @@ public class DeleteJobHandler {
 
   public static void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws IOException, ServletException {
-    String rootJobHandle = req.getParameter(ROOT_PIPELINE_ID);
+    UUID rootJobHandle = UUID.fromString(req.getParameter(ROOT_PIPELINE_ID));
     if (null == rootJobHandle) {
       throw new ServletException(ROOT_PIPELINE_ID + " parameter not found.");
     }

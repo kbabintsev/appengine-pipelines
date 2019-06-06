@@ -34,8 +34,8 @@ public class PromisedValueImpl<E> extends FutureValueImpl<E> implements Promised
   }
 
   @Override
-  public String getHandle() {
-    return slot.getKey().toString();
+  public UUID getHandle() {
+    return slot.getKey();
   }
 
 }

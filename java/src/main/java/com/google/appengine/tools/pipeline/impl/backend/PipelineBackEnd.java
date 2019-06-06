@@ -109,7 +109,7 @@ public interface PipelineBackEnd {
    * Given an arbitrary Java Object, returns another object that encodes the
    * given object but that is guaranteed to be of a type supported by the App
    * Engine Data Store. Use
-   * {@link #deserializeValue(PipelineModelObject, Object)} to reverse this
+   * {@link #deserializeValue(PipelineModelObject, byte[])} to reverse this
    * operation.
    *
    * @param model The model that is associated with the value.
@@ -117,7 +117,7 @@ public interface PipelineBackEnd {
    * @return The serialized version of the object.
    * @throws IOException if any problem occurs
    */
-  Object serializeValue(PipelineModelObject model, Object value) throws IOException;
+  byte[] serializeValue(PipelineModelObject model, Object value) throws IOException;
 
   /**
    * Reverses the operation performed by
@@ -128,7 +128,7 @@ public interface PipelineBackEnd {
    * @return The deserialized version of the object.
    * @throws IOException if any problem occurs
    */
-  Object deserializeValue(PipelineModelObject model, Object serializedVersion)
+  Object deserializeValue(PipelineModelObject model, byte[] serializedVersion)
       throws IOException;
 
   /**
@@ -144,6 +144,8 @@ public interface PipelineBackEnd {
    *         {@code fanoutTask} does not exist in the data store.
    */
   void handleFanoutTask(FanoutTask fanoutTask) throws NoSuchObjectException;
+
+  Set<UUID> getTestPipelines();
 
   /**
    * Queries the data store for all Pipeline objects associated with the given
@@ -175,6 +177,12 @@ public interface PipelineBackEnd {
   void deletePipeline(UUID rootJobKey, boolean force, boolean async)
       throws IllegalStateException;
 
+  void cleanBlobs(String prefix);
+
+  void saveBlob(UUID rootJobKey, UUID ownerKey, byte[] value);
+
+  byte[] retrieveBlob(UUID rootJobKey, UUID ownerKey);
+
   /**
    * Immediately enqueues the given task in the app engine task queue. Note that
    * there is another way to enqueue a task, namely to register the task with
@@ -200,5 +208,7 @@ public interface PipelineBackEnd {
    * Returns the set of all root pipelines display name.
    */
   Set<String> getRootPipelinesDisplayName();
+
+  void shutdown();
 }
 

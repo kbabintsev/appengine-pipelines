@@ -14,8 +14,12 @@
 
 package com.google.appengine.tools.pipeline.impl.model;
 
-import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
+import com.google.appengine.tools.pipeline.impl.util.SerializationUtils;
+import com.google.cloud.Timestamp;
+import com.google.cloud.spanner.Mutation;
+import com.google.cloud.spanner.StructReader;
+import com.google.common.collect.ImmutableList;
 
 import java.io.IOException;
 import java.util.Date;
@@ -23,6 +27,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * A slot to be filled in with a value.
@@ -31,77 +36,90 @@ import java.util.UUID;
  */
 public class Slot extends PipelineModelObject {
 
-  public static final String DATA_STORE_KIND = "pipeline-slot";
+  public static final String DATA_STORE_KIND = "Slot";
   private static final String FILLED_PROPERTY = "filled";
-  private static final String VALUE_PROPERTY = "value";
   private static final String WAITING_ON_ME_PROPERTY = "waitingOnMe";
   private static final String FILL_TIME_PROPERTY = "fillTime";
   private static final String SOURCE_JOB_KEY_PROPERTY = "sourceJob";
+  public static final List<String> PROPERTIES = ImmutableList.<String>builder()
+          .addAll(BASE_PROPERTIES)
+          .add(
+                  FILLED_PROPERTY,
+                  WAITING_ON_ME_PROPERTY,
+                  FILL_TIME_PROPERTY,
+                  SOURCE_JOB_KEY_PROPERTY
+          )
+          .build();
 
   // persistent
   private boolean filled;
   private Date fillTime;
-  private Object value;
   private UUID sourceJobKey;
   private final List<UUID> waitingOnMeKeys;
 
   // transient
   private List<Barrier> waitingOnMeInflated;
-  private Object serializedVersion;
+  private Object value;
+  private boolean valueLoaded;
 
 
   public Slot(UUID rootJobKey, UUID generatorJobKey, String graphGUID) {
-    super(rootJobKey, generatorJobKey, graphGUID);
+    super(DATA_STORE_KIND, rootJobKey, generatorJobKey, graphGUID);
     waitingOnMeKeys = new LinkedList<>();
   }
 
-  public Slot(Entity entity) {
+  public Slot(StructReader entity) {
     this(entity, false);
   }
 
-  public Slot(Entity entity, boolean lazy) {
-    super(entity);
-    filled = (Boolean) entity.getProperty(FILLED_PROPERTY);
-    fillTime = (Date) entity.getProperty(FILL_TIME_PROPERTY);
-    sourceJobKey = (UUID) entity.getProperty(SOURCE_JOB_KEY_PROPERTY);
-    waitingOnMeKeys = getListProperty(WAITING_ON_ME_PROPERTY, entity);
+  public Slot(StructReader entity, boolean lazy) {
+    super(DATA_STORE_KIND, entity);
+    filled = !entity.isNull(FILL_TIME_PROPERTY)
+            && entity.getBoolean(FILLED_PROPERTY);
+    fillTime = entity.isNull(FILL_TIME_PROPERTY) ? null : entity.getTimestamp(FILL_TIME_PROPERTY).toDate();
+    sourceJobKey = entity.isNull(SOURCE_JOB_KEY_PROPERTY) ? null : UUID.fromString(entity.getString(SOURCE_JOB_KEY_PROPERTY));
+    waitingOnMeKeys = getUuidListProperty(WAITING_ON_ME_PROPERTY, entity).orElse(null);
     if (lazy) {
-      serializedVersion = entity.getProperty(VALUE_PROPERTY);
+      value = null;
+      valueLoaded = false;
     } else {
-      value = deserializeValue(entity.getProperty(VALUE_PROPERTY));
-    }
-  }
-
-  private Object deserializeValue(Object serializedValue) {
-    try {
-      return PipelineManager.getBackEnd().deserializeValue(this, serializedValue);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+      try {
+        value = SerializationUtils.deserialize(PipelineManager.getBackEnd().retrieveBlob(getRootJobKey(), getKey()));
+      } catch (IOException e) {
+        throw new RuntimeException("Can't deserialize value", e);
+      }
+      valueLoaded = true;
     }
   }
 
   @Override
-  public Entity toEntity() {
-    Entity entity = toProtoEntity();
-    entity.setUnindexedProperty(FILLED_PROPERTY, filled);
+  public PipelineMutation toEntity() {
+    PipelineMutation mutation = toProtoEntity();
+    final Mutation.WriteBuilder entity = mutation.getDatabaseMutation();
+    entity.set(FILLED_PROPERTY).to(filled);
     if (null != fillTime) {
-      entity.setUnindexedProperty(FILL_TIME_PROPERTY, fillTime);
+      entity.set(FILL_TIME_PROPERTY).to(Timestamp.of(fillTime));
     }
     if (null != sourceJobKey) {
-      entity.setProperty(SOURCE_JOB_KEY_PROPERTY, sourceJobKey);
+      entity.set(SOURCE_JOB_KEY_PROPERTY).to(sourceJobKey.toString());
     }
-    entity.setProperty(WAITING_ON_ME_PROPERTY, waitingOnMeKeys);
-    if (serializedVersion != null) {
-      entity.setUnindexedProperty(VALUE_PROPERTY, serializedVersion);
-    } else {
+    entity.set(WAITING_ON_ME_PROPERTY).toStringArray(
+            waitingOnMeKeys == null
+                    ? null
+                    : waitingOnMeKeys.stream().map(UUID::toString).collect(Collectors.toList())
+    );
+    if (value != null) {
       try {
-        entity.setUnindexedProperty(VALUE_PROPERTY,
-            PipelineManager.getBackEnd().serializeValue(this, value));
+        mutation.setBlobMutation(new PipelineMutation.BlobMutation(
+                getRootJobKey(),
+                getKey(),
+                SerializationUtils.serialize(value)
+        ));
       } catch (IOException e) {
-        throw new RuntimeException(e);
+        throw new RuntimeException("Can't serialize value", e);
       }
     }
-    return entity;
+    return mutation;
   }
 
   @Override
@@ -126,9 +144,13 @@ public class Slot extends PipelineModelObject {
   }
 
   public Object getValue() {
-    if (serializedVersion != null) {
-      value = deserializeValue(serializedVersion);
-      serializedVersion = null;
+    if (!valueLoaded) {
+      try {
+        value = SerializationUtils.deserialize(PipelineManager.getBackEnd().retrieveBlob(getRootJobKey(), getKey()));
+      } catch (IOException e) {
+        throw new RuntimeException("Can't deserialize value", e);
+      }
+      valueLoaded = true;
     }
     return value;
   }
@@ -151,7 +173,7 @@ public class Slot extends PipelineModelObject {
   public void fill(Object value) {
     filled = true;
     this.value = value;
-    serializedVersion = null;
+    this.valueLoaded = true;
     fillTime = new Date();
   }
 
@@ -168,7 +190,7 @@ public class Slot extends PipelineModelObject {
 
   @Override
   public String toString() {
-    return "Slot[" + getKeyName(getKey()) + ", value=" + (serializedVersion != null ? "..." : value)
+    return "Slot[" + getKeyName(getKey()) + ", value=" + (valueLoaded ? value : "...")
         + ", filled=" + filled + ", waitingOnMe=" + waitingOnMeKeys + ", parent="
         + getKeyName(getGeneratorJobKey()) + ", guid=" + getGraphGuid() + "]";
   }

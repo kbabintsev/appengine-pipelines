@@ -26,8 +26,8 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <source>1.7</source>
-          <target>1.7</target>
+          <source>8</source>
+          <target>8</target>
         </configuration>
       </plugin>
       <plugin>
@@ -132,6 +132,16 @@
        <artifactId>mockito-all</artifactId>
        <version>1.8.4</version>
        <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>google-cloud-spanner</artifactId>
+      <version>1.5.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.apis</groupId>
+      <artifactId>google-api-services-storage</artifactId>
+      <version>v1-rev139-1.25.0</version>
     </dependency>
   </dependencies>
 </project>
