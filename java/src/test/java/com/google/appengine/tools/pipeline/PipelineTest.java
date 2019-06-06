@@ -43,6 +43,7 @@ public class PipelineTest extends TestCase {
   private LocalTaskQueue taskQueue;
 
   public PipelineTest() {
+    System.setProperty("java.util.logging.config.file", ClassLoader.getSystemResource("logging.properties").getPath());
     LocalTaskQueueTestConfig taskQueueConfig = new LocalTaskQueueTestConfig();
     taskQueueConfig.setCallbackClass(TestingTaskQueueCallback.class);
     taskQueueConfig.setDisableAutoTaskExecution(false);
@@ -83,18 +84,23 @@ public class PipelineTest extends TestCase {
     apiProxyEnvironment = ApiProxy.getCurrentEnvironment();
     System.setProperty(USE_SIMPLE_GUIDS_FOR_DEBUGGING, "true");
     taskQueue = LocalTaskQueueTestConfig.getLocalTaskQueue();
+    cleanUp();
+  }
+
+  @Override
+  public void tearDown() throws Exception {
+    cleanUp();
+    helper.tearDown();
+    super.tearDown();
+  }
+
+  private void cleanUp() throws NoSuchObjectException {
     PipelineService service = PipelineServiceFactory.newPipelineService();
     service.cleanBobs(GUIDGenerator.getTestPrefix());
     final Set<UUID> testPipelines = service.getTestPipelines();
     for (UUID pipelineId : testPipelines) {
       service.deletePipelineRecords(pipelineId, true, false);
     }
-  }
-
-  @Override
-  public void tearDown() throws Exception {
-    helper.tearDown();
-    super.tearDown();
   }
 
   protected void waitUntilTaskQueueIsEmpty() throws InterruptedException {

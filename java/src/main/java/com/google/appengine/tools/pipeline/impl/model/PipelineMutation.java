@@ -29,17 +29,23 @@ public class PipelineMutation {
 
     public static class BlobMutation {
         private UUID rootJobKey;
+        private String type;
         private UUID key;
         private byte[] value;
 
-        public BlobMutation(final UUID rootJobKey, final UUID key, final byte[] value) {
+        public BlobMutation(final UUID rootJobKey, final String type, final UUID key, final byte[] value) {
             this.rootJobKey = rootJobKey;
+            this.type = type;
             this.key = key;
             this.value = value;
         }
 
         public UUID getRootJobKey() {
             return rootJobKey;
+        }
+
+        public String getType() {
+            return type;
         }
 
         public UUID getKey() {

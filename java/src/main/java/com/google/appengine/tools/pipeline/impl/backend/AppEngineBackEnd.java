@@ -171,7 +171,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
         MutationsAndBlobs allMutations = new MutationsAndBlobs();
         addAll(transactionSpec, allMutations, parentTransaction == null);
         for (PipelineMutation.BlobMutation blob : allMutations.getBlobs()) {
-            saveBlob(blob.getRootJobKey(), blob.getKey(), blob.getValue());
+            saveBlob(blob.getRootJobKey(), blob.getType(), blob.getKey(), blob.getValue());
         }
 
         if (parentTransaction != null) {
@@ -258,7 +258,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
                 if (objects == null || objects.getItems() == null || objects.getItems().isEmpty()) {
                     break;
                 }
-                logger.info("Deleting " + objects.getItems().size() + " blobs from prefix " + prefix);
+                logger.finest("Deleting " + objects.getItems().size() + " blobs from prefix " + prefix);
                 for (StorageObject object : objects.getItems()) {
                     storage.objects().delete(object.getBucket(), object.getName()).execute();
                 }
@@ -269,30 +269,38 @@ public class AppEngineBackEnd implements PipelineBackEnd {
     }
 
     @Override
-    public void saveBlob(UUID rootJobKey, UUID ownerKey, byte[] value) {
+    public void saveBlob(UUID rootJobKey, final String ownerType, UUID ownerKey, byte[] value) {
+        final String path = rootJobKey + "/" + ownerType + "-" + ownerKey + ".dat";
         try {
+            logger.finest("Saving blob " + path + " size of " + value.length + "...");
             storage.objects().insert(
                     Consts.BLOB_BUCKET_NAME,
                     new StorageObject()
                             .setBucket(Consts.BLOB_BUCKET_NAME)
-                            .setName(rootJobKey + "/" + ownerKey + ".dat"),
+                            .setName(path),
                     new ByteArrayContent("application/octet-stream", value)
             ).execute();
+            logger.finest("Saved blob " + path);
         } catch (IOException ex) {
             throw new RuntimeException("Can't save blob in Storage bucket", ex);
         }
     }
 
     @Override
-    public byte[] retrieveBlob(UUID rootJobKey, UUID ownerKey) {
+    public byte[] retrieveBlob(UUID rootJobKey, String ownerType, UUID ownerKey) {
+        final String path = rootJobKey + "/" + ownerType + "-" + ownerKey + ".dat";
         try {
+            logger.finest("Retrieving blob " + path + "...");
             final InputStream inputStream = storage.objects().get(
                     Consts.BLOB_BUCKET_NAME,
-                    rootJobKey + "/" + ownerKey + ".dat"
+                    path
             ).executeMediaAsInputStream();
-            return ByteStreams.toByteArray(inputStream);
+            final byte[] out = ByteStreams.toByteArray(inputStream);
+            logger.finest("Retrieved blob " + path + " size " + out.length);
+            return out;
         } catch (GoogleJsonResponseException ex) {
             if (ex.getStatusCode() == 404) {
+                logger.finest("Blob " + path + " returned 404 status");
                 return null;
             } else {
                 throw new RuntimeException("Can't retrieve blob from Storage bucket", ex);

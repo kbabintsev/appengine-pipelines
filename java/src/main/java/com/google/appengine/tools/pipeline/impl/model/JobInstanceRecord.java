@@ -31,7 +31,7 @@ import java.util.UUID;
  */
 public class JobInstanceRecord extends PipelineModelObject {
 
-  public static final String DATA_STORE_KIND = "JobInstanceRecord";
+  public static final String DATA_STORE_KIND = "JobInstance";
   private static final String JOB_KEY_PROPERTY = "jobKey";
   private static final String JOB_CLASS_NAME_PROPERTY = "jobClassName";
   public static final String JOB_DISPLAY_NAME_PROPERTY = "jobDisplayName";
@@ -76,7 +76,7 @@ public class JobInstanceRecord extends PipelineModelObject {
       jobDisplayName = jobClassName;
     }
 
-    value = PipelineManager.getBackEnd().retrieveBlob(getRootJobKey(), getKey());
+    value = PipelineManager.getBackEnd().retrieveBlob(getRootJobKey(), JobInstanceRecord.DATA_STORE_KIND, getKey());
   }
 
   @Override
@@ -86,7 +86,7 @@ public class JobInstanceRecord extends PipelineModelObject {
     entity.set(JOB_KEY_PROPERTY).to(jobKey.toString());
     entity.set(JOB_CLASS_NAME_PROPERTY).to(jobClassName);
     entity.set(JOB_DISPLAY_NAME_PROPERTY).to(jobDisplayName);
-    mutation.setBlobMutation(new PipelineMutation.BlobMutation(getRootJobKey(), getKey(), value));
+    mutation.setBlobMutation(new PipelineMutation.BlobMutation(getRootJobKey(), DATA_STORE_KIND, getKey(), value));
     return mutation;
   }
 
