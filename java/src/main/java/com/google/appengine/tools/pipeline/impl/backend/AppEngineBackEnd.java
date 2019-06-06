@@ -22,10 +22,10 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Objects;
 import com.google.api.services.storage.model.StorageObject;
-import com.google.appengine.api.datastore.DatastoreFailureException;
-import com.google.appengine.api.datastore.DatastoreTimeoutException;
-import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.tools.cloudstorage.ExceptionHandler;
+import com.google.appengine.tools.cloudstorage.NonRetriableException;
+import com.google.appengine.tools.cloudstorage.RetriesExhaustedException;
+import com.google.appengine.tools.cloudstorage.RetryHelper;
 import com.google.appengine.tools.cloudstorage.RetryParams;
 import com.google.appengine.tools.pipeline.Consts;
 import com.google.appengine.tools.pipeline.NoSuchObjectException;
@@ -69,7 +69,6 @@ import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -100,10 +99,15 @@ public class AppEngineBackEnd implements PipelineBackEnd {
             .retryMaxAttempts(5)
             .build();
 
-    private static final ExceptionHandler EXCEPTION_HANDLER = new ExceptionHandler.Builder().retryOn(
-            ConcurrentModificationException.class, DatastoreTimeoutException.class,
-            DatastoreFailureException.class)
-            .abortOn(EntityNotFoundException.class, NoSuchObjectException.class).build();
+//    private static final ExceptionHandler EXCEPTION_HANDLER = new ExceptionHandler.Builder().retryOn(
+//            ConcurrentModificationException.class, DatastoreTimeoutException.class,
+//            DatastoreFailureException.class)
+//            .abortOn(EntityNotFoundException.class, NoSuchObjectException.class).build();
+
+    private static final ExceptionHandler STORAGE_EXCEPTION_HANDLER = new ExceptionHandler.Builder()
+            .retryOn(IOException.class)
+            .abortOn(RuntimeException.class)
+            .build();
 
     private static final Logger logger = Logger.getLogger(AppEngineBackEnd.class.getName());
 
@@ -184,7 +188,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
         final Boolean out = databaseClient.readWriteTransaction().run(new TransactionRunner.TransactionCallable<Boolean>() {
             @Nullable
             @Override
-            public Boolean run(final TransactionContext transaction) throws Exception {
+            public Boolean run(final TransactionContext transaction) {
                 if (jobKey != null && expectedStates != null) {
                     Struct entity = transaction.readRow(JobRecord.DATA_STORE_KIND, Key.of(jobKey.toString()), ImmutableList.of(STATE_PROPERTY));
                     if (entity == null) {
@@ -224,7 +228,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
                 databaseClient.readWriteTransaction().run(new TransactionRunner.TransactionCallable<Void>() {
                     @Nullable
                     @Override
-                    public Void run(final TransactionContext transaction2) throws Exception {
+                    public Void run(final TransactionContext transaction2) {
                         transaction2.buffer(ImmutableList.of(ftRecord.toEntity().getDatabaseMutation().build()));
                         return null;
                     }
@@ -236,54 +240,64 @@ public class AppEngineBackEnd implements PipelineBackEnd {
         return out == null ? false : out;
     }
 
-//    private <R> R tryFiveTimes(final Operation<R> operation) {
-//        try {
-//            return RetryHelper.runWithRetries(operation, RETRY_PARAMS, EXCEPTION_HANDLER);
-//        } catch (RetriesExhaustedException | NonRetriableException e) {
-//            if (e.getCause() instanceof RuntimeException) {
-//                logger.info(e.getCause().getMessage() + " during " + operation.getName()
-//                        + " throwing after multiple attempts ");
-//                throw (RuntimeException) e.getCause();
-//            } else {
-//                throw e;
-//            }
-//        }
-//    }
+    private <R> R tryFiveTimes(final ExceptionHandler exceptionHandler, final Operation<R> operation) {
+        try {
+            return RetryHelper.runWithRetries(operation, RETRY_PARAMS, exceptionHandler);
+        } catch (RetriesExhaustedException | NonRetriableException e) {
+            if (e.getCause() instanceof RuntimeException) {
+                logger.info(e.getCause().getMessage() + " during " + operation.getName()
+                        + " throwing after multiple attempts ");
+                throw (RuntimeException) e.getCause();
+            } else {
+                throw e;
+            }
+        }
+    }
 
     @Override
     public void cleanBlobs(String prefix) {
-        try {
-            while (true) {
-                final Objects objects = storage.objects().list(Consts.BLOB_BUCKET_NAME).setPrefix(prefix).execute();
-                if (objects == null || objects.getItems() == null || objects.getItems().isEmpty()) {
-                    break;
+        while (true) {
+            final Objects objects = tryFiveTimes(STORAGE_EXCEPTION_HANDLER, new Operation<Objects>("storage.objects.list") {
+                @Override
+                public Objects call() throws IOException {
+                    return storage.objects().list(Consts.BLOB_BUCKET_NAME).setPrefix(prefix).execute();
                 }
-                logger.finest("Deleting " + objects.getItems().size() + " blobs from prefix " + prefix);
-                for (StorageObject object : objects.getItems()) {
-                    storage.objects().delete(object.getBucket(), object.getName()).execute();
-                }
+            });
+
+            if (objects == null || objects.getItems() == null || objects.getItems().isEmpty()) {
+                break;
             }
-        } catch (IOException ex) {
-            throw new RuntimeException("Can't clean blobs in Storage bucket", ex);
+            logger.finest("Deleting " + objects.getItems().size() + " blobs from prefix " + prefix);
+            for (final StorageObject object : objects.getItems()) {
+                tryFiveTimes(STORAGE_EXCEPTION_HANDLER, new Operation<Void>("storage.objects.delete") {
+                    @Override
+                    public Void call() throws IOException {
+                        storage.objects().delete(object.getBucket(), object.getName()).execute();
+                        return null;
+                    }
+                });
+            }
         }
     }
 
     @Override
     public void saveBlob(UUID rootJobKey, final String ownerType, UUID ownerKey, byte[] value) {
         final String path = rootJobKey + "/" + ownerType + "-" + ownerKey + ".dat";
-        try {
-            logger.finest("Saving blob " + path + " size of " + value.length + "...");
-            storage.objects().insert(
-                    Consts.BLOB_BUCKET_NAME,
-                    new StorageObject()
-                            .setBucket(Consts.BLOB_BUCKET_NAME)
-                            .setName(path),
-                    new ByteArrayContent("application/octet-stream", value)
-            ).execute();
-            logger.finest("Saved blob " + path);
-        } catch (IOException ex) {
-            throw new RuntimeException("Can't save blob in Storage bucket", ex);
-        }
+        logger.finest("Saving blob " + path + " size of " + value.length + "...");
+        tryFiveTimes(STORAGE_EXCEPTION_HANDLER, new Operation<Void>("storage.objects.insert") {
+            @Override
+            public Void call() throws IOException {
+                storage.objects().insert(
+                        Consts.BLOB_BUCKET_NAME,
+                        new StorageObject()
+                                .setBucket(Consts.BLOB_BUCKET_NAME)
+                                .setName(path),
+                        new ByteArrayContent("application/octet-stream", value)
+                ).execute();
+                logger.finest("Saved blob " + path);
+                return null;
+            }
+        });
     }
 
     @Override
@@ -291,10 +305,15 @@ public class AppEngineBackEnd implements PipelineBackEnd {
         final String path = rootJobKey + "/" + ownerType + "-" + ownerKey + ".dat";
         try {
             logger.finest("Retrieving blob " + path + "...");
-            final InputStream inputStream = storage.objects().get(
-                    Consts.BLOB_BUCKET_NAME,
-                    path
-            ).executeMediaAsInputStream();
+            final InputStream inputStream = tryFiveTimes(STORAGE_EXCEPTION_HANDLER, new Operation<InputStream>("storage.objects.get") {
+                @Override
+                public InputStream call() throws IOException {
+                    return storage.objects().get(
+                            Consts.BLOB_BUCKET_NAME,
+                            path
+                    ).executeMediaAsInputStream();
+                }
+            });
             final byte[] out = ByteStreams.toByteArray(inputStream);
             logger.finest("Retrieved blob " + path + " size " + out.length);
             return out;
@@ -525,15 +544,19 @@ public class AppEngineBackEnd implements PipelineBackEnd {
     public Pair<? extends Iterable<JobRecord>, String> queryRootPipelines(String classFilter,
                                                                           String cursor, final int limit) {
         final Statement.Builder builder = Statement.newBuilder(
-                "SELECT DISTINCT " + String.join(", ", JobRecord.PROPERTIES) + " "
+                "SELECT " + String.join(", ", JobRecord.PROPERTIES) + " "
                         + "FROM " + JobRecord.DATA_STORE_KIND + " "
                         + "WHERE "
         );
         if (classFilter == null) {
-            builder.append(ROOT_JOB_KEY_PROPERTY + " != null ");
+            builder.append(ROOT_JOB_DISPLAY_NAME + " IS NOT null ");
         } else {
             builder.append(ROOT_JOB_DISPLAY_NAME + " = @classFilter ")
                     .bind("classFilter").to(classFilter);
+        }
+        if (GUIDGenerator.isTest()) {
+            builder.append("AND " + ROOT_JOB_KEY_PROPERTY + " LIKE @prefix ")
+                    .bind("prefix").to(GUIDGenerator.getTestPrefix() + "%");
         }
         builder.append("ORDER BY " + ROOT_JOB_DISPLAY_NAME + " ");
         // limit not set
@@ -554,13 +577,18 @@ public class AppEngineBackEnd implements PipelineBackEnd {
     @Override
     public Set<String> getRootPipelinesDisplayName() {
         Set<String> pipelines = new LinkedHashSet<>();
-        try (ResultSet rs = databaseClient.singleUse().executeQuery(
-                Statement.newBuilder(
-                        "SELECT DISTINCT " + JobRecord.ROOT_JOB_DISPLAY_NAME + " "
-                                + "FROM " + JobRecord.DATA_STORE_KIND + " "
-                                + "ORDER BY " + JobRecord.ROOT_JOB_DISPLAY_NAME
-                ).build()
-        )) {
+        final Statement.Builder builder = Statement.newBuilder(
+                "SELECT DISTINCT " + ROOT_JOB_DISPLAY_NAME + " "
+                        + "FROM " + JobRecord.DATA_STORE_KIND + " "
+                        + "WHERE " + ROOT_JOB_DISPLAY_NAME + " IS NOT null "
+
+        );
+        if (GUIDGenerator.isTest()) {
+            builder.append("AND " + ROOT_JOB_KEY_PROPERTY + " LIKE @prefix ")
+                    .bind("prefix").to(GUIDGenerator.getTestPrefix() + "%");
+        }
+        builder.append("ORDER BY " + ROOT_JOB_DISPLAY_NAME);
+        try (ResultSet rs = databaseClient.singleUse().executeQuery(builder.build())) {
             {
                 while (rs.next()) {
                     pipelines.add(rs.getString(JobRecord.ROOT_JOB_DISPLAY_NAME));
@@ -578,8 +606,8 @@ public class AppEngineBackEnd implements PipelineBackEnd {
                 Statement.newBuilder(
                         "SELECT DISTINCT " + JobRecord.ROOT_JOB_KEY_PROPERTY + " "
                                 + "FROM " + JobRecord.DATA_STORE_KIND + " "
-                                + "WHERE " + JobRecord.ROOT_JOB_KEY_PROPERTY + " LIKE '" + prefix + "%'"
-                ).build()
+                                + "WHERE " + JobRecord.ROOT_JOB_KEY_PROPERTY + " LIKE @prefix"
+                ).bind("prefix").to(prefix + "%").build()
         )) {
             {
                 while (rs.next()) {
@@ -623,7 +651,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
         databaseClient.readWriteTransaction().run(new TransactionRunner.TransactionCallable<Void>() {
             @Nullable
             @Override
-            public Void run(final TransactionContext transaction) throws Exception {
+            public Void run(final TransactionContext transaction) {
                 final long deleted = transaction.executeUpdate(
                         Statement.newBuilder("DELETE FROM " + tableName + " WHERE " + ROOT_JOB_KEY_PROPERTY + " = @rootJobKey")
                                 .bind("rootJobKey").to(rootJobKey.toString())

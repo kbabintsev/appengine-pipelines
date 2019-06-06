@@ -36,6 +36,7 @@ import static com.google.appengine.tools.pipeline.impl.util.GUIDGenerator.USE_SI
  */
 public class RetryTest extends TestCase {
 
+  public static final int ACCEPTABLE_LAG_SECONDS = 5;
   private LocalServiceTestHelper helper;
 
   public RetryTest() {
@@ -91,7 +92,7 @@ public class RetryTest extends TestCase {
     PipelineService service = PipelineServiceFactory.newPipelineService();
     UUID pipelineId = runJob(1, 4, 10, succeedTheLastTime);
     // Wait for framework to save Job information
-    Thread.sleep(1000L);
+    Thread.sleep(1000L + ACCEPTABLE_LAG_SECONDS * 1000);
     JobInfo jobInfo = service.getJobInfo(pipelineId);
     JobInfo.State expectedState =
         (succeedTheLastTime ? JobInfo.State.COMPLETED_SUCCESSFULLY
@@ -106,7 +107,7 @@ public class RetryTest extends TestCase {
 
     UUID pipelineId = service.startNewPipeline(
         new InvokesFailureJob(succeedTheLastTime, maxAttempts, backoffFactor));
-    assertTrue(countdownLatch.await(awaitSeconds, TimeUnit.SECONDS));
+    assertTrue(countdownLatch.await(awaitSeconds + ACCEPTABLE_LAG_SECONDS, TimeUnit.SECONDS));
     return pipelineId;
   }
 

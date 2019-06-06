@@ -10,6 +10,7 @@ import com.google.apphosting.api.ApiProxy;
 
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
 
 import static com.google.appengine.tools.pipeline.impl.util.TestUtils.getFailureProperty;
 
@@ -19,6 +20,9 @@ import static com.google.appengine.tools.pipeline.impl.util.TestUtils.getFailure
  * @author rudominer@google.com (Mitch Rudominer)
  */
 public class OrphanedJobGraphTest extends PipelineTest {
+
+  private static final Logger logger = Logger.getLogger(PipelineManager.class.getName());
+  public static final int SUPPLY_VALUE_DELAY = 7000;
 
   @Override
   protected boolean isHrdSafe() {
@@ -82,6 +86,9 @@ public class OrphanedJobGraphTest extends PipelineTest {
     PipelineService service = PipelineServiceFactory.newPipelineService();
     UUID pipelineHandle = service.startNewPipeline(new GeneratorJob(usePromisedValue));
     waitForJobToComplete(pipelineHandle);
+
+    // and wait for thread to finish too
+    Thread.sleep(SUPPLY_VALUE_DELAY);
 
     // The GeneratorJob run() should have failed twice just before the final
     // transaction and succeeded a third time
@@ -178,7 +185,8 @@ public class OrphanedJobGraphTest extends PipelineTest {
       if (usePromise) {
         PromisedValue<Integer> promisedValue = newPromise();
         (new Thread(new SupplyPromisedValueRunnable(ApiProxy.getCurrentEnvironment(),
-            promisedValue.getHandle()))).start();
+                promisedValue.getHandle(), runCount.get()))).start();
+        logger.info("Starting SupplyPromisedValueRunnable for run " + runCount);
         dummyValue = promisedValue;
       } else {
         dummyValue = immediate(0);
@@ -211,11 +219,13 @@ public class OrphanedJobGraphTest extends PipelineTest {
 
     private UUID promiseHandle;
     private ApiProxy.Environment apiProxyEnvironment;
+    private int runNum;
     public static AtomicInteger orphanedObjectExcetionCount = new AtomicInteger(0);
 
-    public SupplyPromisedValueRunnable(ApiProxy.Environment environment, UUID promiseHandle) {
+    public SupplyPromisedValueRunnable(ApiProxy.Environment environment, UUID promiseHandle, int runNum) {
       this.promiseHandle = promiseHandle;
       this.apiProxyEnvironment = environment;
+      this.runNum = runNum;
     }
 
     @Override
@@ -224,17 +234,20 @@ public class OrphanedJobGraphTest extends PipelineTest {
       ApiProxy.setEnvironmentForCurrentThread(apiProxyEnvironment);
       // TODO(user): Try something better than sleep to make sure
       // this happens after the processing the caller's runTask
+      logger.info("SupplyPromisedValueRunnable for run " + runNum + " and handle " + promiseHandle + " going asleep");
       try {
-        Thread.sleep(1000);
+        Thread.sleep(SUPPLY_VALUE_DELAY);
       } catch (InterruptedException e1) {
         // ignore - use uninterruptables
       }
+      logger.info("SupplyPromisedValueRunnable for run " + runNum + " and handle " + promiseHandle + " awake");
       try {
         service.submitPromisedValue(promiseHandle, 0);
       } catch (NoSuchObjectException e) {
         throw new RuntimeException(e);
       } catch (OrphanedObjectException f) {
         orphanedObjectExcetionCount.incrementAndGet();
+        logger.info("SupplyPromisedValueRunnable for run " + runNum + " and handle " + promiseHandle + " gon OrphanedObjectException");
       }
     }
   }

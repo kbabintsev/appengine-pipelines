@@ -42,6 +42,10 @@ public class GUIDGenerator {
   public static final String USE_SIMPLE_GUIDS_FOR_DEBUGGING =
       "com.google.appengine.api.pipeline.use-simple-guids-for-debugging";
 
+  public static boolean isTest() {
+    return Boolean.getBoolean(USE_SIMPLE_GUIDS_FOR_DEBUGGING);
+  }
+
   public static synchronized UUID nextGUID() {
     if (Boolean.getBoolean(USE_SIMPLE_GUIDS_FOR_DEBUGGING)) {
       return UUID.fromString(getTestPrefix() + "0000-0000-" + String.format("%012d", counter.getAndIncrement()));

@@ -85,7 +85,7 @@ public class GCDTest extends PipelineTest {
     };
     PipelineService service = PipelineServiceFactory.newPipelineService();
     UUID pipelineId = service.startNewPipeline(new PrintGCDJob());
-    assertTrue(latch.await(3, TimeUnit.MINUTES));
+    assertTrue(latch.await(6, TimeUnit.MINUTES));
     assertEquals(expectedMessage, builder.toString());
     // Wait for job task thread to complete
     Thread.sleep(2000);
