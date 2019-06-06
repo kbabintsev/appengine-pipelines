@@ -1,7 +1,6 @@
 package com.google.appengine.tools.pipeline.impl.backend;
 
 import com.google.appengine.api.taskqueue.TaskHandle;
-import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalModulesServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.appengine.tools.development.testing.LocalTaskQueueTestConfig;
@@ -29,8 +28,7 @@ public class AppEngineTaskQueueTest extends TestCase {
     LocalTaskQueueTestConfig taskQueueConfig = new LocalTaskQueueTestConfig();
     taskQueueConfig.setDisableAutoTaskExecution(true);
     taskQueueConfig.setShouldCopyApiProxyEnvironment(true);
-    helper = new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig(), taskQueueConfig,
-        new LocalModulesServiceTestConfig());
+    helper = new LocalServiceTestHelper(taskQueueConfig, new LocalModulesServiceTestConfig());
     helper.setUp();
   }
 
