@@ -15,14 +15,13 @@
 package com.google.appengine.tools.pipeline.impl.servlets;
 
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
+import com.google.appengine.tools.pipeline.impl.util.JsonUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Set;
-
-import static com.google.appengine.tools.pipeline.impl.util.JsonUtils.mapToJson;
-import static java.util.Collections.singletonMap;
 
 /**
  * @author rudominer@google.com (Mitch Rudominer)
@@ -37,6 +36,6 @@ public final class JsonClassFilterHandler {
     public static void doGet(@SuppressWarnings("unused") final HttpServletRequest req,
                              final HttpServletResponse resp) throws IOException {
         final Set<String> pipelines = PipelineManager.getRootPipelinesDisplayName();
-        resp.getWriter().write(mapToJson(singletonMap("classPaths", pipelines)));
+        resp.getWriter().write(JsonUtils.mapToJson(Collections.singletonMap("classPaths", pipelines)));
     }
 }

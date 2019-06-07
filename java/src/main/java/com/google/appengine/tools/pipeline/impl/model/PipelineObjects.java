@@ -54,17 +54,18 @@ public final class PipelineObjects {
                 this.rootJob = job;
             }
         }
-        for (Iterator<JobRecord> iter = jobs.values().iterator(); iter.hasNext(); ) {
-            final JobRecord job = iter.next();
+        final Iterator<JobRecord> jobIterator = jobs.values().iterator();
+        while (jobIterator.hasNext()) {
+            final JobRecord job = jobIterator.next();
             if (job != rootJob) {
                 final UUID parentKey = job.getGeneratorJobKey();
                 final String graphGuid = job.getGraphGuid();
                 if (parentKey == null || graphGuid == null) {
                     LOGGER.info("Ignoring a non root job with no parent or graphGuid -> " + job);
-                    iter.remove();
+                    jobIterator.remove();
                 } else if (!graphGuid.equals(jobToChildGuid.get(parentKey))) {
                     LOGGER.info("Ignoring an orphand job " + job + ", parent: " + jobs.get(parentKey));
-                    iter.remove();
+                    jobIterator.remove();
                 }
             }
         }
@@ -72,8 +73,9 @@ public final class PipelineObjects {
             throw new IllegalArgumentException(
                     "None of the jobs were the root job with key " + rootJobKey);
         }
-        for (Iterator<Slot> iter = slots.values().iterator(); iter.hasNext(); ) {
-            final Slot slot = iter.next();
+        final Iterator<Slot> slotIterator = slots.values().iterator();
+        while (slotIterator.hasNext()) {
+            final Slot slot = slotIterator.next();
             final UUID parentKey = slot.getGeneratorJobKey();
             final String parentGuid = slot.getGraphGuid();
             if (parentKey == null && parentGuid == null
@@ -81,11 +83,12 @@ public final class PipelineObjects {
                 slot.inflate(barriers);
             } else {
                 LOGGER.info("Ignoring an orphand slot " + slot + ", parent: " + jobs.get(parentKey));
-                iter.remove();
+                slotIterator.remove();
             }
         }
-        for (Iterator<Barrier> iter = barriers.values().iterator(); iter.hasNext(); ) {
-            final Barrier barrier = iter.next();
+        final Iterator<Barrier> barriersIterator = barriers.values().iterator();
+        while (barriersIterator.hasNext()) {
+            final Barrier barrier = barriersIterator.next();
             final UUID parentKey = barrier.getGeneratorJobKey();
             final String parentGuid = barrier.getGraphGuid();
             if (parentKey == null && parentGuid == null
@@ -93,7 +96,7 @@ public final class PipelineObjects {
                 barrier.inflate(slots);
             } else {
                 LOGGER.info("Ignoring an orphand Barrier " + barrier + ", parent: " + jobs.get(parentKey));
-                iter.remove();
+                barriersIterator.remove();
             }
         }
         for (final JobRecord jobRec : jobs.values()) {

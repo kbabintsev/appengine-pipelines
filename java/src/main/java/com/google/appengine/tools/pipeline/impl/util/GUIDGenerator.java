@@ -33,8 +33,8 @@ public final class GUIDGenerator {
     public static final String USE_SIMPLE_GUIDS_FOR_DEBUGGING =
             "com.google.appengine.api.pipeline.use-simple-guids-for-debugging";
     private static final String TEST_PREFIX = "00000000";
-    private static AtomicInteger counter = new AtomicInteger();
     private static final int PART_0000 = 10000;
+    private static AtomicInteger counter = new AtomicInteger();
     private static int runId = (int) (Math.random() * PART_0000);
 
     private GUIDGenerator() {

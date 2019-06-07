@@ -220,8 +220,9 @@ public abstract class PipelineModelObject {
         return Optional.of(entity.getStringList(propertyName).stream().map(UUID::fromString).collect(Collectors.toList()));
     }
 
+    @SuppressWarnings("unchecked")
     protected static <E> List<E> getListProperty(final String propertyName, final Entity entity) {
-        @SuppressWarnings("unchecked") final List<E> list = (List<E>) entity.getProperty(propertyName);
+        final List<E> list = (List<E>) entity.getProperty(propertyName);
         return list == null ? new LinkedList<E>() : list;
     }
 

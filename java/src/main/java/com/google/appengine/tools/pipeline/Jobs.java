@@ -30,9 +30,6 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.google.appengine.tools.pipeline.Job.immediate;
-import static com.google.appengine.tools.pipeline.Job.waitFor;
-
 /**
  * A collection of common jobs and utilities.
  *
@@ -48,7 +45,7 @@ public final class Jobs {
         final JobSetting.WaitForSetting[] settings = new JobSetting.WaitForSetting[values.length];
         int i = 0;
         for (final Value<?> value : values) {
-            settings[i++] = waitFor(value);
+            settings[i++] = Job.waitFor(value);
         }
         return settings;
     }
@@ -58,7 +55,7 @@ public final class Jobs {
     }
 
     public static <T> Value<T> waitForAll(final Job<?> caller, final T value, final Value<?>... values) {
-        return caller.futureCall(new WaitForAllJob<T>(), immediate(value),
+        return caller.futureCall(new WaitForAllJob<T>(), Job.immediate(value),
                 createWaitForSettingArray(values));
     }
 
@@ -71,7 +68,7 @@ public final class Jobs {
 
     public static <T> Value<T> waitForAllAndDelete(final Job<?> caller, final T value, final Value<?>... values) {
         return caller.futureCall(new DeletePipelineJob<T>(caller.getPipelineKey()),
-                immediate(value), createWaitForSettingArray(values));
+                Job.immediate(value), createWaitForSettingArray(values));
     }
 
     /**

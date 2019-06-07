@@ -44,6 +44,7 @@ import com.google.appengine.tools.pipeline.impl.tasks.FanoutTask;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
 import com.google.appengine.tools.pipeline.impl.util.GUIDGenerator;
 import com.google.appengine.tools.pipeline.impl.util.SerializationUtils;
+import com.google.appengine.tools.pipeline.impl.util.TestUtils;
 import com.google.appengine.tools.pipeline.util.Pair;
 import com.google.cloud.spanner.DatabaseClient;
 import com.google.cloud.spanner.DatabaseId;
@@ -80,11 +81,6 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
-
-import static com.google.appengine.tools.pipeline.impl.model.JobRecord.ROOT_JOB_DISPLAY_NAME;
-import static com.google.appengine.tools.pipeline.impl.model.JobRecord.STATE_PROPERTY;
-import static com.google.appengine.tools.pipeline.impl.model.PipelineModelObject.ROOT_JOB_KEY_PROPERTY;
-import static com.google.appengine.tools.pipeline.impl.util.TestUtils.throwHereForTesting;
 
 /**
  * @author rudominer@google.com (Mitch Rudominer)
@@ -190,12 +186,12 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
             @Override
             public Boolean run(final TransactionContext transaction) {
                 if (jobKey != null && expectedStates != null) {
-                    final Struct entity = transaction.readRow(JobRecord.DATA_STORE_KIND, Key.of(jobKey.toString()), ImmutableList.of(STATE_PROPERTY));
+                    final Struct entity = transaction.readRow(JobRecord.DATA_STORE_KIND, Key.of(jobKey.toString()), ImmutableList.of(JobRecord.STATE_PROPERTY));
                     if (entity == null) {
                         throw new RuntimeException(
                                 "Fatal Pipeline corruption error. No JobRecord found with key = " + jobKey);
                     }
-                    final JobRecord.State state = JobRecord.State.valueOf(entity.getString(STATE_PROPERTY));
+                    final JobRecord.State state = JobRecord.State.valueOf(entity.getString(JobRecord.STATE_PROPERTY));
                     boolean stateIsExpected = false;
                     for (final JobRecord.State expectedState : expectedStates) {
                         if (state == expectedState) {
@@ -348,7 +344,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
         // TODO(user): Replace this with plug-able hooks that could be used by tests,
         // if needed could be restricted to package-scoped tests.
         // If a unit test requests us to do so, fail here.
-        throwHereForTesting("AppEngineBackeEnd.saveWithJobStateCheck.beforeFinalTransaction");
+        TestUtils.throwHereForTesting("AppEngineBackeEnd.saveWithJobStateCheck.beforeFinalTransaction");
         //tryFiveTimes was here
         final boolean wasSaved = transactionallySaveAll(
                 updateSpec.getFinalTransaction(), queueSettings, updateSpec.getRootJobKey(), jobKey, expectedStates);
@@ -529,7 +525,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
                 Statement.newBuilder(
                         "SELECT " + String.join(", ", columns) + " "
                                 + "FROM " + tableName + " "
-                                + "WHERE " + ROOT_JOB_KEY_PROPERTY + " = @rootJobKey"
+                                + "WHERE " + PipelineModelObject.ROOT_JOB_KEY_PROPERTY + " = @rootJobKey"
                 ).bind("rootJobKey").to(rootJobKey.toString()).build()
         )) {
             {
@@ -549,16 +545,16 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
                         + "WHERE "
         );
         if (classFilter == null) {
-            builder.append(ROOT_JOB_DISPLAY_NAME + " IS NOT null ");
+            builder.append(JobRecord.ROOT_JOB_DISPLAY_NAME + " IS NOT null ");
         } else {
-            builder.append(ROOT_JOB_DISPLAY_NAME + " = @classFilter ")
+            builder.append(JobRecord.ROOT_JOB_DISPLAY_NAME + " = @classFilter ")
                     .bind("classFilter").to(classFilter);
         }
         if (GUIDGenerator.isTest()) {
-            builder.append("AND " + ROOT_JOB_KEY_PROPERTY + " LIKE @prefix ")
+            builder.append("AND " + JobRecord.ROOT_JOB_KEY_PROPERTY + " LIKE @prefix ")
                     .bind("prefix").to(GUIDGenerator.getTestPrefix() + "%");
         }
-        builder.append("ORDER BY " + ROOT_JOB_DISPLAY_NAME + " ");
+        builder.append("ORDER BY " + JobRecord.ROOT_JOB_DISPLAY_NAME + " ");
         // limit not set
         // cursor not used
         final List<JobRecord> roots = new LinkedList<>();
@@ -578,16 +574,16 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
     public Set<String> getRootPipelinesDisplayName() {
         final Set<String> pipelines = new LinkedHashSet<>();
         final Statement.Builder builder = Statement.newBuilder(
-                "SELECT DISTINCT " + ROOT_JOB_DISPLAY_NAME + " "
+                "SELECT DISTINCT " + JobRecord.ROOT_JOB_DISPLAY_NAME + " "
                         + "FROM " + JobRecord.DATA_STORE_KIND + " "
-                        + "WHERE " + ROOT_JOB_DISPLAY_NAME + " IS NOT null "
+                        + "WHERE " + JobRecord.ROOT_JOB_DISPLAY_NAME + " IS NOT null "
 
         );
         if (GUIDGenerator.isTest()) {
-            builder.append("AND " + ROOT_JOB_KEY_PROPERTY + " LIKE @prefix ")
+            builder.append("AND " + JobRecord.ROOT_JOB_KEY_PROPERTY + " LIKE @prefix ")
                     .bind("prefix").to(GUIDGenerator.getTestPrefix() + "%");
         }
-        builder.append("ORDER BY " + ROOT_JOB_DISPLAY_NAME);
+        builder.append("ORDER BY " + JobRecord.ROOT_JOB_DISPLAY_NAME);
         try (ResultSet rs = databaseClient.singleUse().executeQuery(builder.build())) {
             {
                 while (rs.next()) {
@@ -653,7 +649,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
             @Override
             public Void run(final TransactionContext transaction) {
                 final long deleted = transaction.executeUpdate(
-                        Statement.newBuilder("DELETE FROM " + tableName + " WHERE " + ROOT_JOB_KEY_PROPERTY + " = @rootJobKey")
+                        Statement.newBuilder("DELETE FROM " + tableName + " WHERE " + PipelineModelObject.ROOT_JOB_KEY_PROPERTY + " = @rootJobKey")
                                 .bind("rootJobKey").to(rootJobKey.toString())
                                 .build()
                 );

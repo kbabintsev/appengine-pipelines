@@ -16,14 +16,13 @@ package com.google.appengine.tools.pipeline.impl.tasks;
 
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 import com.google.appengine.tools.pipeline.impl.util.GUIDGenerator;
+import com.google.appengine.tools.pipeline.impl.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
-
-import static com.google.appengine.tools.pipeline.impl.util.StringUtils.UTF_8;
 
 /**
  * A Task that represent a set of other tasks.
@@ -92,7 +91,7 @@ public final class FanoutTask extends Task {
             builder.append(TASK_SEPERATOR);
         }
         builder.setLength(builder.length() - TASK_SEPERATOR.length());
-        return builder.toString().getBytes(UTF_8);
+        return builder.toString().getBytes(StringUtils.UTF_8);
     }
 
     private static void encodeTask(final StringBuilder builder, final Task task) {
@@ -111,7 +110,7 @@ public final class FanoutTask extends Task {
     }
 
     public static List<Task> decodeTasks(final byte[] encodedBytes) {
-        final String encodedListOfTasks = new String(encodedBytes, UTF_8);
+        final String encodedListOfTasks = new String(encodedBytes, StringUtils.UTF_8);
         final String[] encodedTaskArray = encodedListOfTasks.split(TASK_SEPERATOR);
         final List<Task> listOfTasks = new ArrayList<>(encodedTaskArray.length);
         for (final String encodedTask : encodedTaskArray) {

@@ -584,7 +584,7 @@ public final class PipelineManager {
             do {
                 try {
                     runMethod = klass.getMethod(
-                            JobRecord.EXCEPTION_HANDLER_METHOD_NAME, new Class<?>[]{exceptionClass});
+                            JobRecord.EXCEPTION_HANDLER_METHOD_NAME, exceptionClass);
                     break;
                 } catch (NoSuchMethodException ignore) {
                     // Ignore, try parent instead.
