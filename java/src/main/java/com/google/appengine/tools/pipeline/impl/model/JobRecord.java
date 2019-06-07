@@ -14,10 +14,6 @@
 
 package com.google.appengine.tools.pipeline.impl.model;
 
-import com.google.appengine.api.backends.BackendService;
-import com.google.appengine.api.backends.BackendServiceFactory;
-import com.google.appengine.api.modules.ModulesService;
-import com.google.appengine.api.modules.ModulesServiceFactory;
 import com.google.appengine.tools.pipeline.Job;
 import com.google.appengine.tools.pipeline.JobInfo;
 import com.google.appengine.tools.pipeline.JobSetting;
@@ -25,19 +21,21 @@ import com.google.appengine.tools.pipeline.JobSetting.BackoffFactor;
 import com.google.appengine.tools.pipeline.JobSetting.BackoffSeconds;
 import com.google.appengine.tools.pipeline.JobSetting.IntValuedSetting;
 import com.google.appengine.tools.pipeline.JobSetting.MaxAttempts;
-import com.google.appengine.tools.pipeline.JobSetting.OnBackend;
-import com.google.appengine.tools.pipeline.JobSetting.OnModule;
-import com.google.appengine.tools.pipeline.JobSetting.OnQueue;
+import com.google.appengine.tools.pipeline.JobSetting.Routing;
 import com.google.appengine.tools.pipeline.JobSetting.StatusConsoleUrl;
 import com.google.appengine.tools.pipeline.JobSetting.WaitForSetting;
+import com.google.appengine.tools.pipeline.Route;
 import com.google.appengine.tools.pipeline.impl.FutureValueImpl;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
+import com.google.appengine.tools.pipeline.impl.util.JsonUtils;
+import com.google.appengine.tools.pipeline.impl.util.ServiceUtils;
 import com.google.appengine.tools.pipeline.impl.util.StringUtils;
 import com.google.cloud.Timestamp;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.StructReader;
 import com.google.common.collect.ImmutableList;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.HashMap;
@@ -79,10 +77,8 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
     private static final String MAX_ATTEMPTS_PROPERTY = "maxAttempts";
     private static final String BACKOFF_SECONDS_PROPERTY = "backoffSeconds";
     private static final String BACKOFF_FACTOR_PROPERTY = "backoffFactor";
-    private static final String ON_BACKEND_PROPERTY = "onBackend";
-    private static final String ON_MODULE_PROPERTY = "onModule";
     private static final String ON_QUEUE_PROPERTY = "onQueue";
-    private static final String MODULE_VERSION_PROPERTY = "moduleVersion";
+    private static final String ROUTE_PROPERY = "route";
     private static final String CHILD_GRAPH_GUID_PROPERTY = "childGraphGuid";
     private static final String STATUS_CONSOLE_URL = "statusConsoleUrl";
     public static final List<String> PROPERTIES = ImmutableList.<String>builder()
@@ -107,10 +103,8 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
                     MAX_ATTEMPTS_PROPERTY,
                     BACKOFF_SECONDS_PROPERTY,
                     BACKOFF_FACTOR_PROPERTY,
-                    ON_BACKEND_PROPERTY,
-                    ON_MODULE_PROPERTY,
                     ON_QUEUE_PROPERTY,
-                    MODULE_VERSION_PROPERTY,
+                    ROUTE_PROPERY,
                     CHILD_GRAPH_GUID_PROPERTY,
                     STATUS_CONSOLE_URL,
                     ROOT_JOB_DISPLAY_NAME
@@ -195,9 +189,11 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
         maxAttempts = entity.getLong(MAX_ATTEMPTS_PROPERTY);
         backoffSeconds = entity.getLong(BACKOFF_SECONDS_PROPERTY);
         backoffFactor = entity.getLong(BACKOFF_FACTOR_PROPERTY);
-        queueSettings.setOnBackend(entity.isNull(ON_BACKEND_PROPERTY) ? null : entity.getString(ON_BACKEND_PROPERTY));
-        queueSettings.setOnModule(entity.isNull(ON_MODULE_PROPERTY) ? null : entity.getString(ON_MODULE_PROPERTY));
-        queueSettings.setModuleVersion(entity.isNull(MODULE_VERSION_PROPERTY) ? null : entity.getString(MODULE_VERSION_PROPERTY));
+        try {
+            queueSettings.setRoute(entity.isNull(ROUTE_PROPERY) ? null : JsonUtils.desertialize(entity.getString(ROUTE_PROPERY), Route.class));
+        } catch (IOException e) {
+            throw new RuntimeException("Can't parse '" + ROUTE_PROPERY + "'", e);
+        }
         queueSettings.setOnQueue(entity.isNull(ON_QUEUE_PROPERTY) ? null : entity.getString(ON_QUEUE_PROPERTY));
         statusConsoleUrl = entity.isNull(STATUS_CONSOLE_URL)
                 ? null
@@ -274,25 +270,12 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
         if (parentQueueSettings != null) {
             queueSettings.merge(parentQueueSettings);
         }
-        if (queueSettings.getOnBackend() == null) {
-            final String module = queueSettings.getOnModule();
-            if (module == null) {
-                final String currentBackend = getCurrentBackend();
-                if (currentBackend != null) {
-                    queueSettings.setOnBackend(currentBackend);
-                } else {
-                    final ModulesService modulesService = ModulesServiceFactory.getModulesService();
-                    queueSettings.setOnModule(modulesService.getCurrentModule());
-                    queueSettings.setModuleVersion(modulesService.getCurrentVersion());
-                }
-            } else {
-                final ModulesService modulesService = ModulesServiceFactory.getModulesService();
-                if (module.equals(modulesService.getCurrentModule())) {
-                    queueSettings.setModuleVersion(modulesService.getCurrentVersion());
-                } else {
-                    queueSettings.setModuleVersion(modulesService.getDefaultVersion(module));
-                }
-            }
+        if (queueSettings.getRoute() == null) {
+            queueSettings.setRoute(
+                    new Route()
+                            .setService(ServiceUtils.getCurrentService())
+                            .setVersion(ServiceUtils.getCurrentVersion())
+            );
         }
     }
 
@@ -302,20 +285,6 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
         // and graphGUID. Also, callExceptionHandler is always false.
         this(key, key, null, null, jobInstance, false, settings, null);
         rootJobDisplayName = jobInstance.getJobDisplayName();
-    }
-
-    private static String getCurrentBackend() {
-        if (Boolean.parseBoolean(System.getenv("GAE_VM"))) {
-            // MVM can't be a backend.
-            return null;
-        }
-        final BackendService backendService = BackendServiceFactory.getBackendService();
-        String currentBackend = backendService.getCurrentBackend();
-        // If currentBackend contains ':' it is actually a B type module (see b/12893879)
-        if (currentBackend != null && currentBackend.indexOf(':') != -1) {
-            currentBackend = null;
-        }
-        return currentBackend;
     }
 
     /**
@@ -402,9 +371,11 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
         entity.set(MAX_ATTEMPTS_PROPERTY).to(maxAttempts);
         entity.set(BACKOFF_SECONDS_PROPERTY).to(backoffSeconds);
         entity.set(BACKOFF_FACTOR_PROPERTY).to(backoffFactor);
-        entity.set(ON_BACKEND_PROPERTY).to(queueSettings.getOnBackend());
-        entity.set(ON_MODULE_PROPERTY).to(queueSettings.getOnModule());
-        entity.set(MODULE_VERSION_PROPERTY).to(queueSettings.getModuleVersion());
+        try {
+            entity.set(ROUTE_PROPERY).to(queueSettings.getRoute() == null ? null : JsonUtils.serialize(queueSettings.getRoute()));
+        } catch (IOException e) {
+            throw new RuntimeException("Can't serialize '" + ROUTE_PROPERY + "'");
+        }
         entity.set(ON_QUEUE_PROPERTY).to(queueSettings.getOnQueue());
         entity.set(STATUS_CONSOLE_URL).to(statusConsoleUrl);
         if (rootJobDisplayName != null) {
@@ -430,12 +401,8 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
             } else {
                 throw new RuntimeException("Unrecognized JobOption class " + setting.getClass().getName());
             }
-        } else if (setting instanceof OnBackend) {
-            queueSettings.setOnBackend(((OnBackend) setting).getValue());
-        } else if (setting instanceof OnModule) {
-            queueSettings.setOnModule(((OnModule) setting).getValue());
-        } else if (setting instanceof OnQueue) {
-            queueSettings.setOnQueue(((OnQueue) setting).getValue());
+        } else if (setting instanceof Routing) {
+            queueSettings.setRoute(((Routing) setting).getRoute());
         } else if (setting instanceof StatusConsoleUrl) {
             statusConsoleUrl = ((StatusConsoleUrl) setting).getValue();
         } else {

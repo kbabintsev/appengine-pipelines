@@ -39,6 +39,7 @@ import com.google.appengine.tools.pipeline.impl.model.PipelineModelObject;
 import com.google.appengine.tools.pipeline.impl.model.PipelineMutation;
 import com.google.appengine.tools.pipeline.impl.model.PipelineObjects;
 import com.google.appengine.tools.pipeline.impl.model.Slot;
+import com.google.appengine.tools.pipeline.impl.model.ValueStoragePath;
 import com.google.appengine.tools.pipeline.impl.tasks.DeletePipelineTask;
 import com.google.appengine.tools.pipeline.impl.tasks.FanoutTask;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
@@ -133,7 +134,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
         spanner.close();
     }
 
-    private void addAll(final Collection<? extends PipelineModelObject> objects, final MutationsAndBlobs allMutations, final boolean runTransaction) {
+    private void addAll(final Collection<? extends PipelineModelObject> objects, final Mutations allMutations, final boolean runTransaction) {
         if (objects.isEmpty()) {
             return;
         }
@@ -141,9 +142,9 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
             LOGGER.finest("Storing: " + x);
             final PipelineMutation m = x.toEntity();
             final Mutation mutation = m.getDatabaseMutation().build();
-            allMutations.addMutation(mutation);
-            if (m.getBlobMutation() != null) {
-                allMutations.addBlob(m.getBlobMutation());
+            allMutations.addDatabaseMutation(mutation);
+            if (m.getValueMutation() != null) {
+                allMutations.addValueMutation(m.getValueMutation());
             }
 
             if (runTransaction) {
@@ -159,7 +160,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
         }
     }
 
-    private void addAll(final UpdateSpec.Group group, final MutationsAndBlobs allMutations, final boolean runTransaction) {
+    private void addAll(final UpdateSpec.Group group, final Mutations allMutations, final boolean runTransaction) {
         addAll(group.getBarriers(), allMutations, runTransaction);
         addAll(group.getJobs(), allMutations, runTransaction);
         addAll(group.getSlots(), allMutations, runTransaction);
@@ -168,14 +169,14 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
     }
 
     private void saveAll(final UpdateSpec.Group transactionSpec, @Nullable final TransactionContext parentTransaction) {
-        final MutationsAndBlobs allMutations = new MutationsAndBlobs();
+        final Mutations allMutations = new Mutations();
         addAll(transactionSpec, allMutations, parentTransaction == null);
-        for (final PipelineMutation.BlobMutation blob : allMutations.getBlobs()) {
-            saveBlob(blob.getRootJobKey(), blob.getType(), blob.getKey(), blob.getValue());
+        for (final PipelineMutation.ValueMutation valueMutation : allMutations.getValueMutations()) {
+            saveBlob(valueMutation.getPath(), valueMutation.getValue());
         }
 
         if (parentTransaction != null) {
-            parentTransaction.buffer(allMutations.getMutations());
+            parentTransaction.buffer(allMutations.getDatabaseMutations());
         }
     }
 
@@ -263,7 +264,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
             if (objects == null || objects.getItems() == null || objects.getItems().isEmpty()) {
                 break;
             }
-            LOGGER.finest("Deleting " + objects.getItems().size() + " blobs from prefix " + prefix);
+            LOGGER.finest("Deleting " + objects.getItems().size() + " valueMutations from prefix " + prefix);
             for (final StorageObject object : objects.getItems()) {
                 tryFiveTimes(STORAGE_EXCEPTION_HANDLER, new Operation<Void>("storage.objects.delete") {
                     @Override
@@ -277,9 +278,9 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
     }
 
     @Override
-    public void saveBlob(final UUID rootJobKey, final String ownerType, final UUID ownerKey, final byte[] value) {
-        final String path = rootJobKey + "/" + ownerType + "-" + ownerKey + ".dat";
-        LOGGER.finest("Saving blob " + path + " size of " + value.length + "...");
+    public void saveBlob(final ValueStoragePath valueStoragePath, final byte[] value) {
+        final String path = valueStoragePath.getPath();
+        LOGGER.finest("Saving value " + path + " size of " + value.length + "...");
         tryFiveTimes(STORAGE_EXCEPTION_HANDLER, new Operation<Void>("storage.objects.insert") {
             @Override
             public Void call() throws IOException {
@@ -290,15 +291,15 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
                                 .setName(path),
                         new ByteArrayContent("application/octet-stream", value)
                 ).execute();
-                LOGGER.finest("Saved blob " + path);
+                LOGGER.finest("Saved object " + path);
                 return null;
             }
         });
     }
 
     @Override
-    public byte[] retrieveBlob(final UUID rootJobKey, final String ownerType, final UUID ownerKey) {
-        final String path = rootJobKey + "/" + ownerType + "-" + ownerKey + ".dat";
+    public byte[] retrieveBlob(final ValueStoragePath valueStoragePath) {
+        final String path = valueStoragePath.getPath();
         try {
             LOGGER.finest("Retrieving blob " + path + "...");
             final InputStream inputStream = tryFiveTimes(STORAGE_EXCEPTION_HANDLER, new Operation<InputStream>("storage.objects.get") {
@@ -311,17 +312,17 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
                 }
             });
             final byte[] out = ByteStreams.toByteArray(inputStream);
-            LOGGER.finest("Retrieved blob " + path + " size " + out.length);
+            LOGGER.finest("Retrieved object " + path + " size " + out.length);
             return out;
         } catch (GoogleJsonResponseException ex) {
             if (ex.getStatusCode() == HTTP_NOT_FOUND) {
                 LOGGER.finest("Blob " + path + " returned 404 status");
                 return null;
             } else {
-                throw new RuntimeException("Can't retrieve blob from Storage bucket", ex);
+                throw new RuntimeException("Can't retrieve object from Storage bucket", ex);
             }
         } catch (IOException ex) {
-            throw new RuntimeException("Can't retrieve blob from Storage bucket", ex);
+            throw new RuntimeException("Can't retrieve object from Storage bucket", ex);
         }
     }
 
@@ -705,24 +706,24 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
         deleteAll(FanoutTaskRecord.DATA_STORE_KIND, rootJobKey);
     }
 
-    private static final class MutationsAndBlobs {
-        private final List<Mutation> mutations = Lists.newArrayList();
-        private final List<PipelineMutation.BlobMutation> blobs = Lists.newArrayList();
+    private static final class Mutations {
+        private final List<Mutation> databaseMutations = Lists.newArrayList();
+        private final List<PipelineMutation.ValueMutation> valueMutations = Lists.newArrayList();
 
-        public void addMutation(final Mutation mutation) {
-            mutations.add(mutation);
+        public void addDatabaseMutation(final Mutation mutation) {
+            databaseMutations.add(mutation);
         }
 
-        public void addBlob(final PipelineMutation.BlobMutation blob) {
-            blobs.add(blob);
+        public void addValueMutation(final PipelineMutation.ValueMutation valueMutation) {
+            valueMutations.add(valueMutation);
         }
 
-        public List<Mutation> getMutations() {
-            return mutations;
+        public List<Mutation> getDatabaseMutations() {
+            return databaseMutations;
         }
 
-        public List<PipelineMutation.BlobMutation> getBlobs() {
-            return blobs;
+        public List<PipelineMutation.ValueMutation> getValueMutations() {
+            return valueMutations;
         }
     }
 

@@ -208,14 +208,14 @@ public class MiscPipelineTest extends PipelineTest {
     public void testPromisedValue() throws Exception {
         PipelineService service = PipelineServiceFactory.newPipelineService();
         UUID pipelineId = service.startNewPipeline(new FillPromisedValueJob());
-        String helloWorld = (String) waitForJobToComplete(pipelineId);
+        String helloWorld = waitForJobToComplete(pipelineId);
         assertEquals("hello world", helloWorld);
     }
 
     public void testDelayedValueInSlowJob() throws Exception {
         PipelineService service = PipelineServiceFactory.newPipelineService();
         UUID pipelineId = service.startNewPipeline(new UsingDelayedValueInSlowJob());
-        String hello = (String) waitForJobToComplete(pipelineId);
+        String hello = waitForJobToComplete(pipelineId);
         assertEquals("I am delayed", hello);
     }
 
@@ -224,8 +224,8 @@ public class MiscPipelineTest extends PipelineTest {
 
         @Override
         public Value<List<String>> run() throws Exception {
-            FutureValue<String> child1 = futureCall(new StrJob<>(), immediate(Long.valueOf(123)));
-            FutureValue<String> child2 = futureCall(new StrJob<>(), immediate(Long.valueOf(456)));
+            FutureValue<String> child1 = futureCall(new StrJob<>(), immediate(123L));
+            FutureValue<String> child2 = futureCall(new StrJob<>(), immediate(456L));
             return new FutureList<>(ImmutableList.of(child1, child2));
         }
     }

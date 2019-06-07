@@ -2,11 +2,9 @@ package com.google.appengine.tools.pipeline.impl.model;
 
 import com.google.cloud.spanner.Mutation;
 
-import java.util.UUID;
-
 public final class PipelineMutation {
     private final Mutation.WriteBuilder databaseMutation;
-    private BlobMutation blobMutation;
+    private ValueMutation valueMutation;
 
     public PipelineMutation(final Mutation.WriteBuilder databaseMutation) {
         this.databaseMutation = databaseMutation;
@@ -16,40 +14,28 @@ public final class PipelineMutation {
         return databaseMutation;
     }
 
-    public BlobMutation getBlobMutation() {
-        return blobMutation;
+    public ValueMutation getValueMutation() {
+        return valueMutation;
     }
 
-    public void setBlobMutation(final BlobMutation blobMutation) {
-        if (this.blobMutation != null) {
-            throw new RuntimeException("Somebody already set blobMutation");
+    public void setValueMutation(final ValueMutation valueMutation) {
+        if (this.valueMutation != null) {
+            throw new RuntimeException("Somebody already set valueMutation");
         }
-        this.blobMutation = blobMutation;
+        this.valueMutation = valueMutation;
     }
 
-    public static final class BlobMutation {
-        private UUID rootJobKey;
-        private String type;
-        private UUID key;
-        private byte[] value;
+    public static final class ValueMutation {
+        private final ValueStoragePath location;
+        private final byte[] value;
 
-        public BlobMutation(final UUID rootJobKey, final String type, final UUID key, final byte[] value) {
-            this.rootJobKey = rootJobKey;
-            this.type = type;
-            this.key = key;
+        public ValueMutation(final ValueStoragePath location, final byte[] value) {
+            this.location = location;
             this.value = value;
         }
 
-        public UUID getRootJobKey() {
-            return rootJobKey;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-        public UUID getKey() {
-            return key;
+        public ValueStoragePath getPath() {
+            return location;
         }
 
         public byte[] getValue() {

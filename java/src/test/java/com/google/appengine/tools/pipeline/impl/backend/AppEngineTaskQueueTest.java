@@ -4,6 +4,7 @@ import com.google.appengine.api.taskqueue.TaskHandle;
 import com.google.appengine.tools.development.testing.LocalModulesServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.appengine.tools.development.testing.LocalTaskQueueTestConfig;
+import com.google.appengine.tools.pipeline.Route;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 import com.google.appengine.tools.pipeline.impl.tasks.RunJobTask;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
@@ -114,7 +115,7 @@ public class AppEngineTaskQueueTest extends TestCase {
 
     private Task createTask() {
         UUID key = GUIDGenerator.nextGUID();
-        Task task = new RunJobTask(key, new QueueSettings().setModuleVersion("m1"));
+        Task task = new RunJobTask(key, new QueueSettings().setRoute(new Route().setVersion("m1")));
         return task;
     }
 }

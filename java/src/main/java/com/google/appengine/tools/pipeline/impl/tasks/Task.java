@@ -14,8 +14,11 @@
 
 package com.google.appengine.tools.pipeline.impl.tasks;
 
+import com.google.appengine.tools.pipeline.Route;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
+import com.google.appengine.tools.pipeline.impl.util.JsonUtils;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.EnumSet;
@@ -132,37 +135,23 @@ public abstract class Task {
 
     private enum TaskProperty {
 
-        ON_BACKEND {
+        ROUTE {
             @Override
             void setProperty(final Task task, final String value) {
-                task.getQueueSettings().setOnBackend(value);
+                try {
+                    task.getQueueSettings().setRoute(JsonUtils.desertialize(value, Route.class));
+                } catch (IOException e) {
+                    throw new RuntimeException("Can't deserialize Route", e);
+                }
             }
 
             @Override
             String getProperty(final Task task) {
-                return task.getQueueSettings().getOnBackend();
-            }
-        },
-        ON_MODULE {
-            @Override
-            void setProperty(final Task task, final String value) {
-                task.getQueueSettings().setOnModule(value);
-            }
-
-            @Override
-            String getProperty(final Task task) {
-                return task.getQueueSettings().getOnModule();
-            }
-        },
-        MODULE_VERSION {
-            @Override
-            void setProperty(final Task task, final String value) {
-                task.getQueueSettings().setModuleVersion(value);
-            }
-
-            @Override
-            String getProperty(final Task task) {
-                return task.getQueueSettings().getModuleVersion();
+                try {
+                    return JsonUtils.serialize(task.getQueueSettings().getRoute());
+                } catch (IOException e) {
+                    throw new RuntimeException("Can't serialized Route", e);
+                }
             }
         },
         ON_QUEUE {

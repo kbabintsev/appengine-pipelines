@@ -15,12 +15,10 @@
 package com.google.appengine.tools.pipeline.impl.model;
 
 import com.google.appengine.tools.pipeline.Job;
-import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.StructReader;
 import com.google.common.collect.ImmutableList;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,12 +33,16 @@ public final class JobInstanceRecord extends PipelineModelObject {
     public static final String JOB_DISPLAY_NAME_PROPERTY = "jobDisplayName";
     private static final String JOB_KEY_PROPERTY = "jobKey";
     private static final String JOB_CLASS_NAME_PROPERTY = "jobClassName";
+    private static final String VALUE_LOCATION_PROPERTY = "valueLocation";
+    private static final String DATABASE_VALUE_PROPERTY = "databaseValue";
     public static final List<String> PROPERTIES = ImmutableList.<String>builder()
             .addAll(BASE_PROPERTIES)
             .add(
                     JOB_KEY_PROPERTY,
                     JOB_CLASS_NAME_PROPERTY,
-                    JOB_DISPLAY_NAME_PROPERTY
+                    JOB_DISPLAY_NAME_PROPERTY,
+                    VALUE_LOCATION_PROPERTY,
+                    DATABASE_VALUE_PROPERTY
             )
             .build();
 
@@ -48,22 +50,17 @@ public final class JobInstanceRecord extends PipelineModelObject {
     private final UUID jobKey;
     private final String jobClassName;
     private final String jobDisplayName;
-    private final byte[] value;
-
-    // transient
-    private Job<?> jobInstance;
+    private final ValueProxy valueProxy;
 
     public JobInstanceRecord(final JobRecord job, final Job<?> jobInstance) {
         super(DATA_STORE_KIND, job.getRootJobKey(), job.getGeneratorJobKey(), job.getGraphGuid());
         jobKey = job.getKey();
         jobClassName = jobInstance.getClass().getName();
         jobDisplayName = jobInstance.getJobDisplayName();
-        try {
-            value = PipelineManager.getBackEnd().serializeValue(this, jobInstance);
-        } catch (IOException e) {
-            throw new RuntimeException("Exception while attempting to serialize the jobInstance "
-                    + jobInstance, e);
-        }
+        valueProxy = new ValueProxy(
+                jobInstance,
+                new ValueStoragePath(getRootJobKey(), DATA_STORE_KIND, getKey())
+        );
     }
 
     public JobInstanceRecord(final StructReader entity) {
@@ -75,8 +72,12 @@ public final class JobInstanceRecord extends PipelineModelObject {
         } else {
             jobDisplayName = jobClassName;
         }
-
-        value = PipelineManager.getBackEnd().retrieveBlob(getRootJobKey(), JobInstanceRecord.DATA_STORE_KIND, getKey());
+        valueProxy = new ValueProxy(
+                entity.isNull(VALUE_LOCATION_PROPERTY) ? ValueLocation.DATABASE : ValueLocation.valueOf(entity.getString(VALUE_LOCATION_PROPERTY)),
+                entity.isNull(DATABASE_VALUE_PROPERTY) ? null : entity.getBytes(DATABASE_VALUE_PROPERTY).toByteArray(),
+                true,
+                new ValueStoragePath(getRootJobKey(), DATA_STORE_KIND, getKey())
+        );
     }
 
     @Override
@@ -86,7 +87,14 @@ public final class JobInstanceRecord extends PipelineModelObject {
         entity.set(JOB_KEY_PROPERTY).to(jobKey.toString());
         entity.set(JOB_CLASS_NAME_PROPERTY).to(jobClassName);
         entity.set(JOB_DISPLAY_NAME_PROPERTY).to(jobDisplayName);
-        mutation.setBlobMutation(new PipelineMutation.BlobMutation(getRootJobKey(), DATA_STORE_KIND, getKey(), value));
+        valueProxy.updateStorage(
+                location -> entity.set(VALUE_LOCATION_PROPERTY).to(location.name()),
+                databaseBlob -> entity.set(DATABASE_VALUE_PROPERTY).to(databaseBlob),
+                (storageLocation, storageBlob) -> mutation.setValueMutation(new PipelineMutation.ValueMutation(
+                        storageLocation,
+                        storageBlob
+                ))
+        );
         return mutation;
     }
 
@@ -111,14 +119,6 @@ public final class JobInstanceRecord extends PipelineModelObject {
     }
 
     public synchronized Job<?> getJobInstanceDeserialized() {
-        if (null == jobInstance) {
-            try {
-                jobInstance = (Job<?>) PipelineManager.getBackEnd().deserializeValue(this, value);
-            } catch (IOException e) {
-                throw new RuntimeException(
-                        "Exception while attempting to deserialize jobInstance for " + jobKey, e);
-            }
-        }
-        return jobInstance;
+        return (Job<?>) valueProxy.getValue();
     }
 }

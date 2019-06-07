@@ -14,10 +14,14 @@
 
 package com.google.appengine.tools.pipeline.impl.util;
 
+import com.google.api.client.json.JsonFactory;
+import com.google.api.client.json.jackson2.JacksonFactory;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,8 +32,12 @@ import java.util.Map;
  */
 public final class JsonUtils {
 
+    private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
+
     private JsonUtils() {
     }
+
+    // All code below is only for manually testing this class.
 
     public static String mapToJson(final Map<?, ?> map) {
         try {
@@ -38,8 +46,6 @@ public final class JsonUtils {
             throw new RuntimeException(e);
         }
     }
-
-    // All code below is only for manually testing this class.
 
     /**
      * Convert an object into its JSON representation.
@@ -154,6 +160,22 @@ public final class JsonUtils {
         final String json = toJson(x);
         final Object y = fromJson(json);
         System.out.println(x + " --> " + json + " --> " + recursiveToString(y));
+    }
+
+    @Nullable
+    public static String serialize(@Nullable final Object value) throws IOException {
+        if (value == null) {
+            return null;
+        }
+        return JSON_FACTORY.toString(value);
+    }
+
+    @Nullable
+    public static <T> T desertialize(@Nullable final String value, final Class<T> destinationClass) throws IOException {
+        if (value == null) {
+            return null;
+        }
+        return JSON_FACTORY.fromString(value, destinationClass);
     }
 
     public static void main(final String[] args) throws Exception {

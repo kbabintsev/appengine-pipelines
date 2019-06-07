@@ -139,41 +139,25 @@ public interface JobSetting extends Serializable {
     }
 
     /**
-     * A setting for specifying what backend to run a job on.
+     * An abstract parent object for integer settings.
      */
-    final class OnBackend extends StringValuedSetting {
+    final class Routing implements JobSetting {
 
-        public static final String DEFAULT = null;
-        private static final long serialVersionUID = -239968568113511744L;
+        public static final Route DEFAULT = null;
+        private static final long serialVersionUID = -5609527860840931319L;
+        private final Route route;
 
-        public OnBackend(final String backend) {
-            super(backend);
+        protected Routing(final Route route) {
+            this.route = route;
         }
-    }
 
-    /**
-     * A setting for specifying what module to run a job on.
-     */
-    final class OnModule extends StringValuedSetting {
-
-        public static final String DEFAULT = null;
-        private static final long serialVersionUID = 3877411731586475273L;
-
-        public OnModule(final String module) {
-            super(module);
+        public Route getRoute() {
+            return route;
         }
-    }
 
-    /**
-     * A setting for specifying which queue to run a job on.
-     */
-    final class OnQueue extends StringValuedSetting {
-
-        public static final String DEFAULT = null;
-        private static final long serialVersionUID = -5010485721032395432L;
-
-        public OnQueue(final String queue) {
-            super(queue);
+        @Override
+        public String toString() {
+            return getClass() + "[" + route + "]";
         }
     }
 

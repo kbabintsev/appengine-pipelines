@@ -21,6 +21,7 @@ import com.google.appengine.tools.pipeline.impl.model.JobRecord;
 import com.google.appengine.tools.pipeline.impl.model.PipelineModelObject;
 import com.google.appengine.tools.pipeline.impl.model.PipelineObjects;
 import com.google.appengine.tools.pipeline.impl.model.Slot;
+import com.google.appengine.tools.pipeline.impl.model.ValueStoragePath;
 import com.google.appengine.tools.pipeline.impl.tasks.FanoutTask;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
 import com.google.appengine.tools.pipeline.util.Pair;
@@ -180,9 +181,9 @@ public interface PipelineBackEnd {
 
     void cleanBlobs(String prefix);
 
-    void saveBlob(UUID rootJobKey, String ownerType, UUID ownerKey, byte[] value);
+    void saveBlob(ValueStoragePath valueStoragePath, byte[] value);
 
-    byte[] retrieveBlob(UUID rootJobKey, String ownerType, UUID ownerKey);
+    byte[] retrieveBlob(ValueStoragePath valueStoragePath);
 
     /**
      * Immediately enqueues the given task in the app engine task queue. Note that

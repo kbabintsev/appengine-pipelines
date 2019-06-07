@@ -196,30 +196,12 @@ public abstract class Job<E> implements Serializable {
     }
 
     /**
-     * Constructs a new {@code JobSetting.OnBackend}. This method is only
-     * syntactic sugar. {@code onBackend(x)} is equivalent to
-     * {@code new JobSetting.OnBackend(x)}.
+     * Constructs a new {@code JobSetting.Routing}. This method is only
+     * syntactic sugar. {@code routing(x)} is equivalent to
+     * {@code new JobSetting.routing(x)}.
      */
-    public static JobSetting.OnBackend onBackend(final String backend) {
-        return new JobSetting.OnBackend(backend);
-    }
-
-    /**
-     * Constructs a new {@code JobSetting.OnModule}. This method is only
-     * syntactic sugar. {@code onModule(x)} is equivalent to
-     * {@code new JobSetting.OnModule(x)}.
-     */
-    public static JobSetting.OnModule onModule(final String module) {
-        return new JobSetting.OnModule(module);
-    }
-
-    /**
-     * Constructs a new {@code JobSetting.OnQueue}. This method is only
-     * syntactic sugar. {@code onQueue(x)} is equivalent to
-     * {@code new JobSetting.OnQueue(x)}.
-     */
-    public static JobSetting.OnQueue onQueue(final String queue) {
-        return new JobSetting.OnQueue(queue);
+    public static JobSetting.Routing routing(final Route route) {
+        return new JobSetting.Routing(route);
     }
 
     /**
@@ -473,7 +455,7 @@ public abstract class Job<E> implements Serializable {
      *              asynchronously provided value.
      * @return A {@code PromisedValue} that represents an empty value slot that
      * will be filled at a later time when the external agent invokes
-     * {@link PipelineService#submitPromisedValue(String, Object)}. This
+     * {@link PipelineService#submitPromisedValue(java.util.UUID, Object)}. This
      * may be passed in to further invocations of {@code futureCall()} in
      * order to specify a data dependency.
      * @deprecated Use #newPromise() instead.
@@ -548,12 +530,8 @@ public abstract class Job<E> implements Serializable {
         return thisJobRecord.getQueueSettings().getOnQueue();
     }
 
-    protected final String getOnBackend() {
-        return thisJobRecord.getQueueSettings().getOnBackend();
-    }
-
-    protected final String getOnModule() {
-        return thisJobRecord.getQueueSettings().getOnModule();
+    protected final Route getRoute() {
+        return thisJobRecord.getQueueSettings().getRoute();
     }
 
     /**

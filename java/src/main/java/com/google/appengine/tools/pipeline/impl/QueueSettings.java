@@ -1,5 +1,7 @@
 package com.google.appengine.tools.pipeline.impl;
 
+import com.google.appengine.tools.pipeline.Route;
+
 /**
  * Queue settings implementation.
  *
@@ -7,9 +9,7 @@ package com.google.appengine.tools.pipeline.impl;
  */
 public final class QueueSettings implements Cloneable {
 
-    private String onBackend;
-    private String onModule;
-    private String moduleVersion;
+    private Route route;
     private String onQueue;
     private Long delay;
 
@@ -18,12 +18,8 @@ public final class QueueSettings implements Cloneable {
      * Note, delay value is not being merged.
      */
     public QueueSettings merge(final QueueSettings other) {
-        if (onBackend == null && onModule == null) {
-            onBackend = other.getOnBackend();
-        }
-        if (onModule == null && onBackend == null) {
-            onModule = other.getOnModule();
-            moduleVersion = other.getModuleVersion();
+        if (route == null) {
+            route = other.getRoute();
         }
         if (onQueue == null) {
             onQueue = other.getOnQueue();
@@ -31,36 +27,12 @@ public final class QueueSettings implements Cloneable {
         return this;
     }
 
-    public String getOnBackend() {
-        return onBackend;
+    public Route getRoute() {
+        return route;
     }
 
-    public QueueSettings setOnBackend(final String onBackend) {
-        if (onBackend != null && onModule != null) {
-            throw new IllegalStateException("OnModule and OnBackend cannot be combined");
-        }
-        this.onBackend = onBackend;
-        return this;
-    }
-
-    public String getOnModule() {
-        return onModule;
-    }
-
-    public QueueSettings setOnModule(final String onModule) {
-        if (onModule != null && onBackend != null) {
-            throw new IllegalStateException("OnModule and OnBackend cannot be combined");
-        }
-        this.onModule = onModule;
-        return this;
-    }
-
-    public String getModuleVersion() {
-        return moduleVersion;
-    }
-
-    public QueueSettings setModuleVersion(final String moduleVersion) {
-        this.moduleVersion = moduleVersion;
+    public QueueSettings setRoute(final Route route) {
+        this.route = route;
         return this;
     }
 
@@ -92,7 +64,6 @@ public final class QueueSettings implements Cloneable {
 
     @Override
     public String toString() {
-        return "QueueSettings[onBackEnd=" + onBackend + ", onModule=" + onModule + ", moduleVersion="
-                + moduleVersion + ", onQueue=" + onQueue + ", delayInSeconds=" + delay + "]";
+        return "QueueSettings[route=" + route + ", onQueue=" + onQueue + ", delayInSeconds=" + delay + "]";
     }
 }

@@ -14,15 +14,11 @@
 
 package com.google.appengine.tools.pipeline.impl.model;
 
-import com.google.appengine.tools.pipeline.impl.PipelineManager;
-import com.google.appengine.tools.pipeline.impl.util.SerializationUtils;
-import com.google.cloud.ByteArray;
 import com.google.cloud.Timestamp;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.StructReader;
 import com.google.common.collect.ImmutableList;
 
-import java.io.IOException;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,7 +33,6 @@ import java.util.stream.Collectors;
  */
 public final class Slot extends PipelineModelObject {
     public static final String DATA_STORE_KIND = "Slot";
-    private static final int DATABASE_VALUE_LIMIT = 5000000;
     private static final String FILLED_PROPERTY = "filled";
     private static final String WAITING_ON_ME_PROPERTY = "waitingOnMe";
     private static final String FILL_TIME_PROPERTY = "fillTime";
@@ -62,13 +57,15 @@ public final class Slot extends PipelineModelObject {
     private UUID sourceJobKey;
     // transient
     private List<Barrier> waitingOnMeInflated;
-    private ValueLocation valueLocation;
-    private Object value;
-    private boolean valueLoaded;
+    private ValueProxy valueProxy;
 
     public Slot(final UUID rootJobKey, final UUID generatorJobKey, final String graphGUID) {
         super(DATA_STORE_KIND, rootJobKey, generatorJobKey, graphGUID);
         waitingOnMeKeys = new LinkedList<>();
+        valueProxy = new ValueProxy(
+                null,
+                new ValueStoragePath(getRootJobKey(), DATA_STORE_KIND, getKey())
+        );
     }
 
     public Slot(final StructReader entity) {
@@ -82,25 +79,12 @@ public final class Slot extends PipelineModelObject {
         fillTime = entity.isNull(FILL_TIME_PROPERTY) ? null : entity.getTimestamp(FILL_TIME_PROPERTY).toDate();
         sourceJobKey = entity.isNull(SOURCE_JOB_KEY_PROPERTY) ? null : UUID.fromString(entity.getString(SOURCE_JOB_KEY_PROPERTY));
         waitingOnMeKeys = getUuidListProperty(WAITING_ON_ME_PROPERTY, entity).orElse(null);
-        valueLocation = entity.isNull(VALUE_LOCATION_PROPERTY) ? ValueLocation.DATABASE : ValueLocation.valueOf(entity.getString(VALUE_LOCATION_PROPERTY));
-        final byte[] databaseValue = entity.isNull(DATABASE_VALUE_PROPERTY) ? null : entity.getBytes(DATABASE_VALUE_PROPERTY).toByteArray();
-        if (lazy && valueLocation == ValueLocation.STORAGE) {
-            value = null;
-            valueLoaded = false;
-        } else {
-            try {
-                if (valueLocation == ValueLocation.STORAGE) {
-                    value = SerializationUtils.deserialize(PipelineManager.getBackEnd().retrieveBlob(getRootJobKey(), DATA_STORE_KIND, getKey()));
-                } else if (valueLocation == ValueLocation.DATABASE) {
-                    value = SerializationUtils.deserialize(databaseValue);
-                } else {
-                    throw new RuntimeException("Unknown ValueLocation: " + valueLocation);
-                }
-                valueLoaded = true;
-            } catch (IOException e) {
-                throw new RuntimeException("Can't deserialize value", e);
-            }
-        }
+        valueProxy = new ValueProxy(
+                entity.isNull(VALUE_LOCATION_PROPERTY) ? ValueLocation.DATABASE : ValueLocation.valueOf(entity.getString(VALUE_LOCATION_PROPERTY)),
+                entity.isNull(DATABASE_VALUE_PROPERTY) ? null : entity.getBytes(DATABASE_VALUE_PROPERTY).toByteArray(),
+                lazy,
+                new ValueStoragePath(getRootJobKey(), DATA_STORE_KIND, getKey())
+        );
     }
 
     @Override
@@ -108,29 +92,14 @@ public final class Slot extends PipelineModelObject {
         final PipelineMutation mutation = toProtoEntity();
         final Mutation.WriteBuilder entity = mutation.getDatabaseMutation();
         //
-        if (value != null) {
-            final byte[] serialized;
-            try {
-                serialized = SerializationUtils.serialize(value);
-            } catch (IOException e) {
-                throw new RuntimeException("Can't serialize value", e);
-            }
-            valueLocation = serialized.length < DATABASE_VALUE_LIMIT ? ValueLocation.DATABASE : ValueLocation.STORAGE;
-            if (valueLocation == ValueLocation.STORAGE) {
-                mutation.setBlobMutation(new PipelineMutation.BlobMutation(
-                        getRootJobKey(),
-                        DATA_STORE_KIND,
-                        getKey(),
-                        serialized
-                ));
-            } else {
-                entity.set(DATABASE_VALUE_PROPERTY).to(ByteArray.copyFrom(serialized));
-            }
-        } else {
-            valueLocation = ValueLocation.DATABASE;
-        }
-
-        entity.set(VALUE_LOCATION_PROPERTY).to(valueLocation.name());
+        valueProxy.updateStorage(
+                location -> entity.set(VALUE_LOCATION_PROPERTY).to(location.name()),
+                databaseBlob -> entity.set(DATABASE_VALUE_PROPERTY).to(databaseBlob),
+                (storageLocation, storageBlob) -> mutation.setValueMutation(new PipelineMutation.ValueMutation(
+                        storageLocation,
+                        storageBlob
+                ))
+        );
         entity.set(FILLED_PROPERTY).to(filled);
         if (null != fillTime) {
             entity.set(FILL_TIME_PROPERTY).to(Timestamp.of(fillTime));
@@ -168,15 +137,7 @@ public final class Slot extends PipelineModelObject {
     }
 
     public Object getValue() {
-        if (!valueLoaded) {
-            try {
-                value = SerializationUtils.deserialize(PipelineManager.getBackEnd().retrieveBlob(getRootJobKey(), DATA_STORE_KIND, getKey()));
-            } catch (IOException e) {
-                throw new RuntimeException("Can't deserialize value", e);
-            }
-            valueLoaded = true;
-        }
-        return value;
+        return valueProxy.getValue();
     }
 
     /**
@@ -194,10 +155,9 @@ public final class Slot extends PipelineModelObject {
         sourceJobKey = key;
     }
 
-    public void fill(final Object val) {
+    public void fill(final Object value) {
         filled = true;
-        this.value = val;
-        this.valueLoaded = true;
+        valueProxy.setValue(value);
         fillTime = new Date();
     }
 
@@ -214,7 +174,7 @@ public final class Slot extends PipelineModelObject {
 
     @Override
     public String toString() {
-        return "Slot[" + getKeyName(getKey()) + ", value=" + (valueLoaded ? value : "...")
+        return "Slot[" + getKeyName(getKey()) + ", valueProxy=" + valueProxy
                 + ", filled=" + filled + ", waitingOnMe=" + waitingOnMeKeys + ", parent="
                 + getKeyName(getGeneratorJobKey()) + ", guid=" + getGraphGuid() + "]";
     }

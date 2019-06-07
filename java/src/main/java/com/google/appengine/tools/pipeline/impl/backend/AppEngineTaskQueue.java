@@ -14,10 +14,7 @@
 
 package com.google.appengine.tools.pipeline.impl.backend;
 
-import com.google.appengine.api.backends.BackendServiceFactory;
 import com.google.appengine.api.modules.ModulesException;
-import com.google.appengine.api.modules.ModulesService;
-import com.google.appengine.api.modules.ModulesServiceFactory;
 import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.QueueConstants;
 import com.google.appengine.api.taskqueue.QueueFactory;
@@ -25,11 +22,11 @@ import com.google.appengine.api.taskqueue.TaskAlreadyExistsException;
 import com.google.appengine.api.taskqueue.TaskHandle;
 import com.google.appengine.api.taskqueue.TaskOptions;
 import com.google.appengine.tools.cloudstorage.ExceptionHandler;
-import com.google.appengine.tools.cloudstorage.RetryHelper;
-import com.google.appengine.tools.cloudstorage.RetryParams;
+import com.google.appengine.tools.pipeline.Route;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 import com.google.appengine.tools.pipeline.impl.servlets.TaskHandler;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
+import com.google.appengine.tools.pipeline.impl.util.ServiceUtils;
 import com.google.apphosting.api.ApiProxy;
 
 import java.time.Duration;
@@ -39,7 +36,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
@@ -144,25 +140,18 @@ public final class AppEngineTaskQueue implements PipelineTaskQueue {
         final QueueSettings queueSettings = task.getQueueSettings();
 
         final TaskOptions taskOptions = TaskOptions.Builder.withUrl(TaskHandler.handleTaskUrl());
-        if (queueSettings.getOnBackend() != null) {
-            taskOptions.header("Host", BackendServiceFactory.getBackendService().getBackendAddress(
-                    queueSettings.getOnBackend()));
-        } else {
-
-            final String versionHostname = RetryHelper.runWithRetries(new Callable<String>() {
-                @Override
-                public String call() {
-                    final ModulesService service = ModulesServiceFactory.getModulesService();
-                    String module = queueSettings.getOnModule();
-                    String version = queueSettings.getModuleVersion();
-                    if (module == null) {
-                        module = service.getCurrentModule();
-                        version = service.getCurrentVersion();
-                    }
-                    return service.getVersionHostname(module, version);
-                }
-            }, RetryParams.getDefaultInstance(), MODULES_EXCEPTION_HANDLER);
-            taskOptions.header("Host", versionHostname);
+        final Route route = queueSettings.getRoute();
+        if (route.getHeaders() != null) {
+            taskOptions.headers(route.getHeaders());
+        }
+        String service = route.getService();
+        String version = route.getVersion();
+        if (service == null) {
+            service = ServiceUtils.getCurrentService();
+            version = ServiceUtils.getCurrentVersion();
+        }
+        if (route.getHeaders() != null && !route.getHeaders().containsKey("Host")) {
+            taskOptions.header("Host", version + "." + service);
         }
 
         final Long delayInSeconds = queueSettings.getDelayInSeconds();
