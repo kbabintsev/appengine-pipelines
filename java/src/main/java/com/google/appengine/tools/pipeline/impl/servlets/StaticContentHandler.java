@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 /**
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class StaticContentHandler {
+public final class StaticContentHandler {
     private static final int BUFFER_SIZE = 1024 * 2;
     private static final String UI_DIR = "ui/";
     // This is where the ui files end up if the library is built internally at Google:
@@ -61,20 +61,23 @@ public class StaticContentHandler {
     private static Logger logger = Logger.getLogger(StaticContentHandler.class.getName());
 
     static {
-        Map<String, NameContentTypePair> map = new HashMap<>(RESOURCES.length + 1, 1);
-        for (String[] triple : RESOURCES) {
-            String urlPath = triple[0];
-            String fileName = triple[1];
-            String contentType = triple[2];
+        final Map<String, NameContentTypePair> map = new HashMap<>(RESOURCES.length + 1, 1);
+        for (final String[] triple : RESOURCES) {
+            final String urlPath = triple[0];
+            final String fileName = triple[1];
+            final String contentType = triple[2];
             map.put(urlPath, new NameContentTypePair(fileName, contentType));
         }
 
         RESOURCE_MAP = Collections.unmodifiableMap(map);
     }
 
-    public static void doGet(HttpServletResponse resp, String path) throws ServletException {
+    private StaticContentHandler() {
+    }
+
+    public static void doGet(final HttpServletResponse resp, final String path) throws ServletException {
         try {
-            NameContentTypePair pair = RESOURCE_MAP.get(path);
+            final NameContentTypePair pair = RESOURCE_MAP.get(path);
             if (pair == null) {
                 logger.warning("Resource not found: " + path);
                 resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -82,14 +85,14 @@ public class StaticContentHandler {
                 resp.setContentType("text/plain");
                 return;
             }
-            String contentType = pair.contentType;
+            final String contentType = pair.getContentType();
             resp.setContentType(contentType);
             resp.setStatus(HttpServletResponse.SC_OK);
             resp.addHeader("Cache-Control", "public; max-age=300");
-            try (InputStream in = getResourceAsStream(pair.fileName);
+            try (InputStream in = getResourceAsStream(pair.getFileName());
                  ReadableByteChannel readChannel = Channels.newChannel(in);
                  WritableByteChannel writeChannel = Channels.newChannel(resp.getOutputStream())) {
-                ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
+                final ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
                 while (true) {
                     buffer.clear();
                     if (-1 == readChannel.read(buffer)) {
@@ -105,9 +108,9 @@ public class StaticContentHandler {
     }
 
     // Visible for testing
-    public static InputStream getResourceAsStream(String fileName) throws FileNotFoundException {
-        String localPath = UI_DIR + fileName;
-        String altLocalPath = INTERNAL_BUILD_UI_DIR + fileName;
+    public static InputStream getResourceAsStream(final String fileName) throws FileNotFoundException {
+        final String localPath = UI_DIR + fileName;
+        final String altLocalPath = INTERNAL_BUILD_UI_DIR + fileName;
         InputStream in = StaticContentHandler.class.getResourceAsStream(localPath);
         if (in == null) {
             in = StaticContentHandler.class.getResourceAsStream(altLocalPath);
@@ -120,12 +123,20 @@ public class StaticContentHandler {
 
     private static class NameContentTypePair {
 
-        public final String fileName;
-        public final String contentType;
+        private final String fileName;
+        private final String contentType;
 
-        public NameContentTypePair(String name, String type) {
+        NameContentTypePair(final String name, final String type) {
             fileName = name;
             contentType = type;
+        }
+
+        String getFileName() {
+            return fileName;
+        }
+
+        String getContentType() {
+            return contentType;
         }
     }
 }

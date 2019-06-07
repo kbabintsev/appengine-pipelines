@@ -25,7 +25,7 @@ import java.util.UUID;
  *
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class HandleSlotFilledTask extends ObjRefTask {
+public final class HandleSlotFilledTask extends ObjRefTask {
 
     /**
      * This constructor is used on the sending side. That is, it is used to
@@ -34,11 +34,11 @@ public class HandleSlotFilledTask extends ObjRefTask {
      *
      * @param slotKey The key of the Slot whose filling is to be handled
      */
-    public HandleSlotFilledTask(UUID slotKey, QueueSettings queueSettings) {
+    public HandleSlotFilledTask(final UUID slotKey, final QueueSettings queueSettings) {
         super(Type.HANDLE_SLOT_FILLED, "handleSlotFilled", slotKey, queueSettings);
     }
 
-    protected HandleSlotFilledTask(Type type, String taskName, Properties properties) {
+    protected HandleSlotFilledTask(final Type type, final String taskName, final Properties properties) {
         super(type, taskName, properties);
     }
 

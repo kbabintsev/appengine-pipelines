@@ -28,34 +28,38 @@ import java.util.UUID;
 /**
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class JsonTreeHandler {
+public final class JsonTreeHandler {
 
     public static final String PATH_COMPONENT = "rpc/tree";
     private static final String ROOT_PIPELINE_ID = "root_pipeline_id";
+    private static final int HTTP_449 = 449;
 
-    public static void doGet(HttpServletRequest req, HttpServletResponse resp)
+    private JsonTreeHandler() {
+    }
+
+    public static void doGet(final HttpServletRequest req, final HttpServletResponse resp)
             throws ServletException {
 
-        UUID rootJobHandle = UUID.fromString(req.getParameter(ROOT_PIPELINE_ID));
+        final UUID rootJobHandle = UUID.fromString(req.getParameter(ROOT_PIPELINE_ID));
         if (null == rootJobHandle) {
             throw new ServletException(ROOT_PIPELINE_ID + " parameter not found.");
         }
         try {
-            JobRecord jobInfo;
+            final JobRecord jobInfo;
             try {
                 jobInfo = PipelineManager.getJob(rootJobHandle);
             } catch (NoSuchObjectException nsoe) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
-            UUID rootJobKey = jobInfo.getRootJobKey();
+            final UUID rootJobKey = jobInfo.getRootJobKey();
             if (!rootJobKey.equals(rootJobHandle)) {
                 resp.addHeader(ROOT_PIPELINE_ID, rootJobKey.toString());
-                resp.sendError(449, rootJobKey.toString());
+                resp.sendError(HTTP_449, rootJobKey.toString());
                 return;
             }
-            PipelineObjects pipelineObjects = PipelineManager.queryFullPipeline(rootJobKey);
-            String asJson = JsonGenerator.pipelineObjectsToJson(pipelineObjects);
+            final PipelineObjects pipelineObjects = PipelineManager.queryFullPipeline(rootJobKey);
+            final String asJson = JsonGenerator.pipelineObjectsToJson(pipelineObjects);
             // TODO(user): Temporary until we support abort/delete in Python
             resp.addHeader("Pipeline-Lang", "Java");
             resp.getWriter().write(asJson);

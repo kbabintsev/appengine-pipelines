@@ -54,7 +54,7 @@ import static com.google.appengine.tools.pipeline.impl.util.StringUtils.UTF_8;
  * @author rudominer@google.com (Mitch Rudominer)
  * @see com.google.appengine.tools.pipeline.impl.backend.PipelineBackEnd#handleFanoutTask
  */
-public class FanoutTask extends Task {
+public final class FanoutTask extends Task {
 
     private static final String KEY_VALUE_SEPERATOR = "::";
     private static final String PROPERTY_SEPERATOR = ",,";
@@ -68,7 +68,7 @@ public class FanoutTask extends Task {
      * Construct a new FanoutTask that contains the given data store Key. This
      * constructor is used to construct an instance to be enqueued.
      */
-    public FanoutTask(UUID recordKey, QueueSettings queueSettings) {
+    public FanoutTask(final UUID recordKey, final QueueSettings queueSettings) {
         super(Type.FAN_OUT, null, queueSettings.clone());
         this.recordKey = recordKey;
     }
@@ -77,17 +77,17 @@ public class FanoutTask extends Task {
      * Construct a new FanoutTask from the given Properties. This constructor
      * is used to construct an instance that is being handled.
      */
-    public FanoutTask(Type type, String taskName, Properties properties) {
+    public FanoutTask(final Type type, final String taskName, final Properties properties) {
         super(type, taskName, properties);
         this.recordKey = UUID.fromString(properties.getProperty(RECORD_KEY_PROPERTY));
     }
 
-    public static byte[] encodeTasks(Collection<? extends Task> taskList) {
+    public static byte[] encodeTasks(final Collection<? extends Task> taskList) {
         if (taskList.isEmpty()) {
             return new byte[0];
         }
-        StringBuilder builder = new StringBuilder(1024);
-        for (Task task : taskList) {
+        final StringBuilder builder = new StringBuilder(1024);
+        for (final Task task : taskList) {
             encodeTask(builder, task);
             builder.append(TASK_SEPERATOR);
         }
@@ -95,14 +95,14 @@ public class FanoutTask extends Task {
         return builder.toString().getBytes(UTF_8);
     }
 
-    private static void encodeTask(StringBuilder builder, Task task) {
-        String taskName = GUIDGenerator.nextGUID().toString();
+    private static void encodeTask(final StringBuilder builder, final Task task) {
+        final String taskName = GUIDGenerator.nextGUID().toString();
         builder.append(taskName);
         builder.append(TASK_NAME_DELIMITTER);
-        Properties taskProps = task.toProperties();
+        final Properties taskProps = task.toProperties();
         if (!taskProps.isEmpty()) {
-            for (String propName : taskProps.stringPropertyNames()) {
-                String value = taskProps.getProperty(propName);
+            for (final String propName : taskProps.stringPropertyNames()) {
+                final String value = taskProps.getProperty(propName);
                 builder.append(propName).append(KEY_VALUE_SEPERATOR).append(value);
                 builder.append(PROPERTY_SEPERATOR);
             }
@@ -110,30 +110,30 @@ public class FanoutTask extends Task {
         }
     }
 
-    public static List<Task> decodeTasks(byte[] encodedBytes) {
-        String encodedListOfTasks = new String(encodedBytes, UTF_8);
-        String[] encodedTaskArray = encodedListOfTasks.split(TASK_SEPERATOR);
-        List<Task> listOfTasks = new ArrayList<>(encodedTaskArray.length);
-        for (String encodedTask : encodedTaskArray) {
-            String[] nameAndProperties = encodedTask.split(TASK_NAME_DELIMITTER);
-            String taskName = nameAndProperties[0];
-            String encodedProperties = nameAndProperties[1];
-            String[] encodedPropertyArray = encodedProperties.split(PROPERTY_SEPERATOR);
-            Properties taskProperties = new Properties();
-            for (String encodedProperty : encodedPropertyArray) {
-                String[] keyValuePair = encodedProperty.split(KEY_VALUE_SEPERATOR);
-                String key = keyValuePair[0];
-                String value = keyValuePair[1];
+    public static List<Task> decodeTasks(final byte[] encodedBytes) {
+        final String encodedListOfTasks = new String(encodedBytes, UTF_8);
+        final String[] encodedTaskArray = encodedListOfTasks.split(TASK_SEPERATOR);
+        final List<Task> listOfTasks = new ArrayList<>(encodedTaskArray.length);
+        for (final String encodedTask : encodedTaskArray) {
+            final String[] nameAndProperties = encodedTask.split(TASK_NAME_DELIMITTER);
+            final String taskName = nameAndProperties[0];
+            final String encodedProperties = nameAndProperties[1];
+            final String[] encodedPropertyArray = encodedProperties.split(PROPERTY_SEPERATOR);
+            final Properties taskProperties = new Properties();
+            for (final String encodedProperty : encodedPropertyArray) {
+                final String[] keyValuePair = encodedProperty.split(KEY_VALUE_SEPERATOR);
+                final String key = keyValuePair[0];
+                final String value = keyValuePair[1];
                 taskProperties.setProperty(key, value);
             }
-            Task task = Task.fromProperties(taskName, taskProperties);
+            final Task task = Task.fromProperties(taskName, taskProperties);
             listOfTasks.add(task);
         }
         return listOfTasks;
     }
 
     @Override
-    protected void addProperties(Properties properties) {
+    protected void addProperties(final Properties properties) {
         properties.setProperty(RECORD_KEY_PROPERTY, recordKey.toString());
     }
 

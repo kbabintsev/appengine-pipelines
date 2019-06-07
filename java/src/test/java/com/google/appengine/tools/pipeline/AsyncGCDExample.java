@@ -28,14 +28,14 @@ public class AsyncGCDExample {
     /**
      * A Callback
      */
-    public static interface Callback {
-        public int getFirstInt();
+    public interface Callback {
+        int getFirstInt();
 
-        public int getSecondInt();
+        int getSecondInt();
 
-        public String getUserName();
+        String getUserName();
 
-        public void acceptOutput(String output);
+        void acceptOutput(String output);
     }
 
     /**

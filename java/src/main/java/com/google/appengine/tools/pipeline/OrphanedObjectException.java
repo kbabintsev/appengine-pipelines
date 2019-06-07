@@ -16,11 +16,11 @@ import java.util.UUID;
 public class OrphanedObjectException extends Exception {
     private static final long serialVersionUID = 149320669328554627L;
 
-    public OrphanedObjectException(UUID key) {
+    public OrphanedObjectException(final UUID key) {
         super(key.toString());
     }
 
-    public OrphanedObjectException(UUID key, Throwable cause) {
+    public OrphanedObjectException(final UUID key, final Throwable cause) {
         super(key.toString(), cause);
     }
 }

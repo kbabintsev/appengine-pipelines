@@ -41,14 +41,22 @@ package com.google.appengine.tools.pipeline.impl.model;
  *
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class SlotDescriptor {
+public final class SlotDescriptor {
 
-    public final Slot slot;
-    public final int groupSize;
+    private final Slot slot;
+    private final int groupSize;
 
-    SlotDescriptor(Slot sl, int groupSize) {
+    SlotDescriptor(final Slot sl, final int groupSize) {
         this.slot = sl;
         this.groupSize = groupSize;
+    }
+
+    public Slot getSlot() {
+        return slot;
+    }
+
+    public int getGroupSize() {
+        return groupSize;
     }
 
     public boolean isPhantom() {

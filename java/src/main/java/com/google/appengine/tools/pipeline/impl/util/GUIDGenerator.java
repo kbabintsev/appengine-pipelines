@@ -28,13 +28,17 @@ import java.util.concurrent.atomic.AtomicInteger;
  * |          | - incremental part
  * 00000000-0000-0000-0000-000000000000
  */
-public class GUIDGenerator {
+public final class GUIDGenerator {
 
     public static final String USE_SIMPLE_GUIDS_FOR_DEBUGGING =
             "com.google.appengine.api.pipeline.use-simple-guids-for-debugging";
     private static final String TEST_PREFIX = "00000000";
     private static AtomicInteger counter = new AtomicInteger();
-    private static int runId = (int) (Math.random() * 10000);
+    private static final int PART_0000 = 10000;
+    private static int runId = (int) (Math.random() * PART_0000);
+
+    private GUIDGenerator() {
+    }
 
     public static String getTestPrefix() {
         return TEST_PREFIX + "-" + String.format("%04d", runId) + "-";
@@ -48,13 +52,13 @@ public class GUIDGenerator {
         if (Boolean.getBoolean(USE_SIMPLE_GUIDS_FOR_DEBUGGING)) {
             return UUID.fromString(getTestPrefix() + "0000-0000-" + String.format("%012d", counter.getAndIncrement()));
         }
-        UUID uuid = UUID.randomUUID();
+        final UUID uuid = UUID.randomUUID();
         return uuid;
     }
 
-    public static void main(String[] args) {
-        for (int i = 0; i < 10; i++) {
-            System.out.println(nextGUID());
-        }
+    public static void main(final String[] args) {
+//        for (int i = 0; i < 10; i++) {
+//            System.out.println(nextGUID());
+//        }
     }
 }

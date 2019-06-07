@@ -26,7 +26,7 @@ import java.util.UUID;
  * @author maximf@google.com (Maxim Fateev)
  * @see com.google.appengine.tools.pipeline.Job#newDelayedValue(long)
  */
-public class DelayedSlotFillTask extends ObjRefTask {
+public final class DelayedSlotFillTask extends ObjRefTask {
 
     private static final String ROOT_JOB_KEY_PARAM = "rootJobKey";
 
@@ -42,19 +42,19 @@ public class DelayedSlotFillTask extends ObjRefTask {
      * @param rootJobKey    The key of the root job of the pipeline
      * @param queueSettings The queue settings
      */
-    public DelayedSlotFillTask(Slot slot, long delay, UUID rootJobKey, QueueSettings queueSettings) {
+    public DelayedSlotFillTask(final Slot slot, final long delay, final UUID rootJobKey, final QueueSettings queueSettings) {
         super(Type.DELAYED_SLOT_FILL, "delayedSlotFillTask", slot.getKey(), queueSettings);
         getQueueSettings().setDelayInSeconds(delay);
         this.rootJobKey = rootJobKey;
     }
 
-    protected DelayedSlotFillTask(Type type, String taskName, Properties properties) {
+    protected DelayedSlotFillTask(final Type type, final String taskName, final Properties properties) {
         super(type, taskName, properties);
         rootJobKey = UUID.fromString(properties.getProperty(ROOT_JOB_KEY_PARAM));
     }
 
     @Override
-    protected void addProperties(Properties properties) {
+    protected void addProperties(final Properties properties) {
         super.addProperties(properties);
         properties.setProperty(ROOT_JOB_KEY_PARAM, rootJobKey.toString());
     }

@@ -25,13 +25,13 @@ import java.util.UUID;
  *
  * @author maximf@google.com (Maxim Fateev)
  */
-public class CancelJobTask extends ObjRefTask {
+public final class CancelJobTask extends ObjRefTask {
 
-    public CancelJobTask(UUID jobKey, QueueSettings queueSettings) {
+    public CancelJobTask(final UUID jobKey, final QueueSettings queueSettings) {
         super(Type.CANCEL_JOB, "cancelJob", jobKey, queueSettings);
     }
 
-    protected CancelJobTask(Type type, String taskName, Properties properties) {
+    protected CancelJobTask(final Type type, final String taskName, final Properties properties) {
         super(type, taskName, properties);
     }
 

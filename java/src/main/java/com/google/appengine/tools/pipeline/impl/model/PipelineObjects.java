@@ -26,44 +26,44 @@ import java.util.logging.Logger;
  *
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class PipelineObjects {
+public final class PipelineObjects {
 
-    private static final Logger log = Logger.getLogger(PipelineObjects.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(PipelineObjects.class.getName());
 
-    public JobRecord rootJob;
-    public Map<UUID, JobRecord> jobs;
-    public Map<UUID, Slot> slots;
-    public Map<UUID, Barrier> barriers;
-    public Map<UUID, JobInstanceRecord> jobInstanceRecords;
+    private JobRecord rootJob;
+    private Map<UUID, JobRecord> jobs;
+    private Map<UUID, Slot> slots;
+    private Map<UUID, Barrier> barriers;
+    private Map<UUID, JobInstanceRecord> jobInstanceRecords;
 
     /**
      * The {@code PipelineObjects} takes ownership of the objects passed in. The
      * caller should not hold references to them.
      */
-    public PipelineObjects(UUID rootJobKey, Map<UUID, JobRecord> jobs, Map<UUID, Slot> slots,
-                           Map<UUID, Barrier> barriers, Map<UUID, JobInstanceRecord> jobInstanceRecords,
-                           Map<UUID, ExceptionRecord> failureRecords) {
+    public PipelineObjects(final UUID rootJobKey, final Map<UUID, JobRecord> jobs, final Map<UUID, Slot> slots,
+                           final Map<UUID, Barrier> barriers, final Map<UUID, JobInstanceRecord> jobInstanceRecords,
+                           final Map<UUID, ExceptionRecord> failureRecords) {
         this.jobInstanceRecords = jobInstanceRecords;
         this.barriers = barriers;
         this.jobs = jobs;
         this.slots = slots;
-        Map<UUID, String> jobToChildGuid = new HashMap<>();
-        for (JobRecord job : jobs.values()) {
+        final Map<UUID, String> jobToChildGuid = new HashMap<>();
+        for (final JobRecord job : jobs.values()) {
             jobToChildGuid.put(job.getKey(), job.getChildGraphGuid());
             if (job.getKey().equals(rootJobKey)) {
                 this.rootJob = job;
             }
         }
         for (Iterator<JobRecord> iter = jobs.values().iterator(); iter.hasNext(); ) {
-            JobRecord job = iter.next();
+            final JobRecord job = iter.next();
             if (job != rootJob) {
-                UUID parentKey = job.getGeneratorJobKey();
-                String graphGuid = job.getGraphGuid();
+                final UUID parentKey = job.getGeneratorJobKey();
+                final String graphGuid = job.getGraphGuid();
                 if (parentKey == null || graphGuid == null) {
-                    log.info("Ignoring a non root job with no parent or graphGuid -> " + job);
+                    LOGGER.info("Ignoring a non root job with no parent or graphGuid -> " + job);
                     iter.remove();
                 } else if (!graphGuid.equals(jobToChildGuid.get(parentKey))) {
-                    log.info("Ignoring an orphand job " + job + ", parent: " + jobs.get(parentKey));
+                    LOGGER.info("Ignoring an orphand job " + job + ", parent: " + jobs.get(parentKey));
                     iter.remove();
                 }
             }
@@ -73,40 +73,60 @@ public class PipelineObjects {
                     "None of the jobs were the root job with key " + rootJobKey);
         }
         for (Iterator<Slot> iter = slots.values().iterator(); iter.hasNext(); ) {
-            Slot slot = iter.next();
-            UUID parentKey = slot.getGeneratorJobKey();
-            String parentGuid = slot.getGraphGuid();
+            final Slot slot = iter.next();
+            final UUID parentKey = slot.getGeneratorJobKey();
+            final String parentGuid = slot.getGraphGuid();
             if (parentKey == null && parentGuid == null
                     || parentGuid != null && parentGuid.equals(jobToChildGuid.get(parentKey))) {
                 slot.inflate(barriers);
             } else {
-                log.info("Ignoring an orphand slot " + slot + ", parent: " + jobs.get(parentKey));
+                LOGGER.info("Ignoring an orphand slot " + slot + ", parent: " + jobs.get(parentKey));
                 iter.remove();
             }
         }
         for (Iterator<Barrier> iter = barriers.values().iterator(); iter.hasNext(); ) {
-            Barrier barrier = iter.next();
-            UUID parentKey = barrier.getGeneratorJobKey();
-            String parentGuid = barrier.getGraphGuid();
+            final Barrier barrier = iter.next();
+            final UUID parentKey = barrier.getGeneratorJobKey();
+            final String parentGuid = barrier.getGraphGuid();
             if (parentKey == null && parentGuid == null
                     || parentGuid != null && parentGuid.equals(jobToChildGuid.get(parentKey))) {
                 barrier.inflate(slots);
             } else {
-                log.info("Ignoring an orphand Barrier " + barrier + ", parent: " + jobs.get(parentKey));
+                LOGGER.info("Ignoring an orphand Barrier " + barrier + ", parent: " + jobs.get(parentKey));
                 iter.remove();
             }
         }
-        for (JobRecord jobRec : jobs.values()) {
-            Barrier runBarrier = barriers.get(jobRec.getRunBarrierKey());
-            Barrier finalizeBarrier = barriers.get(jobRec.getFinalizeBarrierKey());
-            Slot outputSlot = slots.get(jobRec.getOutputSlotKey());
-            JobInstanceRecord jobInstanceRecord = jobInstanceRecords.get(jobRec.getJobInstanceKey());
+        for (final JobRecord jobRec : jobs.values()) {
+            final Barrier runBarrier = barriers.get(jobRec.getRunBarrierKey());
+            final Barrier finalizeBarrier = barriers.get(jobRec.getFinalizeBarrierKey());
+            final Slot outputSlot = slots.get(jobRec.getOutputSlotKey());
+            final JobInstanceRecord jobInstanceRecord = jobInstanceRecords.get(jobRec.getJobInstanceKey());
             ExceptionRecord failureRecord = null;
-            UUID failureKey = jobRec.getExceptionKey();
+            final UUID failureKey = jobRec.getExceptionKey();
             if (null != failureKey) {
                 failureRecord = failureRecords.get(failureKey);
             }
             jobRec.inflate(runBarrier, finalizeBarrier, outputSlot, jobInstanceRecord, failureRecord);
         }
+    }
+
+    public JobRecord getRootJob() {
+        return rootJob;
+    }
+
+    public Map<UUID, JobRecord> getJobs() {
+        return jobs;
+    }
+
+    public Map<UUID, Slot> getSlots() {
+        return slots;
+    }
+
+    public Map<UUID, Barrier> getBarriers() {
+        return barriers;
+    }
+
+    public Map<UUID, JobInstanceRecord> getJobInstanceRecords() {
+        return jobInstanceRecords;
     }
 }

@@ -32,7 +32,7 @@ public interface JobSetting extends Serializable {
         private static final long serialVersionUID = 1961952679964049657L;
         private final Value<?> futureValue;
 
-        public WaitForSetting(Value<?> value) {
+        public WaitForSetting(final Value<?> value) {
             futureValue = value;
         }
 
@@ -49,7 +49,7 @@ public interface JobSetting extends Serializable {
         private static final long serialVersionUID = -4853437803222515955L;
         private final int value;
 
-        protected IntValuedSetting(int value) {
+        protected IntValuedSetting(final int value) {
             this.value = value;
         }
 
@@ -71,7 +71,7 @@ public interface JobSetting extends Serializable {
         private static final long serialVersionUID = 7756646651569386669L;
         private final String value;
 
-        protected StringValuedSetting(String value) {
+        protected StringValuedSetting(final String value) {
             this.value = value;
         }
 
@@ -100,7 +100,7 @@ public interface JobSetting extends Serializable {
         public static final int DEFAULT = 15;
         private static final long serialVersionUID = -8900842071483349275L;
 
-        public BackoffSeconds(int seconds) {
+        public BackoffSeconds(final int seconds) {
             super(seconds);
         }
     }
@@ -120,7 +120,7 @@ public interface JobSetting extends Serializable {
         public static final int DEFAULT = 2;
         private static final long serialVersionUID = 5879098639819720213L;
 
-        public BackoffFactor(int factor) {
+        public BackoffFactor(final int factor) {
             super(factor);
         }
     }
@@ -133,7 +133,7 @@ public interface JobSetting extends Serializable {
         public static final int DEFAULT = 3;
         private static final long serialVersionUID = 8389745591294068656L;
 
-        public MaxAttempts(int attempts) {
+        public MaxAttempts(final int attempts) {
             super(attempts);
         }
     }
@@ -146,7 +146,7 @@ public interface JobSetting extends Serializable {
         public static final String DEFAULT = null;
         private static final long serialVersionUID = -239968568113511744L;
 
-        public OnBackend(String backend) {
+        public OnBackend(final String backend) {
             super(backend);
         }
     }
@@ -159,7 +159,7 @@ public interface JobSetting extends Serializable {
         public static final String DEFAULT = null;
         private static final long serialVersionUID = 3877411731586475273L;
 
-        public OnModule(String module) {
+        public OnModule(final String module) {
             super(module);
         }
     }
@@ -172,7 +172,7 @@ public interface JobSetting extends Serializable {
         public static final String DEFAULT = null;
         private static final long serialVersionUID = -5010485721032395432L;
 
-        public OnQueue(String queue) {
+        public OnQueue(final String queue) {
             super(queue);
         }
     }
@@ -184,7 +184,7 @@ public interface JobSetting extends Serializable {
 
         private static final long serialVersionUID = -3079475300434663590L;
 
-        public StatusConsoleUrl(String statusConsoleUrl) {
+        public StatusConsoleUrl(final String statusConsoleUrl) {
             super(statusConsoleUrl);
         }
     }

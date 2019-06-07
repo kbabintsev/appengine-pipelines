@@ -26,21 +26,25 @@ import java.io.IOException;
 /**
  * @author tkaitchuck@google.com (Tom Kaitchuck)
  */
-public class JsonListHandler {
+public final class JsonListHandler {
 
     public static final String PATH_COMPONENT = "rpc/list";
     private static final String CLASS_FILTER_PARAMETER = "class_path";
     private static final String CURSOR_PARAMETER = "cursor";
     private static final String LIMIT_PARAMETER = "limit";
+    private static final int DEFAULT_LIMIT = 100;
 
-    public static void doGet(HttpServletRequest req, HttpServletResponse resp)
+    private JsonListHandler() {
+    }
+
+    public static void doGet(final HttpServletRequest req, final HttpServletResponse resp)
             throws ServletException {
-        String classFilter = getParam(req, CLASS_FILTER_PARAMETER);
-        String cursor = getParam(req, CURSOR_PARAMETER);
-        String limit = getParam(req, LIMIT_PARAMETER);
-        Pair<? extends Iterable<JobRecord>, String> pipelineRoots = PipelineManager.queryRootPipelines(
-                classFilter, cursor, limit == null ? 100 : Integer.parseInt(limit));
-        String asJson = JsonGenerator.pipelineRootsToJson(pipelineRoots);
+        final String classFilter = getParam(req, CLASS_FILTER_PARAMETER);
+        final String cursor = getParam(req, CURSOR_PARAMETER);
+        final String limit = getParam(req, LIMIT_PARAMETER);
+        final Pair<? extends Iterable<JobRecord>, String> pipelineRoots = PipelineManager.queryRootPipelines(
+                classFilter, cursor, limit == null ? DEFAULT_LIMIT : Integer.parseInt(limit));
+        final String asJson = JsonGenerator.pipelineRootsToJson(pipelineRoots);
         try {
             resp.getWriter().write(asJson);
         } catch (IOException e) {
@@ -48,7 +52,7 @@ public class JsonListHandler {
         }
     }
 
-    private static String getParam(HttpServletRequest req, String name) {
+    private static String getParam(final HttpServletRequest req, final String name) {
         String value = req.getParameter(name);
         if (value != null) {
             value = value.trim();

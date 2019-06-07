@@ -31,7 +31,7 @@ import java.util.UUID;
  * @author rudominer@google.com (Mitch Rudominer)
  */
 @SuppressWarnings("serial")
-public class PipelineServlet extends HttpServlet {
+public final class PipelineServlet extends HttpServlet {
 
     public static final String BASE_URL_PROPERTY = "com.google.appengine.tools.pipeline.BASE_URL";
     public static final String BASE_URL = baseUrl();
@@ -48,15 +48,15 @@ public class PipelineServlet extends HttpServlet {
         return baseURL;
     }
 
-    public static String makeViewerUrl(UUID rootJobKey, UUID jobKey) {
+    public static String makeViewerUrl(final UUID rootJobKey, final UUID jobKey) {
         return baseUrl() + "status.html?root=" + rootJobKey + "#pipeline-" + jobKey;
     }
 
-    private Pair<String, RequestType> parseRequestType(HttpServletRequest req) {
+    private Pair<String, RequestType> parseRequestType(final HttpServletRequest req) {
         String path = req.getPathInfo();
         path = path == null ? "" : path.substring(1); // Take off the leading '/'
         RequestType requestType = RequestType.HANDLE_STATIC;
-        for (RequestType rt : RequestType.values()) {
+        for (final RequestType rt : RequestType.values()) {
             if (rt.matches(path)) {
                 requestType = rt;
                 break;
@@ -66,17 +66,17 @@ public class PipelineServlet extends HttpServlet {
     }
 
     @Override
-    public void doPost(HttpServletRequest req, HttpServletResponse resp)
+    public void doPost(final HttpServletRequest req, final HttpServletResponse resp)
             throws ServletException, IOException {
         doGet(req, resp);
     }
 
     @Override
-    public void doGet(HttpServletRequest req, HttpServletResponse resp)
+    public void doGet(final HttpServletRequest req, final HttpServletResponse resp)
             throws ServletException, IOException {
-        Pair<String, RequestType> pair = parseRequestType(req);
-        RequestType requestType = pair.getSecond();
-        String path = pair.getFirst();
+        final Pair<String, RequestType> pair = parseRequestType(req);
+        final RequestType requestType = pair.getSecond();
+        final String path = pair.getFirst();
         switch (requestType) {
             case HANDLE_TASK:
                 TaskHandler.doPost(req);
@@ -104,7 +104,7 @@ public class PipelineServlet extends HttpServlet {
         }
     }
 
-    private static enum RequestType {
+    private enum RequestType {
 
         HANDLE_TASK(TaskHandler.PATH_COMPONENT),
         GET_JSON(JsonTreeHandler.PATH_COMPONENT),
@@ -116,11 +116,11 @@ public class PipelineServlet extends HttpServlet {
 
         private final String pathComponent;
 
-        private RequestType(String pathComponent) {
+        RequestType(final String pathComponent) {
             this.pathComponent = pathComponent;
         }
 
-        public boolean matches(String path) {
+        public boolean matches(final String path) {
             return pathComponent.equals(path);
         }
     }

@@ -25,7 +25,7 @@ import java.util.UUID;
  *
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class DeletePipelineTask extends ObjRefTask {
+public final class DeletePipelineTask extends ObjRefTask {
 
     /**
      * A parameter specifying that the Pipeline should be deleted no matter
@@ -35,18 +35,18 @@ public class DeletePipelineTask extends ObjRefTask {
 
     private final boolean force;
 
-    public DeletePipelineTask(UUID rootJobKey, boolean force, QueueSettings queueSettings) {
+    public DeletePipelineTask(final UUID rootJobKey, final boolean force, final QueueSettings queueSettings) {
         super(Type.DELETE_PIPELINE, "deletePipeline", rootJobKey, queueSettings);
         this.force = force;
     }
 
-    protected DeletePipelineTask(Type type, String taskName, Properties properties) {
+    protected DeletePipelineTask(final Type type, final String taskName, final Properties properties) {
         super(type, taskName, properties);
         force = Boolean.parseBoolean(properties.getProperty(FORCE_PARAM));
     }
 
     @Override
-    protected void addProperties(Properties properties) {
+    protected void addProperties(final Properties properties) {
         super.addProperties(properties);
         properties.setProperty(FORCE_PARAM, Boolean.toString(force));
     }

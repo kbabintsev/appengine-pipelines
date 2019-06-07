@@ -52,7 +52,7 @@ public abstract class Task {
      * This constructor is used on the sending side. That is, it is used to
      * construct a task to be enqueued.
      */
-    protected Task(Type type, String taskName, QueueSettings queueSettings) {
+    protected Task(final Type type, final String taskName, final QueueSettings queueSettings) {
         if (type == null) {
             throw new IllegalArgumentException("type must not be null");
         }
@@ -64,9 +64,9 @@ public abstract class Task {
         this.queueSettings = queueSettings;
     }
 
-    protected Task(Type type, String taskName, Properties properties) {
+    protected Task(final Type type, final String taskName, final Properties properties) {
         this(type, taskName, new QueueSettings());
-        for (TaskProperty taskProperty : TaskProperty.ALL) {
+        for (final TaskProperty taskProperty : TaskProperty.ALL) {
             taskProperty.applyFrom(this, properties);
         }
     }
@@ -79,32 +79,37 @@ public abstract class Task {
      * contain the properties specified by the concrete subclass of this class
      * corresponding to the task type.
      */
-    public static Task fromProperties(String taskName, Properties properties) {
-        String taskTypeString = properties.getProperty(TASK_TYPE_PARAMETER);
+    public static Task fromProperties(final String taskName, final Properties properties) {
+        final String taskTypeString = properties.getProperty(TASK_TYPE_PARAMETER);
         if (null == taskTypeString) {
             throw new IllegalArgumentException(TASK_TYPE_PARAMETER + " property is missing: "
                     + properties.toString());
         }
-        Type type = Type.valueOf(taskTypeString);
+        final Type type = Type.valueOf(taskTypeString);
         return type.createInstance(taskName, properties);
     }
 
-    public Type getType() {
+    public final Type getType() {
         return type;
     }
 
+    /**
+     * Returns the name of the task (can be overriden by subclasses)
+     *
+     * @return task name
+     */
     public String getName() {
         return taskName;
     }
 
-    public QueueSettings getQueueSettings() {
+    public final QueueSettings getQueueSettings() {
         return queueSettings;
     }
 
     public final Properties toProperties() {
-        Properties properties = new Properties();
+        final Properties properties = new Properties();
         properties.setProperty(TASK_TYPE_PARAMETER, type.toString());
-        for (TaskProperty taskProperty : TaskProperty.ALL) {
+        for (final TaskProperty taskProperty : TaskProperty.ALL) {
             taskProperty.addTo(this, properties);
         }
         addProperties(properties);
@@ -114,7 +119,7 @@ public abstract class Task {
     @Override
     public String toString() {
         String value = getType() + "_TASK[name=" + getName() + ", queueSettings=" + getQueueSettings();
-        String extraProperties = propertiesAsString();
+        final String extraProperties = propertiesAsString();
         if (extraProperties != null && !extraProperties.isEmpty()) {
             value += ", " + extraProperties;
         }
@@ -129,59 +134,59 @@ public abstract class Task {
 
         ON_BACKEND {
             @Override
-            void setProperty(Task task, String value) {
+            void setProperty(final Task task, final String value) {
                 task.getQueueSettings().setOnBackend(value);
             }
 
             @Override
-            String getProperty(Task task) {
+            String getProperty(final Task task) {
                 return task.getQueueSettings().getOnBackend();
             }
         },
         ON_MODULE {
             @Override
-            void setProperty(Task task, String value) {
+            void setProperty(final Task task, final String value) {
                 task.getQueueSettings().setOnModule(value);
             }
 
             @Override
-            String getProperty(Task task) {
+            String getProperty(final Task task) {
                 return task.getQueueSettings().getOnModule();
             }
         },
         MODULE_VERSION {
             @Override
-            void setProperty(Task task, String value) {
+            void setProperty(final Task task, final String value) {
                 task.getQueueSettings().setModuleVersion(value);
             }
 
             @Override
-            String getProperty(Task task) {
+            String getProperty(final Task task) {
                 return task.getQueueSettings().getModuleVersion();
             }
         },
         ON_QUEUE {
             @Override
-            void setProperty(Task task, String value) {
+            void setProperty(final Task task, final String value) {
                 task.getQueueSettings().setOnQueue(value);
             }
 
             @Override
-            String getProperty(Task task) {
+            String getProperty(final Task task) {
                 return task.getQueueSettings().getOnQueue();
             }
         },
         DELAY {
             @Override
-            void setProperty(Task task, String value) {
+            void setProperty(final Task task, final String value) {
                 if (value != null) {
                     task.getQueueSettings().setDelayInSeconds(Long.parseLong(value));
                 }
             }
 
             @Override
-            String getProperty(Task task) {
-                Long delay = task.getQueueSettings().getDelayInSeconds();
+            String getProperty(final Task task) {
+                final Long delay = task.getQueueSettings().getDelayInSeconds();
                 return delay == null ? null : delay.toString();
             }
         };
@@ -192,15 +197,15 @@ public abstract class Task {
 
         abstract String getProperty(Task task);
 
-        void applyFrom(Task task, Properties properties) {
-            String value = properties.getProperty(name());
+        void applyFrom(final Task task, final Properties properties) {
+            final String value = properties.getProperty(name());
             if (value != null) {
                 setProperty(task, value);
             }
         }
 
-        void addTo(Task task, Properties properties) {
-            String value = getProperty(task);
+        void addTo(final Task task, final Properties properties) {
+            final String value = getProperty(task);
             if (value != null) {
                 properties.setProperty(name(), value);
             }
@@ -210,7 +215,7 @@ public abstract class Task {
     /**
      * The type of task. The Pipeline framework uses several types
      */
-    public static enum Type {
+    public enum Type {
 
         HANDLE_SLOT_FILLED(HandleSlotFilledTask.class),
         RUN_JOB(RunJobTask.class),
@@ -225,7 +230,7 @@ public abstract class Task {
 
         private final Constructor<? extends Task> taskConstructor;
 
-        Type(Class<? extends Task> taskClass) {
+        Type(final Class<? extends Task> taskClass) {
             try {
                 taskConstructor = taskClass.getDeclaredConstructor(
                         getClass(), String.class, Properties.class);
@@ -235,9 +240,9 @@ public abstract class Task {
             }
         }
 
-        public Task createInstance(String taskName, Properties properties) {
+        public Task createInstance(final String aTaskName, final Properties properties) {
             try {
-                return taskConstructor.newInstance(this, taskName, properties);
+                return taskConstructor.newInstance(this, aTaskName, properties);
             } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
                     | InvocationTargetException e) {
                 throw new RuntimeException("Unexpected exception while creating new instance for "

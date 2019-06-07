@@ -39,82 +39,82 @@ import java.util.UUID;
 public class PipelineServiceImpl implements PipelineService {
 
     @Override
-    public UUID startNewPipeline(Job0<?> jobInstance, JobSetting... settings) {
+    public UUID startNewPipeline(final Job0<?> jobInstance, final JobSetting... settings) {
         return PipelineManager.startNewPipeline(settings, jobInstance);
     }
 
     @Override
-    public <T1> UUID startNewPipeline(Job1<?, T1> jobInstance, T1 arg1, JobSetting... settings) {
+    public <T1> UUID startNewPipeline(final Job1<?, T1> jobInstance, final T1 arg1, final JobSetting... settings) {
         return PipelineManager.startNewPipeline(settings, jobInstance, arg1);
     }
 
     @Override
-    public <T1, T2> UUID startNewPipeline(Job2<?, T1, T2> jobInstance, T1 arg1, T2 arg2,
-                                          JobSetting... settings) {
+    public <T1, T2> UUID startNewPipeline(final Job2<?, T1, T2> jobInstance, final T1 arg1, final T2 arg2,
+                                          final JobSetting... settings) {
         return PipelineManager.startNewPipeline(settings, jobInstance, arg1, arg2);
     }
 
     @Override
-    public <T1, T2, T3> UUID startNewPipeline(Job3<?, T1, T2, T3> jobInstance, T1 arg1, T2 arg2,
-                                              T3 arg3, JobSetting... settings) {
+    public <T1, T2, T3> UUID startNewPipeline(final Job3<?, T1, T2, T3> jobInstance, final T1 arg1, final T2 arg2,
+                                              final T3 arg3, final JobSetting... settings) {
         return PipelineManager.startNewPipeline(settings, jobInstance, arg1, arg2, arg3);
     }
 
     @Override
-    public <T1, T2, T3, T4> UUID startNewPipeline(Job4<?, T1, T2, T3, T4> jobInstance, T1 arg1,
-                                                  T2 arg2, T3 arg3, T4 arg4, JobSetting... settings) {
+    public <T1, T2, T3, T4> UUID startNewPipeline(final Job4<?, T1, T2, T3, T4> jobInstance, final T1 arg1,
+                                                  final T2 arg2, final T3 arg3, final T4 arg4, final JobSetting... settings) {
         return PipelineManager.startNewPipeline(settings, jobInstance, arg1, arg2, arg3, arg4);
     }
 
     @Override
-    public <T1, T2, T3, T4, T5> UUID startNewPipeline(Job5<?, T1, T2, T3, T4, T5> jobInstance,
-                                                      T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, JobSetting... settings) {
+    public <T1, T2, T3, T4, T5> UUID startNewPipeline(final Job5<?, T1, T2, T3, T4, T5> jobInstance,
+                                                      final T1 arg1, final T2 arg2, final T3 arg3, final T4 arg4, final T5 arg5, final JobSetting... settings) {
         return PipelineManager.startNewPipeline(settings, jobInstance, arg1, arg2, arg3, arg4, arg5);
     }
 
     @Override
     public <T1, T2, T3, T4, T5, T6> UUID startNewPipeline(
-            Job6<?, T1, T2, T3, T4, T5, T6> jobInstance, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5,
-            T6 arg6, JobSetting... settings) {
+            final Job6<?, T1, T2, T3, T4, T5, T6> jobInstance, final T1 arg1, final T2 arg2, final T3 arg3, final T4 arg4, final T5 arg5,
+            final T6 arg6, final JobSetting... settings) {
         return PipelineManager.startNewPipeline(settings, jobInstance, arg1, arg2, arg3, arg4, arg5,
                 arg6);
     }
 
     @Override
-    public UUID startNewPipelineUnchecked(Job<?> jobInstance, Object[] arguments,
-                                          JobSetting... settings) {
+    public UUID startNewPipelineUnchecked(final Job<?> jobInstance, final Object[] arguments,
+                                          final JobSetting... settings) {
         return PipelineManager.startNewPipeline(settings, jobInstance, arguments);
     }
 
     @Override
-    public void stopPipeline(UUID jobHandle) throws NoSuchObjectException {
+    public void stopPipeline(final UUID jobHandle) throws NoSuchObjectException {
         PipelineManager.stopJob(jobHandle);
     }
 
     @Override
-    public void cancelPipeline(UUID jobHandle) throws NoSuchObjectException {
+    public void cancelPipeline(final UUID jobHandle) throws NoSuchObjectException {
         PipelineManager.cancelJob(jobHandle);
     }
 
     @Override
-    public void deletePipelineRecords(UUID pipelineHandle) throws NoSuchObjectException,
+    public void deletePipelineRecords(final UUID pipelineHandle) throws NoSuchObjectException,
             IllegalStateException {
         deletePipelineRecords(pipelineHandle, false, false);
     }
 
     @Override
-    public void deletePipelineRecords(UUID pipelineHandle, boolean force, boolean async)
+    public void deletePipelineRecords(final UUID pipelineHandle, final boolean force, final boolean async)
             throws NoSuchObjectException, IllegalStateException {
         PipelineManager.deletePipelineRecords(pipelineHandle, force, async);
     }
 
     @Override
-    public JobInfo getJobInfo(UUID jobHandle) throws NoSuchObjectException {
+    public JobInfo getJobInfo(final UUID jobHandle) throws NoSuchObjectException {
         return PipelineManager.getJob(jobHandle);
     }
 
     @Override
-    public void submitPromisedValue(UUID promiseHandle, Object value)
+    public void submitPromisedValue(final UUID promiseHandle, final Object value)
             throws NoSuchObjectException, OrphanedObjectException {
         PipelineManager.acceptPromisedValue(promiseHandle, value);
     }

@@ -29,7 +29,7 @@ import java.util.UUID;
  *
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class JobInstanceRecord extends PipelineModelObject {
+public final class JobInstanceRecord extends PipelineModelObject {
 
     public static final String DATA_STORE_KIND = "JobInstance";
     public static final String JOB_DISPLAY_NAME_PROPERTY = "jobDisplayName";
@@ -53,7 +53,7 @@ public class JobInstanceRecord extends PipelineModelObject {
     // transient
     private Job<?> jobInstance;
 
-    public JobInstanceRecord(JobRecord job, Job<?> jobInstance) {
+    public JobInstanceRecord(final JobRecord job, final Job<?> jobInstance) {
         super(DATA_STORE_KIND, job.getRootJobKey(), job.getGeneratorJobKey(), job.getGraphGuid());
         jobKey = job.getKey();
         jobClassName = jobInstance.getClass().getName();
@@ -66,7 +66,7 @@ public class JobInstanceRecord extends PipelineModelObject {
         }
     }
 
-    public JobInstanceRecord(StructReader entity) {
+    public JobInstanceRecord(final StructReader entity) {
         super(DATA_STORE_KIND, entity);
         jobKey = UUID.fromString(entity.getString(JOB_KEY_PROPERTY)); // probably not null?
         jobClassName = entity.getString(JOB_CLASS_NAME_PROPERTY); // probably not null?
@@ -81,7 +81,7 @@ public class JobInstanceRecord extends PipelineModelObject {
 
     @Override
     public PipelineMutation toEntity() {
-        PipelineMutation mutation = toProtoEntity();
+        final PipelineMutation mutation = toProtoEntity();
         final Mutation.WriteBuilder entity = mutation.getDatabaseMutation();
         entity.set(JOB_KEY_PROPERTY).to(jobKey.toString());
         entity.set(JOB_CLASS_NAME_PROPERTY).to(jobClassName);

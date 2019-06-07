@@ -17,7 +17,7 @@ public final class QueueSettings implements Cloneable {
      * Merge will override any {@code null} setting with a matching setting from {@code other}.
      * Note, delay value is not being merged.
      */
-    public QueueSettings merge(QueueSettings other) {
+    public QueueSettings merge(final QueueSettings other) {
         if (onBackend == null && onModule == null) {
             onBackend = other.getOnBackend();
         }
@@ -35,7 +35,7 @@ public final class QueueSettings implements Cloneable {
         return onBackend;
     }
 
-    public QueueSettings setOnBackend(String onBackend) {
+    public QueueSettings setOnBackend(final String onBackend) {
         if (onBackend != null && onModule != null) {
             throw new IllegalStateException("OnModule and OnBackend cannot be combined");
         }
@@ -47,7 +47,7 @@ public final class QueueSettings implements Cloneable {
         return onModule;
     }
 
-    public QueueSettings setOnModule(String onModule) {
+    public QueueSettings setOnModule(final String onModule) {
         if (onModule != null && onBackend != null) {
             throw new IllegalStateException("OnModule and OnBackend cannot be combined");
         }
@@ -59,7 +59,7 @@ public final class QueueSettings implements Cloneable {
         return moduleVersion;
     }
 
-    public QueueSettings setModuleVersion(String moduleVersion) {
+    public QueueSettings setModuleVersion(final String moduleVersion) {
         this.moduleVersion = moduleVersion;
         return this;
     }
@@ -68,7 +68,7 @@ public final class QueueSettings implements Cloneable {
         return onQueue;
     }
 
-    public QueueSettings setOnQueue(String onQueue) {
+    public QueueSettings setOnQueue(final String onQueue) {
         this.onQueue = onQueue;
         return this;
     }
@@ -77,8 +77,8 @@ public final class QueueSettings implements Cloneable {
         return delay;
     }
 
-    public void setDelayInSeconds(Long delay) {
-        this.delay = delay;
+    public void setDelayInSeconds(final Long delayInSeconds) {
+        this.delay = delayInSeconds;
     }
 
     @Override

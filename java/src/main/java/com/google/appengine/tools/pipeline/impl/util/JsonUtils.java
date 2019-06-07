@@ -19,18 +19,19 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
 /**
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class JsonUtils {
+public final class JsonUtils {
 
-    public static String mapToJson(Map<?, ?> map) {
+    private JsonUtils() {
+    }
+
+    public static String mapToJson(final Map<?, ?> map) {
         try {
             return (new JSONObject(map)).toString(2);
         } catch (Exception e) {
@@ -43,7 +44,7 @@ public class JsonUtils {
     /**
      * Convert an object into its JSON representation.
      */
-    private static String toJson(Object x) {
+    private static String toJson(final Object x) {
         try {
             if (x == null || x instanceof String || x instanceof Number || x instanceof Character
                     || x.getClass().isArray() || x instanceof Iterable<?>) {
@@ -63,9 +64,9 @@ public class JsonUtils {
     /**
      * Convert a JSON representation into an object
      */
-    public static Object fromJson(String json) {
+    public static Object fromJson(final String json) {
         try {
-            JSONObject jsonObject = new JSONObject(json);
+            final JSONObject jsonObject = new JSONObject(json);
             if (jsonObject.has("JSON")) {
                 return convert(jsonObject.get("JSON"));
             } else {
@@ -80,23 +81,23 @@ public class JsonUtils {
      * Convert an <code>org.json.JSONObject</code> into a <code>Map</code> and an
      * <code>org.json.JSONArray</code> into a <code>List</code>
      */
-    private static Object convert(Object x) throws JSONException {
+    private static Object convert(final Object x) throws JSONException {
         if (x instanceof JSONObject) {
-            JSONObject jsonObject = (JSONObject) x;
-            String[] names = JSONObject.getNames(jsonObject);
+            final JSONObject jsonObject = (JSONObject) x;
+            final String[] names = JSONObject.getNames(jsonObject);
             if (names == null || names.length == 0) {
                 return new HashMap<>(0);
             }
-            HashMap<String, Object> map = new HashMap<>(names.length);
-            for (String name : names) {
-                Object value = jsonObject.get(name);
+            final Map<String, Object> map = new HashMap<>(names.length);
+            for (final String name : names) {
+                final Object value = jsonObject.get(name);
                 map.put(name, convert(value));
             }
             return map;
         } else if (x instanceof JSONArray) {
-            JSONArray jsonArray = (JSONArray) x;
-            int length = jsonArray.length();
-            List<Object> list = new ArrayList<>(length);
+            final JSONArray jsonArray = (JSONArray) x;
+            final int length = jsonArray.length();
+            final List<Object> list = new ArrayList<>(length);
             for (int i = 0; i < length; i++) {
                 list.add(convert(jsonArray.get(i)));
             }
@@ -106,16 +107,16 @@ public class JsonUtils {
         }
     }
 
-    private static String recursiveToString(Object y) {
-        StringBuilder builder = new StringBuilder(512);
+    private static String recursiveToString(final Object y) {
+        final StringBuilder builder = new StringBuilder(512);
         if (null == y) {
             builder.append("null");
         } else {
             if (y instanceof List) {
-                List<?> list = (List<?>) y;
+                final List<?> list = (List<?>) y;
                 builder.append("(");
                 boolean first = true;
-                for (Object x : list) {
+                for (final Object x : list) {
                     if (!first) {
                         builder.append(", ");
                     }
@@ -124,10 +125,10 @@ public class JsonUtils {
                 }
                 builder.append(")");
             } else if (y instanceof Map) {
-                Map<?, ?> map = (Map<?, ?>) y;
+                final Map<?, ?> map = (Map<?, ?>) y;
                 builder.append("{");
                 boolean first = true;
-                for (Object key : map.keySet()) {
+                for (final Object key : map.keySet()) {
                     if (!first) {
                         builder.append(", ");
                     }
@@ -148,15 +149,16 @@ public class JsonUtils {
         return builder.toString();
     }
 
-    private static void debugPrint(Object x) {
+    private static void debugPrint(final Object x) {
         System.out.println();
-        String json = toJson(x);
-        Object y = fromJson(json);
+        final String json = toJson(x);
+        final Object y = fromJson(json);
         System.out.println(x + " --> " + json + " --> " + recursiveToString(y));
     }
 
-    public static void main(String[] args) throws Exception {
-        JSONObject x = new JSONObject();
+    public static void main(final String[] args) throws Exception {
+        /*
+        final JSONObject x = new JSONObject();
         x.put("first", 5);
         x.put("second", 7);
         debugPrint("hello");
@@ -167,34 +169,34 @@ public class JsonUtils {
         debugPrint(x);
         debugPrint(null);
 
-        Map<String, Integer> map = new HashMap<>();
+        final Map<String, Integer> map = new HashMap<>();
         map.put("first", 5);
         map.put("second", 7);
         debugPrint(map);
 
-        int[] array = new int[]{5, 7};
+        final int[] array = new int[]{5, 7};
         debugPrint(array);
 
-        ArrayList<Integer> arrayList = new ArrayList<>(2);
+        final ArrayList<Integer> arrayList = new ArrayList<>(2);
         arrayList.add(5);
         arrayList.add(7);
         debugPrint(arrayList);
 
-        Collection<Integer> collection = new HashSet<>(2);
+        final Collection<Integer> collection = new HashSet<>(2);
         collection.add(5);
         collection.add(7);
         debugPrint(collection);
 
-        Object object = new Object();
+        final Object object = new Object();
         debugPrint(object);
 
-        Map<String, String> map1 = new HashMap<>();
+        final Map<String, String> map1 = new HashMap<>();
         map1.put("a", "hello");
         map1.put("b", "goodbye");
 
-        Object[] array2 = new Object[]{17, "yes", "no", map1};
+        final Object[] array2 = new Object[]{17, "yes", "no", map1};
 
-        Map<String, Object> map2 = new HashMap<>();
+        final Map<String, Object> map2 = new HashMap<>();
         map2.put("first", 5.4);
         map2.put("second", array2);
         map2.put("third", map1);
@@ -217,7 +219,8 @@ public class JsonUtils {
                 return "yellow";
             }
         }
-        debugPrint(new MyBean());
 
+        debugPrint(new MyBean());
+        */
     }
 }

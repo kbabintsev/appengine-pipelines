@@ -65,14 +65,15 @@ import java.util.UUID;
  *
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class UpdateSpec {
+public final class UpdateSpec {
 
+    private static final int INITIAL_MAP_CAPACITY = 10;
     private Group nonTransactionalGroup = new Group();
-    private Map<String, Transaction> transactions = new HashMap<>(10);
+    private Map<String, Transaction> transactions = new HashMap<>(INITIAL_MAP_CAPACITY);
     private TransactionWithTasks finalTransaction = new TransactionWithTasks();
     private UUID rootJobKey;
 
-    public UpdateSpec(UUID rootJobKey) {
+    public UpdateSpec(final UUID rootJobKey) {
         this.rootJobKey = rootJobKey;
     }
 
@@ -80,11 +81,11 @@ public class UpdateSpec {
         return rootJobKey;
     }
 
-    public void setRootJobKey(UUID rootJobKey) {
+    public void setRootJobKey(final UUID rootJobKey) {
         this.rootJobKey = rootJobKey;
     }
 
-    public Transaction getOrCreateTransaction(String transactionName) {
+    public Transaction getOrCreateTransaction(final String transactionName) {
         Transaction transaction = transactions.get(transactionName);
         if (null == transaction) {
             transaction = new Transaction();
@@ -130,59 +131,59 @@ public class UpdateSpec {
         private Map<UUID, JobInstanceRecord> jobInstanceMap = new HashMap<>(INITIAL_SIZE);
         private Map<UUID, ExceptionRecord> failureMap = new HashMap<>(INITIAL_SIZE);
 
-        private static <E extends PipelineModelObject> void put(Map<UUID, E> map, E object) {
+        private static <E extends PipelineModelObject> void put(final Map<UUID, E> map, final E object) {
             map.put(object.getKey(), object);
         }
 
         /**
          * Include the given Barrier in the group of objects to be saved.
          */
-        public void includeBarrier(Barrier barrier) {
+        public final void includeBarrier(final Barrier barrier) {
             put(barrierMap, barrier);
         }
 
-        public Collection<Barrier> getBarriers() {
+        public final Collection<Barrier> getBarriers() {
             return barrierMap.values();
         }
 
         /**
          * Include the given JobRecord in the group of objects to be saved.
          */
-        public void includeJob(JobRecord job) {
+        public final void includeJob(final JobRecord job) {
             put(jobMap, job);
         }
 
-        public Collection<JobRecord> getJobs() {
+        public final Collection<JobRecord> getJobs() {
             return jobMap.values();
         }
 
         /**
          * Include the given Slot in the group of objects to be saved.
          */
-        public void includeSlot(Slot slot) {
+        public final void includeSlot(final Slot slot) {
             put(slotMap, slot);
         }
 
-        public Collection<Slot> getSlots() {
+        public final Collection<Slot> getSlots() {
             return slotMap.values();
         }
 
         /**
          * Include the given JobInstanceRecord in the group of objects to be saved.
          */
-        public void includeJobInstanceRecord(JobInstanceRecord record) {
+        public final void includeJobInstanceRecord(final JobInstanceRecord record) {
             put(jobInstanceMap, record);
         }
 
-        public Collection<JobInstanceRecord> getJobInstanceRecords() {
+        public final Collection<JobInstanceRecord> getJobInstanceRecords() {
             return jobInstanceMap.values();
         }
 
-        public void includeException(ExceptionRecord failureRecord) {
+        public final void includeException(final ExceptionRecord failureRecord) {
             put(failureMap, failureRecord);
         }
 
-        public Collection<ExceptionRecord> getFailureRecords() {
+        public final Collection<ExceptionRecord> getFailureRecords() {
             return failureMap.values();
         }
     }
@@ -211,14 +212,14 @@ public class UpdateSpec {
         private static final int INITIAL_SIZE = 20;
         private final Set<Task> taskSet = new HashSet<>(INITIAL_SIZE);
 
-        public void registerTask(Task task) {
+        public final void registerTask(final Task task) {
             taskSet.add(task);
         }
 
         /**
          * @return Unmodifiable collection of Tasks.
          */
-        public Collection<Task> getTasks() {
+        public final Collection<Task> getTasks() {
             return Collections.unmodifiableCollection(taskSet);
         }
     }

@@ -8,9 +8,12 @@ package com.google.appengine.tools.pipeline.impl.util;
  *
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class TestUtils {
+public final class TestUtils {
 
     private static final String FAIL_PROPERTY_PREFIX = TestUtils.class.getName() + ".failAt.";
+
+    private TestUtils() {
+    }
 
     /**
      * Builds the name of the Java System property that should be set to
@@ -22,7 +25,7 @@ public class TestUtils {
      *                to fail for tests.
      * @return The name of the Java System propert that should be set to "true".
      */
-    public static String getFailureProperty(String breakId) {
+    public static String getFailureProperty(final String breakId) {
         return FAIL_PROPERTY_PREFIX + "." + breakId;
     }
 
@@ -38,8 +41,8 @@ public class TestUtils {
      *                Java System property named x is "true" where x is the result of
      *                invoking {@link #getFailureProperty(String)} on {@code breakId}.
      */
-    public static void throwHereForTesting(String breakId) {
-        String propertyName = getFailureProperty(breakId);
+    public static void throwHereForTesting(final String breakId) {
+        final String propertyName = getFailureProperty(breakId);
         if (Boolean.parseBoolean(System.getProperty(propertyName))) {
             System.setProperty(propertyName, "false");
             throw new RuntimeException("Breaking for test at " + breakId);

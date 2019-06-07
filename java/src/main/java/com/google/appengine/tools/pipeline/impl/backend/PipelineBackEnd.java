@@ -180,9 +180,9 @@ public interface PipelineBackEnd {
 
   void cleanBlobs(String prefix);
 
-  void saveBlob(UUID rootJobKey, final String ownerType, UUID ownerKey, byte[] value);
+  void saveBlob(UUID rootJobKey, String ownerType, UUID ownerKey, byte[] value);
 
-  byte[] retrieveBlob(UUID rootJobKey, final String ownerType, UUID ownerKey);
+  byte[] retrieveBlob(UUID rootJobKey, String ownerType, UUID ownerKey);
 
   /**
    * Immediately enqueues the given task in the app engine task queue. Note that

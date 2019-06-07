@@ -21,11 +21,11 @@ import com.google.appengine.api.taskqueue.QueueFactory;
 import com.google.appengine.api.taskqueue.RetryOptions;
 import com.google.appengine.api.taskqueue.TaskOptions;
 import com.google.common.base.Function;
-import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,38 +38,38 @@ import static com.google.appengine.tools.pipeline.Job.waitFor;
  *
  * @author ozarov@google.com (Arie Ozarov)
  */
-public class Jobs {
+public final class Jobs {
 
     private Jobs() {
         // A utility class
     }
 
-    public static JobSetting.WaitForSetting[] createWaitForSettingArray(Value<?>... values) {
-        JobSetting.WaitForSetting[] settings = new JobSetting.WaitForSetting[values.length];
+    public static JobSetting.WaitForSetting[] createWaitForSettingArray(final Value<?>... values) {
+        final JobSetting.WaitForSetting[] settings = new JobSetting.WaitForSetting[values.length];
         int i = 0;
-        for (Value<?> value : values) {
+        for (final Value<?> value : values) {
             settings[i++] = waitFor(value);
         }
         return settings;
     }
 
-    public static <T> Value<T> waitForAll(Job<?> caller, Value<T> value, Value<?>... values) {
+    public static <T> Value<T> waitForAll(final Job<?> caller, final Value<T> value, final Value<?>... values) {
         return caller.futureCall(new WaitForAllJob<T>(), value, createWaitForSettingArray(values));
     }
 
-    public static <T> Value<T> waitForAll(Job<?> caller, T value, Value<?>... values) {
+    public static <T> Value<T> waitForAll(final Job<?> caller, final T value, final Value<?>... values) {
         return caller.futureCall(new WaitForAllJob<T>(), immediate(value),
                 createWaitForSettingArray(values));
     }
 
     public static <T> Value<T> waitForAllAndDelete(
-            Job<?> caller, Value<T> value, Value<?>... values) {
+            final Job<?> caller, final Value<T> value, final Value<?>... values) {
         return caller.futureCall(
                 new DeletePipelineJob<T>(caller.getPipelineKey()),
                 value, createWaitForSettingArray(values));
     }
 
-    public static <T> Value<T> waitForAllAndDelete(Job<?> caller, T value, Value<?>... values) {
+    public static <T> Value<T> waitForAllAndDelete(final Job<?> caller, final T value, final Value<?>... values) {
         return caller.futureCall(new DeletePipelineJob<T>(caller.getPipelineKey()),
                 immediate(value), createWaitForSettingArray(values));
     }
@@ -85,13 +85,13 @@ public class Jobs {
         private static final long serialVersionUID = 1280795955105207728L;
         private Function<F, T> function;
 
-        public Transform(Function<F, T> function) {
+        public Transform(final Function<F, T> function) {
             Preconditions.checkArgument(function instanceof Serializable, "Function not serializable");
             this.function = function;
         }
 
         @Override
-        public Value<T> run(F from) throws Exception {
+        public Value<T> run(final F from) throws Exception {
             return immediate(function.apply(from));
         }
     }
@@ -101,7 +101,7 @@ public class Jobs {
         private static final long serialVersionUID = 3151677893523195265L;
 
         @Override
-        public Value<T> run(T value) {
+        public Value<T> run(final T value) {
             return immediate(value);
         }
     }
@@ -109,50 +109,53 @@ public class Jobs {
     private static class DeletePipelineJob<T> extends Job1<T, T> {
 
         private static final long serialVersionUID = -5440838671291502355L;
-        private static final Logger log = Logger.getLogger(DeletePipelineJob.class.getName());
+        private static final Logger LOGGER = Logger.getLogger(DeletePipelineJob.class.getName());
+        private static final int COUNTDOWN_MILLIS = 10000;
+        private static final int MAX_BACKOFF_SECONDS = 20;
+        private static final int MIN_BACKOFF_SECONDS = 2;
         private final UUID key;
 
-        DeletePipelineJob(UUID rootJobKey) {
+        DeletePipelineJob(final UUID rootJobKey) {
             this.key = rootJobKey;
         }
 
         @Override
-        public Value<T> run(T value) {
+        public Value<T> run(final T value) {
             DeferredTask deleteRecordsTask = new DeferredTask() {
                 private static final long serialVersionUID = -7510918963650055768L;
 
                 @Override
                 public void run() {
-                    PipelineService service = PipelineServiceFactory.newPipelineService();
+                    final PipelineService service = PipelineServiceFactory.newPipelineService();
                     try {
                         service.deletePipelineRecords(key);
-                        log.info("Deleted pipeline: " + key);
+                        LOGGER.info("Deleted pipeline: " + key);
                     } catch (IllegalStateException e) {
-                        log.info("Failed to delete pipeline: " + key);
-                        HttpServletRequest request = DeferredTaskContext.getCurrentRequest();
+                        LOGGER.info("Failed to delete pipeline: " + key);
+                        final HttpServletRequest request = DeferredTaskContext.getCurrentRequest();
                         if (request != null) {
-                            int attempts = request.getIntHeader("X-AppEngine-TaskExecutionCount");
+                            final int attempts = request.getIntHeader("X-AppEngine-TaskExecutionCount");
                             if (attempts <= 5) {
-                                log.info("Request to retry deferred task #" + attempts);
+                                LOGGER.info("Request to retry deferred task #" + attempts);
                                 DeferredTaskContext.markForRetry();
                                 return;
                             }
                         }
                         try {
                             service.deletePipelineRecords(key, true, false);
-                            log.info("Force deleted pipeline: " + key);
+                            LOGGER.info("Force deleted pipeline: " + key);
                         } catch (Exception ex) {
-                            log.log(Level.WARNING, "Failed to force delete pipeline: " + key, ex);
+                            LOGGER.log(Level.WARNING, "Failed to force delete pipeline: " + key, ex);
                         }
-                    } catch (NoSuchObjectException e) {
+                    } catch (NoSuchObjectException ignore) {
                         // Already done
                     }
                 }
             };
-            String queueName = Optional.fromNullable(getOnQueue()).or("default");
-            Queue queue = QueueFactory.getQueue(queueName);
-            queue.add(TaskOptions.Builder.withPayload(deleteRecordsTask).countdownMillis(10000)
-                    .retryOptions(RetryOptions.Builder.withMinBackoffSeconds(2).maxBackoffSeconds(20)));
+            final String queueName = Optional.ofNullable(getOnQueue()).orElse("default");
+            final Queue queue = QueueFactory.getQueue(queueName);
+            queue.add(TaskOptions.Builder.withPayload(deleteRecordsTask).countdownMillis(COUNTDOWN_MILLIS)
+                    .retryOptions(RetryOptions.Builder.withMinBackoffSeconds(MIN_BACKOFF_SECONDS).maxBackoffSeconds(MAX_BACKOFF_SECONDS)));
             return immediate(value);
         }
     }

@@ -27,13 +27,16 @@ import static java.util.Collections.singletonMap;
 /**
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class JsonClassFilterHandler {
+public final class JsonClassFilterHandler {
 
     public static final String PATH_COMPONENT = "rpc/class_paths";
 
-    public static void doGet(@SuppressWarnings("unused") HttpServletRequest req,
-                             HttpServletResponse resp) throws IOException {
-        Set<String> pipelines = PipelineManager.getRootPipelinesDisplayName();
+    private JsonClassFilterHandler() {
+    }
+
+    public static void doGet(@SuppressWarnings("unused") final HttpServletRequest req,
+                             final HttpServletResponse resp) throws IOException {
+        final Set<String> pipelines = PipelineManager.getRootPipelinesDisplayName();
         resp.getWriter().write(mapToJson(singletonMap("classPaths", pipelines)));
     }
 }

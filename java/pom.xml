@@ -70,6 +70,33 @@
                     </excludes>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>2.17</version>
+                <configuration>
+                    <configLocation>https://raw.githubusercontent.com/cloudaware/checkstyle-config/master/checkstyle.xml</configLocation>
+                    <suppressionsLocation>${session.executionRootDirectory}/suppressions.xml</suppressionsLocation>
+                    <consoleOutput>true</consoleOutput>
+                    <failsOnError>true</failsOnError>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle-backport-jre6</artifactId>
+                        <version>7.2</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>validate</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
         <resources>
             <resource>
@@ -144,4 +171,11 @@
             <version>v1-rev139-1.25.0</version>
         </dependency>
     </dependencies>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>checkstyle-backport-jre6-maven</id>
+            <name>checkstyle-backport-jre6-maven</name>
+            <url>http://rnveach.github.io/checkstyle-backport-jre6/maven2</url>
+        </pluginRepository>
+    </pluginRepositories>
 </project>

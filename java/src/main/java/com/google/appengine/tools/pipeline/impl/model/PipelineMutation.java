@@ -4,7 +4,7 @@ import com.google.cloud.spanner.Mutation;
 
 import java.util.UUID;
 
-public class PipelineMutation {
+public final class PipelineMutation {
     private final Mutation.WriteBuilder databaseMutation;
     private BlobMutation blobMutation;
 
@@ -27,7 +27,7 @@ public class PipelineMutation {
         this.blobMutation = blobMutation;
     }
 
-    public static class BlobMutation {
+    public static final class BlobMutation {
         private UUID rootJobKey;
         private String type;
         private UUID key;

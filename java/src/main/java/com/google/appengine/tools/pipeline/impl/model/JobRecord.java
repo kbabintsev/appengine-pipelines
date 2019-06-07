@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
  *
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class JobRecord extends PipelineModelObject implements JobInfo {
+public final class JobRecord extends PipelineModelObject implements JobInfo {
 
     public static final String EXCEPTION_HANDLER_METHOD_NAME = "handleException";
     public static final String DATA_STORE_KIND = "Job";
@@ -152,7 +152,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
      *
      * @param entity
      */
-    public JobRecord(StructReader entity) {
+    public JobRecord(final StructReader entity) {
         super(DATA_STORE_KIND, entity);
         jobInstanceKey = UUID.fromString(entity.getString(JOB_INSTANCE_PROPERTY));
         finalizeBarrierKey = UUID.fromString(entity.getString(FINALIZE_BARRIER_PROPERTY));
@@ -225,8 +225,8 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
      * @param settings             Array of {@code JobSetting} to apply to the newly created
      *                             JobRecord.
      */
-    public JobRecord(JobRecord generatorJob, String graphGUIDParam, Job<?> jobInstance,
-                     boolean callExceptionHandler, JobSetting[] settings) {
+    public JobRecord(final JobRecord generatorJob, final String graphGUIDParam, final Job<?> jobInstance,
+                     final boolean callExceptionHandler, final JobSetting[] settings) {
         this(generatorJob.getRootJobKey(), null, generatorJob.getKey(), graphGUIDParam, jobInstance,
                 callExceptionHandler, settings, generatorJob.getQueueSettings());
         // If generator job has exception handler then it should be called in case
@@ -240,8 +240,8 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
             exceptionHandlingAncestorKey = generatorJob.getExceptionHandlingAncestorKey();
         }
         // Inherit settings from generator job
-        Map<Class<? extends JobSetting>, JobSetting> settingsMap = new HashMap<>();
-        for (JobSetting setting : settings) {
+        final Map<Class<? extends JobSetting>, JobSetting> settingsMap = new HashMap<>();
+        for (final JobSetting setting : settings) {
             settingsMap.put(setting.getClass(), setting);
         }
         if (!settingsMap.containsKey(StatusConsoleUrl.class)) {
@@ -249,13 +249,13 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
         }
     }
 
-    private JobRecord(UUID rootJobKey, UUID thisKey, UUID generatorJobKey, String graphGUID,
-                      Job<?> jobInstance, boolean callExceptionHandler, JobSetting[] settings,
-                      QueueSettings parentQueueSettings) {
+    private JobRecord(final UUID rootJobKey, final UUID thisKey, final UUID generatorJobKey, final String graphGUID,
+                      final Job<?> jobInstance, final boolean callExceptionHandler, final JobSetting[] settings,
+                      final QueueSettings parentQueueSettings) {
         super(DATA_STORE_KIND, rootJobKey, null, thisKey, generatorJobKey, graphGUID);
         jobInstanceRecordInflated = new JobInstanceRecord(this, jobInstance);
         jobInstanceKey = jobInstanceRecordInflated.getKey();
-        exceptionHandlerSpecified = isExceptionHandlerSpecified(jobInstance);
+        exceptionHandlerSpecified = hasExceptionHandler(jobInstance);
         this.callExceptionHandler = callExceptionHandler;
         runBarrierInflated = new Barrier(Barrier.Type.RUN, this);
         runBarrierKey = runBarrierInflated.getKey();
@@ -268,25 +268,25 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
         outputSlotKey = outputSlotInflated.getKey();
         childKeys = new LinkedList<>();
         state = State.WAITING_TO_RUN;
-        for (JobSetting setting : settings) {
+        for (final JobSetting setting : settings) {
             applySetting(setting);
         }
         if (parentQueueSettings != null) {
             queueSettings.merge(parentQueueSettings);
         }
         if (queueSettings.getOnBackend() == null) {
-            String module = queueSettings.getOnModule();
+            final String module = queueSettings.getOnModule();
             if (module == null) {
-                String currentBackend = getCurrentBackend();
+                final String currentBackend = getCurrentBackend();
                 if (currentBackend != null) {
                     queueSettings.setOnBackend(currentBackend);
                 } else {
-                    ModulesService modulesService = ModulesServiceFactory.getModulesService();
+                    final ModulesService modulesService = ModulesServiceFactory.getModulesService();
                     queueSettings.setOnModule(modulesService.getCurrentModule());
                     queueSettings.setModuleVersion(modulesService.getCurrentVersion());
                 }
             } else {
-                ModulesService modulesService = ModulesServiceFactory.getModulesService();
+                final ModulesService modulesService = ModulesServiceFactory.getModulesService();
                 if (module.equals(modulesService.getCurrentModule())) {
                     queueSettings.setModuleVersion(modulesService.getCurrentVersion());
                 } else {
@@ -297,7 +297,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
     }
 
     // Constructor for Root Jobs (called by {@link #createRootJobRecord}).
-    private JobRecord(UUID key, Job<?> jobInstance, JobSetting[] settings) {
+    private JobRecord(final UUID key, final Job<?> jobInstance, final JobSetting[] settings) {
         // Root Jobs have their rootJobKey the same as their keys and provide null for generatorKey
         // and graphGUID. Also, callExceptionHandler is always false.
         this(key, key, null, null, jobInstance, false, settings, null);
@@ -309,7 +309,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
             // MVM can't be a backend.
             return null;
         }
-        BackendService backendService = BackendServiceFactory.getBackendService();
+        final BackendService backendService = BackendServiceFactory.getBackendService();
         String currentBackend = backendService.getCurrentBackend();
         // If currentBackend contains ':' it is actually a B type module (see b/12893879)
         if (currentBackend != null && currentBackend.indexOf(':') != -1) {
@@ -326,17 +326,17 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
      * @param settings    Array of {@code JobSetting} to apply to the newly created
      *                    JobRecord.
      */
-    public static JobRecord createRootJobRecord(Job<?> jobInstance, JobSetting[] settings) {
-        UUID key = generateKey(null, DATA_STORE_KIND);
+    public static JobRecord createRootJobRecord(final Job<?> jobInstance, final JobSetting[] settings) {
+        final UUID key = generateKey(null, DATA_STORE_KIND);
         return new JobRecord(key, jobInstance, settings);
     }
 
-    public static boolean isExceptionHandlerSpecified(Job<?> jobInstance) {
+    public static boolean hasExceptionHandler(final Job<?> jobInstance) {
         boolean result = false;
-        Class<?> clazz = jobInstance.getClass();
-        for (Method method : clazz.getMethods()) {
+        final Class<?> clazz = jobInstance.getClass();
+        for (final Method method : clazz.getMethods()) {
             if (method.getName().equals(EXCEPTION_HANDLER_METHOD_NAME)) {
-                Class<?>[] parameterTypes = method.getParameterTypes();
+                final Class<?>[] parameterTypes = method.getParameterTypes();
                 if (parameterTypes.length != 1 || !Throwable.class.isAssignableFrom(parameterTypes[0])) {
                     throw new RuntimeException(method
                             + " has invalid signature. It must have exactly one paramter of type "
@@ -349,7 +349,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
         return result;
     }
 
-    private static boolean checkForInflate(PipelineModelObject obj, UUID expectedGuid, String name) {
+    private static boolean checkForInflate(final PipelineModelObject obj, final UUID expectedGuid, final String name) {
         if (null == obj) {
             return false;
         }
@@ -368,7 +368,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
      */
     @Override
     public PipelineMutation toEntity() {
-        PipelineMutation mutation = toProtoEntity();
+        final PipelineMutation mutation = toProtoEntity();
         final Mutation.WriteBuilder entity = mutation.getDatabaseMutation();
         entity.set(JOB_INSTANCE_PROPERTY).to(jobInstanceKey.toString());
         entity.set(FINALIZE_BARRIER_PROPERTY).to(finalizeBarrierKey.toString());
@@ -413,14 +413,14 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
         return mutation;
     }
 
-    private void applySetting(JobSetting setting) {
+    private void applySetting(final JobSetting setting) {
         if (setting instanceof WaitForSetting) {
-            WaitForSetting wf = (WaitForSetting) setting;
-            FutureValueImpl<?> fv = (FutureValueImpl<?>) wf.getValue();
-            Slot slot = fv.getSlot();
+            final WaitForSetting wf = (WaitForSetting) setting;
+            final FutureValueImpl<?> fv = (FutureValueImpl<?>) wf.getValue();
+            final Slot slot = fv.getSlot();
             runBarrierInflated.addPhantomArgumentSlot(slot);
         } else if (setting instanceof IntValuedSetting) {
-            int value = ((IntValuedSetting) setting).getValue();
+            final int value = ((IntValuedSetting) setting).getValue();
             if (setting instanceof BackoffSeconds) {
                 backoffSeconds = value;
             } else if (setting instanceof BackoffFactor) {
@@ -448,8 +448,8 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
         return DATA_STORE_KIND;
     }
 
-    public void inflate(Barrier runBarrier, Barrier finalizeBarrier, Slot outputSlot,
-                        JobInstanceRecord jobInstanceRecord, ExceptionRecord exceptionRecord) {
+    public void inflate(final Barrier runBarrier, final Barrier finalizeBarrier, final Slot outputSlot,
+                        final JobInstanceRecord jobInstanceRecord, final ExceptionRecord exceptionRecord) {
         if (checkForInflate(runBarrier, runBarrierKey, "runBarrier")) {
             runBarrierInflated = runBarrier;
         }
@@ -494,7 +494,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
     /**
      * Used to set exceptionHandling Job output to the same slot as the protected job.
      */
-    public void setOutputSlotInflated(Slot outputSlot) {
+    public void setOutputSlotInflated(final Slot outputSlot) {
         outputSlotInflated = outputSlot;
         outputSlotKey = outputSlot.getKey();
     }
@@ -511,7 +511,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
         return startTime;
     }
 
-    public void setStartTime(Date date) {
+    public void setStartTime(final Date date) {
         startTime = date;
     }
 
@@ -519,7 +519,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
         return endTime;
     }
 
-    public void setEndTime(Date date) {
+    public void setEndTime(final Date date) {
         endTime = date;
     }
 
@@ -527,7 +527,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
         return state;
     }
 
-    public void setState(State state) {
+    public void setState(final State state) {
         this.state = state;
     }
 
@@ -553,7 +553,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
         return exceptionHandlerJobGraphGuid;
     }
 
-    public void setExceptionHandlerJobGraphGuid(String exceptionHandlerJobGraphGuid) {
+    public void setExceptionHandlerJobGraphGuid(final String exceptionHandlerJobGraphGuid) {
         this.exceptionHandlerJobGraphGuid = exceptionHandlerJobGraphGuid;
     }
 
@@ -575,7 +575,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
         return ignoreException;
     }
 
-    public void setIgnoreException(boolean ignoreException) {
+    public void setIgnoreException(final boolean ignoreException) {
         this.ignoreException = ignoreException;
     }
 
@@ -610,11 +610,11 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
         return statusConsoleUrl;
     }
 
-    public void setStatusConsoleUrl(String statusConsoleUrl) {
+    public void setStatusConsoleUrl(final String statusConsoleUrl) {
         this.statusConsoleUrl = statusConsoleUrl;
     }
 
-    public void appendChildKey(UUID key) {
+    public void appendChildKey(final UUID key) {
         childKeys.add(key);
     }
 
@@ -626,7 +626,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
         return childGraphGuid;
     }
 
-    public void setChildGraphGuid(String guid) {
+    public void setChildGraphGuid(final String guid) {
         childGraphGuid = guid;
     }
 
@@ -679,7 +679,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
         return exceptionKey;
     }
 
-    public void setExceptionKey(UUID exceptionKey) {
+    public void setExceptionKey(final UUID exceptionKey) {
         this.exceptionKey = exceptionKey;
     }
 
@@ -691,7 +691,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
         if (null == jobInstanceRecordInflated) {
             return "jobInstanceKey=" + jobInstanceKey;
         }
-        String jobClass = jobInstanceRecordInflated.getClassName();
+        final String jobClass = jobInstanceRecordInflated.getClassName();
         return jobClass + (callExceptionHandler ? ".handleException" : ".run");
     }
 
@@ -708,7 +708,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
     /**
      * The state of the job.
      */
-    public static enum State {
+    public enum State {
         // TODO(user): document states (including valid transitions) and relation to JobInfo.State
         WAITING_TO_RUN, WAITING_TO_FINALIZE, FINALIZED, STOPPED, CANCELED, RETRY
     }
@@ -721,7 +721,7 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
      * much auxiliary data should also be queried and used to inflate the instance
      * of {@code JobRecord}.
      */
-    public static enum InflationType {
+    public enum InflationType {
         /**
          * Do not inflate at all
          */
@@ -759,6 +759,6 @@ public class JobRecord extends PipelineModelObject implements JobInfo {
          * Inflate as necessary to retrieve the output of the job. In particular
          * {@link JobRecord#getOutputSlotInflated()} will not return {@code null}
          */
-        FOR_OUTPUT;
+        FOR_OUTPUT,
     }
 }

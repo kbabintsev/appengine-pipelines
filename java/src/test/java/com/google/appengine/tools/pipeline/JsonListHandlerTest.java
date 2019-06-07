@@ -54,6 +54,7 @@ public class JsonListHandlerTest extends PipelineTest {
         assertEquals("{\"pipelines\": []}", output.toString());
     }
 
+    @SuppressWarnings("unchecked")
     public void testHandlerWithResults() throws Exception {
         PipelineService service = PipelineServiceFactory.newPipelineService();
         UUID pipelineId1 = service.startNewPipeline(new Main1Job());

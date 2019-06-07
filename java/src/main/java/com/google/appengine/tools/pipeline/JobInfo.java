@@ -1,11 +1,11 @@
 // Copyright 2011 Google Inc.
-// 
+//
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy of
 // the License at
-// 
+//
 // http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 // WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -17,7 +17,7 @@ package com.google.appengine.tools.pipeline;
 /**
  * A record about a job that has been registered with the framework. A {@code
  * JobInfo} is obtained via the method
- * {@link PipelineService#getJobInfo(String)}.
+ * {@link PipelineService#getJobInfo(java.util.UUID)}.
  *
  * @author rudominer@google.com (Mitch Rudominer)
  */
@@ -52,7 +52,7 @@ public interface JobInfo {
     /**
      * The state of the job.
      */
-    static enum State {
+    enum State {
         /**
          * Job is currently executing.
          */
@@ -62,7 +62,7 @@ public interface JobInfo {
          */
         COMPLETED_SUCCESSFULLY,
         /**
-         * Job was stopped through {@link PipelineService#stopPipeline(String)}.
+         * Job was stopped through {@link PipelineService#stopPipeline(java.util.UUID)}.
          */
         STOPPED_BY_REQUEST,
         /**
@@ -75,7 +75,7 @@ public interface JobInfo {
         WAITING_TO_RETRY,
         /**
          * Job was cancelled either through
-         * {@link PipelineService#cancelPipeline(String)} or due to unhandled
+         * {@link PipelineService#cancelPipeline(java.util.UUID)} or due to unhandled
          * failure in a sibling job.
          */
         CANCELED_BY_REQUEST

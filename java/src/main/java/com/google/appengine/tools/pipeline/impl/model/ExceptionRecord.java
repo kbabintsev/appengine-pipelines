@@ -29,7 +29,7 @@ import java.util.UUID;
  *
  * @author maximf@google.com (Maxim Fateev)
  */
-public class ExceptionRecord extends PipelineModelObject {
+public final class ExceptionRecord extends PipelineModelObject {
 
     public static final String DATA_STORE_KIND = "Exception";
     private static final String EXCEPTION_PROPERTY = "exceptionBytes";
@@ -43,15 +43,15 @@ public class ExceptionRecord extends PipelineModelObject {
     private final Throwable exception;
 
     public ExceptionRecord(
-            UUID rootJobKey, UUID generatorJobKey, String graphGUID, Throwable exception) {
+            final UUID rootJobKey, final UUID generatorJobKey, final String graphGUID, final Throwable exception) {
         super(DATA_STORE_KIND, rootJobKey, generatorJobKey, graphGUID);
         this.exception = exception;
     }
 
-    public ExceptionRecord(StructReader entity) {
+    public ExceptionRecord(final StructReader entity) {
         super(DATA_STORE_KIND, entity);
-        ByteArray serializedExceptionBlob = entity.getBytes(EXCEPTION_PROPERTY);
-        byte[] serializedException = serializedExceptionBlob.toByteArray();
+        final ByteArray serializedExceptionBlob = entity.getBytes(EXCEPTION_PROPERTY);
+        final byte[] serializedException = serializedExceptionBlob.toByteArray();
         try {
             exception = (Throwable) SerializationUtils.deserialize(serializedException);
         } catch (IOException e) {
@@ -71,9 +71,9 @@ public class ExceptionRecord extends PipelineModelObject {
     @Override
     public PipelineMutation toEntity() {
         try {
-            PipelineMutation mutation = toProtoEntity();
+            final PipelineMutation mutation = toProtoEntity();
             final Mutation.WriteBuilder entity = mutation.getDatabaseMutation();
-            byte[] serializedException = SerializationUtils.serialize(exception);
+            final byte[] serializedException = SerializationUtils.serialize(exception);
             entity.set(EXCEPTION_PROPERTY).to(ByteArray.copyFrom(serializedException));
             return mutation;
         } catch (IOException e) {

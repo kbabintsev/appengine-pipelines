@@ -30,12 +30,12 @@ public final class Pair<S, T> implements Serializable {
     private final S first;
     private final T second;
 
-    public Pair(S first, T second) {
+    public Pair(final S first, final T second) {
         this.first = first;
         this.second = second;
     }
 
-    public static <S, T> Pair<S, T> of(S first, T second) {
+    public static <S, T> Pair<S, T> of(final S first, final T second) {
         return new Pair<>(first, second);
     }
 

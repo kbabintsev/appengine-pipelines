@@ -32,6 +32,7 @@ import com.google.appengine.tools.pipeline.impl.servlets.TaskHandler;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
 import com.google.apphosting.api.ApiProxy;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -48,36 +49,37 @@ import java.util.logging.Logger;
  *
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class AppEngineTaskQueue implements PipelineTaskQueue {
+public final class AppEngineTaskQueue implements PipelineTaskQueue {
 
     static final int MAX_TASKS_PER_ENQUEUE = QueueConstants.maxTasksPerAdd();
-    private static final Logger logger = Logger.getLogger(AppEngineTaskQueue.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(AppEngineTaskQueue.class.getName());
     private static final ExceptionHandler MODULES_EXCEPTION_HANDLER =
             new ExceptionHandler.Builder().retryOn(ModulesException.class).build();
 
-    private static Queue getQueue(String queueName) {
-        if (queueName == null) {
-            Map<String, Object> attributes = ApiProxy.getCurrentEnvironment().getAttributes();
-            queueName = (String) attributes.get(TaskHandler.TASK_QUEUE_NAME_HEADER);
+    private static Queue getQueue(final String queueName) {
+        String queue = queueName;
+        if (queue == null) {
+            final Map<String, Object> attributes = ApiProxy.getCurrentEnvironment().getAttributes();
+            queue = (String) attributes.get(TaskHandler.TASK_QUEUE_NAME_HEADER);
         }
-        return queueName == null ? QueueFactory.getDefaultQueue() : QueueFactory.getQueue(queueName);
+        return queue == null ? QueueFactory.getDefaultQueue() : QueueFactory.getQueue(queue);
     }
 
-    private static void addProperties(TaskOptions taskOptions, Properties properties) {
-        for (String paramName : properties.stringPropertyNames()) {
-            String paramValue = properties.getProperty(paramName);
+    private static void addProperties(final TaskOptions taskOptions, final Properties properties) {
+        for (final String paramName : properties.stringPropertyNames()) {
+            final String paramValue = properties.getProperty(paramName);
             taskOptions.param(paramName, paramValue);
         }
     }
 
     @Override
-    public void enqueue(Task task) {
-        logger.finest("Enqueueing: " + task);
-        TaskOptions taskOptions = toTaskOptions(task);
-        Queue queue = getQueue(task.getQueueSettings().getOnQueue());
+    public void enqueue(final Task task) {
+        LOGGER.finest("Enqueueing: " + task);
+        final TaskOptions taskOptions = toTaskOptions(task);
+        final Queue queue = getQueue(task.getQueueSettings().getOnQueue());
         try {
             queue.add(taskOptions);
-        } catch (TaskAlreadyExistsException ingore) {
+        } catch (TaskAlreadyExistsException ignore) {
             // ignore
         }
     }
@@ -89,12 +91,12 @@ public class AppEngineTaskQueue implements PipelineTaskQueue {
 
     //VisibleForTesting
     List<TaskHandle> addToQueue(final Collection<Task> tasks) {
-        List<TaskHandle> handles = new ArrayList<>();
-        Map<String, List<TaskOptions>> queueNameToTaskOptions = new HashMap<>();
-        for (Task task : tasks) {
-            logger.finest("Enqueueing: " + task);
-            String queueName = task.getQueueSettings().getOnQueue();
-            TaskOptions taskOptions = toTaskOptions(task);
+        final List<TaskHandle> handles = new ArrayList<>();
+        final Map<String, List<TaskOptions>> queueNameToTaskOptions = new HashMap<>();
+        for (final Task task : tasks) {
+            LOGGER.finest("Enqueueing: " + task);
+            final String queueName = task.getQueueSettings().getOnQueue();
+            final TaskOptions taskOptions = toTaskOptions(task);
             List<TaskOptions> taskOptionsList = queueNameToTaskOptions.get(queueName);
             if (taskOptionsList == null) {
                 taskOptionsList = new ArrayList<>();
@@ -102,29 +104,29 @@ public class AppEngineTaskQueue implements PipelineTaskQueue {
             }
             taskOptionsList.add(taskOptions);
         }
-        for (Map.Entry<String, List<TaskOptions>> entry : queueNameToTaskOptions.entrySet()) {
-            Queue queue = getQueue(entry.getKey());
+        for (final Map.Entry<String, List<TaskOptions>> entry : queueNameToTaskOptions.entrySet()) {
+            final Queue queue = getQueue(entry.getKey());
             handles.addAll(addToQueue(queue, entry.getValue()));
         }
         return handles;
     }
 
-    private List<TaskHandle> addToQueue(Queue queue, List<TaskOptions> tasks) {
-        int limit = tasks.size();
+    private List<TaskHandle> addToQueue(final Queue queue, final List<TaskOptions> tasks) {
+        final int limit = tasks.size();
         int start = 0;
-        List<Future<List<TaskHandle>>> futures = new ArrayList<>(limit / MAX_TASKS_PER_ENQUEUE + 1);
+        final List<Future<List<TaskHandle>>> futures = new ArrayList<>(limit / MAX_TASKS_PER_ENQUEUE + 1);
         while (start < limit) {
-            int end = Math.min(limit, start + MAX_TASKS_PER_ENQUEUE);
+            final int end = Math.min(limit, start + MAX_TASKS_PER_ENQUEUE);
             futures.add(queue.addAsync(tasks.subList(start, end)));
             start = end;
         }
 
-        List<TaskHandle> taskHandles = new ArrayList<>(limit);
-        for (Future<List<TaskHandle>> future : futures) {
+        final List<TaskHandle> taskHandles = new ArrayList<>(limit);
+        for (final Future<List<TaskHandle>> future : futures) {
             try {
                 taskHandles.addAll(future.get());
             } catch (InterruptedException e) {
-                logger.throwing("AppEngineTaskQueue", "addToQueue", e);
+                LOGGER.throwing("AppEngineTaskQueue", "addToQueue", e);
                 Thread.currentThread().interrupt();
                 throw new RuntimeException("addToQueue failed", e);
             } catch (ExecutionException e) {
@@ -138,19 +140,19 @@ public class AppEngineTaskQueue implements PipelineTaskQueue {
         return taskHandles;
     }
 
-    private TaskOptions toTaskOptions(Task task) {
+    private TaskOptions toTaskOptions(final Task task) {
         final QueueSettings queueSettings = task.getQueueSettings();
 
-        TaskOptions taskOptions = TaskOptions.Builder.withUrl(TaskHandler.handleTaskUrl());
+        final TaskOptions taskOptions = TaskOptions.Builder.withUrl(TaskHandler.handleTaskUrl());
         if (queueSettings.getOnBackend() != null) {
             taskOptions.header("Host", BackendServiceFactory.getBackendService().getBackendAddress(
                     queueSettings.getOnBackend()));
         } else {
 
-            String versionHostname = RetryHelper.runWithRetries(new Callable<String>() {
+            final String versionHostname = RetryHelper.runWithRetries(new Callable<String>() {
                 @Override
                 public String call() {
-                    ModulesService service = ModulesServiceFactory.getModulesService();
+                    final ModulesService service = ModulesServiceFactory.getModulesService();
                     String module = queueSettings.getOnModule();
                     String version = queueSettings.getModuleVersion();
                     if (module == null) {
@@ -163,13 +165,13 @@ public class AppEngineTaskQueue implements PipelineTaskQueue {
             taskOptions.header("Host", versionHostname);
         }
 
-        Long delayInSeconds = queueSettings.getDelayInSeconds();
+        final Long delayInSeconds = queueSettings.getDelayInSeconds();
         if (null != delayInSeconds) {
-            taskOptions.countdownMillis(delayInSeconds * 1000L);
+            taskOptions.countdownMillis(Duration.ofSeconds(delayInSeconds).toMillis());
             queueSettings.setDelayInSeconds(null);
         }
         addProperties(taskOptions, task.toProperties());
-        String taskName = task.getName();
+        final String taskName = task.getName();
         if (null != taskName) {
             taskOptions.taskName(taskName);
         }

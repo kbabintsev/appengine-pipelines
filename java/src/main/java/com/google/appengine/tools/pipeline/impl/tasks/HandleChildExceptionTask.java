@@ -25,13 +25,13 @@ import java.util.UUID;
  *
  * @author maximf@google.com (Maxim Fateev)
  */
-public class HandleChildExceptionTask extends ObjRefTask {
+public final class HandleChildExceptionTask extends ObjRefTask {
 
     private static final String FAILED_CHILD_KEY_PARAM = "failedChildKey";
 
     private final UUID failedChildKey;
 
-    public HandleChildExceptionTask(UUID jobKey, UUID failedChildKey, QueueSettings queueSettings) {
+    public HandleChildExceptionTask(final UUID jobKey, final UUID failedChildKey, final QueueSettings queueSettings) {
         super(Type.HANDLE_CHILD_EXCEPTION, "handleChildFailure", jobKey, queueSettings);
         if (null == failedChildKey) {
             throw new NullPointerException("failedChildKey");
@@ -39,13 +39,13 @@ public class HandleChildExceptionTask extends ObjRefTask {
         this.failedChildKey = failedChildKey;
     }
 
-    protected HandleChildExceptionTask(Type type, String taskName, Properties properties) {
+    protected HandleChildExceptionTask(final Type type, final String taskName, final Properties properties) {
         super(type, taskName, properties);
         failedChildKey = UUID.fromString(properties.getProperty(FAILED_CHILD_KEY_PARAM));
     }
 
     @Override
-    protected void addProperties(Properties properties) {
+    protected void addProperties(final Properties properties) {
         super.addProperties(properties);
         properties.setProperty(FAILED_CHILD_KEY_PARAM, failedChildKey.toString());
     }

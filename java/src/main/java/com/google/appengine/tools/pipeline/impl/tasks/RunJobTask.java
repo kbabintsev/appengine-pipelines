@@ -25,20 +25,20 @@ import java.util.UUID;
  *
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class RunJobTask extends ObjRefTask {
+public final class RunJobTask extends ObjRefTask {
 
     private final Integer attemptNumber;
 
-    public RunJobTask(UUID jobKey, Integer attemptNumber, QueueSettings queueSettings) {
+    public RunJobTask(final UUID jobKey, final Integer attemptNumber, final QueueSettings queueSettings) {
         super(Type.RUN_JOB, "runJob", jobKey, queueSettings);
         this.attemptNumber = attemptNumber;
     }
 
-    public RunJobTask(UUID jobKey, QueueSettings queueSettings) {
+    public RunJobTask(final UUID jobKey, final QueueSettings queueSettings) {
         this(jobKey, null, queueSettings);
     }
 
-    protected RunJobTask(Type type, String taskName, Properties properties) {
+    protected RunJobTask(final Type type, final String taskName, final Properties properties) {
         super(type, taskName, properties);
         attemptNumber = null;
     }

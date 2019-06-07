@@ -89,28 +89,28 @@ import static com.google.appengine.tools.pipeline.impl.util.TestUtils.throwHereF
 /**
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class AppEngineBackEnd implements PipelineBackEnd {
+public final class AppEngineBackEnd implements PipelineBackEnd {
 
-    private static final RetryParams RETRY_PARAMS = new RetryParams.Builder()
-            .retryDelayBackoffFactor(2)
-            .initialRetryDelayMillis(300)
-            .maxRetryDelayMillis(5000)
-            .retryMinAttempts(5)
-            .retryMaxAttempts(5)
-            .build();
+    private static final int INITIAL_RETRY_DELAY_MILLIS = 300;
+    private static final int MAX_RETRY_DELAY_MILLIS = 5000;
+    private static final int HTTP_NOT_FOUND = 404;
 
-//    private static final ExceptionHandler EXCEPTION_HANDLER = new ExceptionHandler.Builder().retryOn(
+    //    private static final ExceptionHandler EXCEPTION_HANDLER = new ExceptionHandler.Builder().retryOn(
 //            ConcurrentModificationException.class, DatastoreTimeoutException.class,
 //            DatastoreFailureException.class)
 //            .abortOn(EntityNotFoundException.class, NoSuchObjectException.class).build();
-
+    private static final RetryParams RETRY_PARAMS = new RetryParams.Builder()
+            .retryDelayBackoffFactor(2)
+            .initialRetryDelayMillis(INITIAL_RETRY_DELAY_MILLIS)
+            .maxRetryDelayMillis(MAX_RETRY_DELAY_MILLIS)
+            .retryMinAttempts(5)
+            .retryMaxAttempts(5)
+            .build();
     private static final ExceptionHandler STORAGE_EXCEPTION_HANDLER = new ExceptionHandler.Builder()
             .retryOn(IOException.class)
             .abortOn(RuntimeException.class)
             .build();
-
-    private static final Logger logger = Logger.getLogger(AppEngineBackEnd.class.getName());
-
+    private static final Logger LOGGER = Logger.getLogger(AppEngineBackEnd.class.getName());
     private final Spanner spanner;
     private final DatabaseClient databaseClient;
     private final AppEngineTaskQueue taskQueue;
@@ -137,12 +137,12 @@ public class AppEngineBackEnd implements PipelineBackEnd {
         spanner.close();
     }
 
-    private void addAll(Collection<? extends PipelineModelObject> objects, MutationsAndBlobs allMutations, boolean runTransaction) {
+    private void addAll(final Collection<? extends PipelineModelObject> objects, final MutationsAndBlobs allMutations, final boolean runTransaction) {
         if (objects.isEmpty()) {
             return;
         }
-        for (PipelineModelObject x : objects) {
-            logger.finest("Storing: " + x);
+        for (final PipelineModelObject x : objects) {
+            LOGGER.finest("Storing: " + x);
             final PipelineMutation m = x.toEntity();
             final Mutation mutation = m.getDatabaseMutation().build();
             allMutations.addMutation(mutation);
@@ -163,7 +163,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
         }
     }
 
-    private void addAll(UpdateSpec.Group group, MutationsAndBlobs allMutations, boolean runTransaction) {
+    private void addAll(final UpdateSpec.Group group, final MutationsAndBlobs allMutations, final boolean runTransaction) {
         addAll(group.getBarriers(), allMutations, runTransaction);
         addAll(group.getJobs(), allMutations, runTransaction);
         addAll(group.getSlots(), allMutations, runTransaction);
@@ -171,10 +171,10 @@ public class AppEngineBackEnd implements PipelineBackEnd {
         addAll(group.getFailureRecords(), allMutations, runTransaction);
     }
 
-    private void saveAll(UpdateSpec.Group transactionSpec, @Nullable TransactionContext parentTransaction) {
-        MutationsAndBlobs allMutations = new MutationsAndBlobs();
+    private void saveAll(final UpdateSpec.Group transactionSpec, @Nullable final TransactionContext parentTransaction) {
+        final MutationsAndBlobs allMutations = new MutationsAndBlobs();
         addAll(transactionSpec, allMutations, parentTransaction == null);
-        for (PipelineMutation.BlobMutation blob : allMutations.getBlobs()) {
+        for (final PipelineMutation.BlobMutation blob : allMutations.getBlobs()) {
             saveBlob(blob.getRootJobKey(), blob.getType(), blob.getKey(), blob.getValue());
         }
 
@@ -183,28 +183,28 @@ public class AppEngineBackEnd implements PipelineBackEnd {
         }
     }
 
-    private boolean transactionallySaveAll(UpdateSpec.Transaction transactionSpec,
-                                           QueueSettings queueSettings, UUID rootJobKey, UUID jobKey, JobRecord.State... expectedStates) {
+    private boolean transactionallySaveAll(final UpdateSpec.Transaction transactionSpec,
+                                           final QueueSettings queueSettings, final UUID rootJobKey, final UUID jobKey, final JobRecord.State... expectedStates) {
         final Boolean out = databaseClient.readWriteTransaction().run(new TransactionRunner.TransactionCallable<Boolean>() {
             @Nullable
             @Override
             public Boolean run(final TransactionContext transaction) {
                 if (jobKey != null && expectedStates != null) {
-                    Struct entity = transaction.readRow(JobRecord.DATA_STORE_KIND, Key.of(jobKey.toString()), ImmutableList.of(STATE_PROPERTY));
+                    final Struct entity = transaction.readRow(JobRecord.DATA_STORE_KIND, Key.of(jobKey.toString()), ImmutableList.of(STATE_PROPERTY));
                     if (entity == null) {
                         throw new RuntimeException(
                                 "Fatal Pipeline corruption error. No JobRecord found with key = " + jobKey);
                     }
-                    JobRecord.State state = JobRecord.State.valueOf(entity.getString(STATE_PROPERTY));
+                    final JobRecord.State state = JobRecord.State.valueOf(entity.getString(STATE_PROPERTY));
                     boolean stateIsExpected = false;
-                    for (JobRecord.State expectedState : expectedStates) {
+                    for (final JobRecord.State expectedState : expectedStates) {
                         if (state == expectedState) {
                             stateIsExpected = true;
                             break;
                         }
                     }
                     if (!stateIsExpected) {
-                        logger.info("Job " + jobKey + " is not in one of the expected states: "
+                        LOGGER.info("Job " + jobKey + " is not in one of the expected states: "
                                 + Arrays.asList(expectedStates)
                                 + " and so transactionallySaveAll() will not continue.");
                         return false;
@@ -215,12 +215,12 @@ public class AppEngineBackEnd implements PipelineBackEnd {
             }
         });
         if (transactionSpec instanceof UpdateSpec.TransactionWithTasks) {
-            UpdateSpec.TransactionWithTasks transactionWithTasks =
+            final UpdateSpec.TransactionWithTasks transactionWithTasks =
                     (UpdateSpec.TransactionWithTasks) transactionSpec;
-            Collection<Task> tasks = transactionWithTasks.getTasks();
+            final Collection<Task> tasks = transactionWithTasks.getTasks();
             if (tasks.size() > 0) {
-                byte[] encodedTasks = FanoutTask.encodeTasks(tasks);
-                FanoutTaskRecord ftRecord = new FanoutTaskRecord(rootJobKey, encodedTasks);
+                final byte[] encodedTasks = FanoutTask.encodeTasks(tasks);
+                final FanoutTaskRecord ftRecord = new FanoutTaskRecord(rootJobKey, encodedTasks);
                 // Store FanoutTaskRecord outside of any transaction, but before
                 // the FanoutTask is enqueued. If the put succeeds but the
                 // enqueue fails then the FanoutTaskRecord is orphaned. But
@@ -233,7 +233,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
                         return null;
                     }
                 });
-                FanoutTask fannoutTask = new FanoutTask(ftRecord.getKey(), queueSettings);
+                final FanoutTask fannoutTask = new FanoutTask(ftRecord.getKey(), queueSettings);
                 taskQueue.enqueue(fannoutTask);
             }
         }
@@ -245,7 +245,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
             return RetryHelper.runWithRetries(operation, RETRY_PARAMS, exceptionHandler);
         } catch (RetriesExhaustedException | NonRetriableException e) {
             if (e.getCause() instanceof RuntimeException) {
-                logger.info(e.getCause().getMessage() + " during " + operation.getName()
+                LOGGER.info(e.getCause().getMessage() + " during " + operation.getName()
                         + " throwing after multiple attempts ");
                 throw (RuntimeException) e.getCause();
             } else {
@@ -255,7 +255,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
     }
 
     @Override
-    public void cleanBlobs(String prefix) {
+    public void cleanBlobs(final String prefix) {
         while (true) {
             final Objects objects = tryFiveTimes(STORAGE_EXCEPTION_HANDLER, new Operation<Objects>("storage.objects.list") {
                 @Override
@@ -267,7 +267,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
             if (objects == null || objects.getItems() == null || objects.getItems().isEmpty()) {
                 break;
             }
-            logger.finest("Deleting " + objects.getItems().size() + " blobs from prefix " + prefix);
+            LOGGER.finest("Deleting " + objects.getItems().size() + " blobs from prefix " + prefix);
             for (final StorageObject object : objects.getItems()) {
                 tryFiveTimes(STORAGE_EXCEPTION_HANDLER, new Operation<Void>("storage.objects.delete") {
                     @Override
@@ -281,9 +281,9 @@ public class AppEngineBackEnd implements PipelineBackEnd {
     }
 
     @Override
-    public void saveBlob(UUID rootJobKey, final String ownerType, UUID ownerKey, byte[] value) {
+    public void saveBlob(final UUID rootJobKey, final String ownerType, final UUID ownerKey, final byte[] value) {
         final String path = rootJobKey + "/" + ownerType + "-" + ownerKey + ".dat";
-        logger.finest("Saving blob " + path + " size of " + value.length + "...");
+        LOGGER.finest("Saving blob " + path + " size of " + value.length + "...");
         tryFiveTimes(STORAGE_EXCEPTION_HANDLER, new Operation<Void>("storage.objects.insert") {
             @Override
             public Void call() throws IOException {
@@ -294,17 +294,17 @@ public class AppEngineBackEnd implements PipelineBackEnd {
                                 .setName(path),
                         new ByteArrayContent("application/octet-stream", value)
                 ).execute();
-                logger.finest("Saved blob " + path);
+                LOGGER.finest("Saved blob " + path);
                 return null;
             }
         });
     }
 
     @Override
-    public byte[] retrieveBlob(UUID rootJobKey, String ownerType, UUID ownerKey) {
+    public byte[] retrieveBlob(final UUID rootJobKey, final String ownerType, final UUID ownerKey) {
         final String path = rootJobKey + "/" + ownerType + "-" + ownerKey + ".dat";
         try {
-            logger.finest("Retrieving blob " + path + "...");
+            LOGGER.finest("Retrieving blob " + path + "...");
             final InputStream inputStream = tryFiveTimes(STORAGE_EXCEPTION_HANDLER, new Operation<InputStream>("storage.objects.get") {
                 @Override
                 public InputStream call() throws IOException {
@@ -315,11 +315,11 @@ public class AppEngineBackEnd implements PipelineBackEnd {
                 }
             });
             final byte[] out = ByteStreams.toByteArray(inputStream);
-            logger.finest("Retrieved blob " + path + " size " + out.length);
+            LOGGER.finest("Retrieved blob " + path + " size " + out.length);
             return out;
         } catch (GoogleJsonResponseException ex) {
-            if (ex.getStatusCode() == 404) {
-                logger.finest("Blob " + path + " returned 404 status");
+            if (ex.getStatusCode() == HTTP_NOT_FOUND) {
+                LOGGER.finest("Blob " + path + " returned 404 status");
                 return null;
             } else {
                 throw new RuntimeException("Can't retrieve blob from Storage bucket", ex);
@@ -330,7 +330,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
     }
 
     @Override
-    public void enqueue(Task task) {
+    public void enqueue(final Task task) {
         taskQueue.enqueue(task);
     }
 
@@ -350,21 +350,21 @@ public class AppEngineBackEnd implements PipelineBackEnd {
         // If a unit test requests us to do so, fail here.
         throwHereForTesting("AppEngineBackeEnd.saveWithJobStateCheck.beforeFinalTransaction");
         //tryFiveTimes was here
-        boolean wasSaved = transactionallySaveAll(
+        final boolean wasSaved = transactionallySaveAll(
                 updateSpec.getFinalTransaction(), queueSettings, updateSpec.getRootJobKey(), jobKey, expectedStates);
         return wasSaved;
     }
 
     @Override
-    public void save(UpdateSpec updateSpec, QueueSettings queueSettings) {
+    public void save(final UpdateSpec updateSpec, final QueueSettings queueSettings) {
         saveWithJobStateCheck(updateSpec, queueSettings, null);
     }
 
     @Override
     public JobRecord queryJob(final UUID jobKey, final JobRecord.InflationType inflationType)
             throws NoSuchObjectException {
-        Struct entity = getEntity("queryJob", JobRecord.DATA_STORE_KIND, JobRecord.PROPERTIES, jobKey);
-        JobRecord jobRecord = new JobRecord(entity);
+        final Struct entity = getEntity("queryJob", JobRecord.DATA_STORE_KIND, JobRecord.PROPERTIES, jobKey);
+        final JobRecord jobRecord = new JobRecord(entity);
         Barrier runBarrier = null;
         Barrier finalizeBarrier = null;
         Slot outputSlot = null;
@@ -384,13 +384,13 @@ public class AppEngineBackEnd implements PipelineBackEnd {
                 break;
             case FOR_OUTPUT:
                 outputSlot = querySlot(jobRecord.getOutputSlotKey(), false);
-                UUID failureKey = jobRecord.getExceptionKey();
+                final UUID failureKey = jobRecord.getExceptionKey();
                 failureRecord = queryFailure(failureKey);
                 break;
             default:
         }
         jobRecord.inflate(runBarrier, finalizeBarrier, outputSlot, jobInstanceRecord, failureRecord);
-        logger.finest("Query returned: " + jobRecord);
+        LOGGER.finest("Query returned: " + jobRecord);
         return jobRecord;
     }
 
@@ -398,15 +398,15 @@ public class AppEngineBackEnd implements PipelineBackEnd {
      * {@code inflate = true} means that {@link Barrier#getWaitingOnInflated()}
      * will not return {@code null}.
      */
-    private Barrier queryBarrier(UUID barrierKey, boolean inflate) throws NoSuchObjectException {
-        Struct entity = getEntity("queryBarrier", Barrier.DATA_STORE_KIND, Barrier.PROPERTIES, barrierKey);
-        Barrier barrier = new Barrier(entity);
+    private Barrier queryBarrier(final UUID barrierKey, final boolean inflate) throws NoSuchObjectException {
+        final Struct entity = getEntity("queryBarrier", Barrier.DATA_STORE_KIND, Barrier.PROPERTIES, barrierKey);
+        final Barrier barrier = new Barrier(entity);
         if (inflate) {
-            Collection<Barrier> barriers = new ArrayList<>(1);
+            final Collection<Barrier> barriers = new ArrayList<>(1);
             barriers.add(barrier);
             inflateBarriers(barriers);
         }
-        logger.finest("Querying returned: " + barrier);
+        LOGGER.finest("Querying returned: " + barrier);
         return barrier;
     }
 
@@ -417,15 +417,15 @@ public class AppEngineBackEnd implements PipelineBackEnd {
      *
      * @param barriers
      */
-    private void inflateBarriers(Collection<Barrier> barriers) {
+    private void inflateBarriers(final Collection<Barrier> barriers) {
         // Step 1. Build the set of keys corresponding to the slots.
-        Set<UUID> keySet = new HashSet<>(barriers.size() * 5);
-        for (Barrier barrier : barriers) {
+        final Set<UUID> keySet = new HashSet<>(barriers.size() * 5);
+        for (final Barrier barrier : barriers) {
             keySet.addAll(barrier.getWaitingOnKeys());
         }
         // Step 2. Query the datastore for the Slot entities
         // Step 3. Convert into map from key to Slot
-        Map<UUID, Slot> slotMap = new HashMap<>(keySet.size());
+        final Map<UUID, Slot> slotMap = new HashMap<>(keySet.size());
         getEntities(
                 "inflateBarriers",
                 Slot.DATA_STORE_KIND,
@@ -437,17 +437,17 @@ public class AppEngineBackEnd implements PipelineBackEnd {
         );
 
         // Step 4. Inflate each of the barriers
-        for (Barrier barrier : barriers) {
+        for (final Barrier barrier : barriers) {
             barrier.inflate(slotMap);
         }
     }
 
     @Override
-    public Slot querySlot(UUID slotKey, boolean inflate) throws NoSuchObjectException {
-        Struct entity = getEntity("querySlot", Slot.DATA_STORE_KIND, Slot.PROPERTIES, slotKey);
-        Slot slot = new Slot(entity);
+    public Slot querySlot(final UUID slotKey, final boolean inflate) throws NoSuchObjectException {
+        final Struct entity = getEntity("querySlot", Slot.DATA_STORE_KIND, Slot.PROPERTIES, slotKey);
+        final Slot slot = new Slot(entity);
         if (inflate) {
-            Map<UUID, Barrier> barriers = new HashMap<>();
+            final Map<UUID, Barrier> barriers = new HashMap<>();
             getEntities(
                     "querySlot",
                     Barrier.DATA_STORE_KIND,
@@ -464,27 +464,27 @@ public class AppEngineBackEnd implements PipelineBackEnd {
     }
 
     @Override
-    public ExceptionRecord queryFailure(UUID failureKey) throws NoSuchObjectException {
+    public ExceptionRecord queryFailure(final UUID failureKey) throws NoSuchObjectException {
         if (failureKey == null) {
             return null;
         }
-        Struct entity = getEntity("ReadExceptionRecord", ExceptionRecord.DATA_STORE_KIND, ExceptionRecord.PROPERTIES, failureKey);
+        final Struct entity = getEntity("ReadExceptionRecord", ExceptionRecord.DATA_STORE_KIND, ExceptionRecord.PROPERTIES, failureKey);
         return new ExceptionRecord(entity);
     }
 
     @Override
-    public byte[] serializeValue(PipelineModelObject model, Object value) throws IOException {
-        byte[] bytes = SerializationUtils.serialize(value);
+    public byte[] serializeValue(final PipelineModelObject model, final Object value) throws IOException {
+        final byte[] bytes = SerializationUtils.serialize(value);
         return bytes;
     }
 
     @Override
-    public Object deserializeValue(PipelineModelObject model, byte[] serializedVersion)
+    public Object deserializeValue(final PipelineModelObject model, final byte[] serializedVersion)
             throws IOException {
         return SerializationUtils.deserialize(serializedVersion);
     }
 
-    private void getEntities(String logString, String tableName, List<String> columns, final Collection<UUID> keys, Consumer<StructReader> consumer) {
+    private void getEntities(final String logString, final String tableName, final List<String> columns, final Collection<UUID> keys, final Consumer<StructReader> consumer) {
         //tryFiveTimes was here
         final KeySet.Builder keysBuilder = KeySet.newBuilder();
         keys.forEach(key -> keysBuilder.addKey(Key.of(key.toString())));
@@ -505,7 +505,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
         }
     }
 
-    private Struct getEntity(String logString, String tableName, List<String> columns, final UUID key) throws NoSuchObjectException {
+    private Struct getEntity(final String logString, final String tableName, final List<String> columns, final UUID key) throws NoSuchObjectException {
         // tryFiveTimes was here
         final Struct entity = databaseClient.singleUse().readRow(tableName, Key.of(key.toString()), columns);
         if (entity == null) {
@@ -515,16 +515,16 @@ public class AppEngineBackEnd implements PipelineBackEnd {
     }
 
     @Override
-    public void handleFanoutTask(FanoutTask fanoutTask) throws NoSuchObjectException {
-        UUID fanoutTaskRecordKey = fanoutTask.getRecordKey();
+    public void handleFanoutTask(final FanoutTask fanoutTask) throws NoSuchObjectException {
+        final UUID fanoutTaskRecordKey = fanoutTask.getRecordKey();
         // Fetch the fanoutTaskRecord outside of any transaction
-        Struct entity = getEntity("handleFanoutTask", FanoutTaskRecord.DATA_STORE_KIND, FanoutTaskRecord.PROPERTIES, fanoutTaskRecordKey);
-        FanoutTaskRecord ftRecord = new FanoutTaskRecord(entity);
-        byte[] encodedBytes = ftRecord.getPayload();
+        final Struct entity = getEntity("handleFanoutTask", FanoutTaskRecord.DATA_STORE_KIND, FanoutTaskRecord.PROPERTIES, fanoutTaskRecordKey);
+        final FanoutTaskRecord ftRecord = new FanoutTaskRecord(entity);
+        final byte[] encodedBytes = ftRecord.getPayload();
         taskQueue.enqueue(FanoutTask.decodeTasks(encodedBytes));
     }
 
-    public void queryAll(final String tableName, List<String> columns, final UUID rootJobKey, Consumer<StructReader> consumer) {
+    public void queryAll(final String tableName, final List<String> columns, final UUID rootJobKey, final Consumer<StructReader> consumer) {
         try (ResultSet rs = databaseClient.singleUse().executeQuery(
                 Statement.newBuilder(
                         "SELECT " + String.join(", ", columns) + " "
@@ -541,8 +541,8 @@ public class AppEngineBackEnd implements PipelineBackEnd {
     }
 
     @Override
-    public Pair<? extends Iterable<JobRecord>, String> queryRootPipelines(String classFilter,
-                                                                          String cursor, final int limit) {
+    public Pair<? extends Iterable<JobRecord>, String> queryRootPipelines(final String classFilter,
+                                                                          final String cursor, final int limit) {
         final Statement.Builder builder = Statement.newBuilder(
                 "SELECT " + String.join(", ", JobRecord.PROPERTIES) + " "
                         + "FROM " + JobRecord.DATA_STORE_KIND + " "
@@ -561,7 +561,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
         builder.append("ORDER BY " + ROOT_JOB_DISPLAY_NAME + " ");
         // limit not set
         // cursor not used
-        List<JobRecord> roots = new LinkedList<>();
+        final List<JobRecord> roots = new LinkedList<>();
         try (ResultSet rs = databaseClient.singleUse().executeQuery(
                 builder.build()
         )) {
@@ -576,7 +576,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
 
     @Override
     public Set<String> getRootPipelinesDisplayName() {
-        Set<String> pipelines = new LinkedHashSet<>();
+        final Set<String> pipelines = new LinkedHashSet<>();
         final Statement.Builder builder = Statement.newBuilder(
                 "SELECT DISTINCT " + ROOT_JOB_DISPLAY_NAME + " "
                         + "FROM " + JobRecord.DATA_STORE_KIND + " "
@@ -600,7 +600,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
 
     @Override
     public Set<UUID> getTestPipelines() {
-        Set<UUID> pipelines = new LinkedHashSet<>();
+        final Set<UUID> pipelines = new LinkedHashSet<>();
         final String prefix = GUIDGenerator.getTestPrefix();
         try (ResultSet rs = databaseClient.singleUse().executeQuery(
                 Statement.newBuilder(
@@ -615,7 +615,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
                 }
             }
         }
-        logger.info("Retrieved " + pipelines.size() + " test pipelines with prefix " + prefix);
+        LOGGER.info("Retrieved " + pipelines.size() + " test pipelines with prefix " + prefix);
         return pipelines;
     }
 
@@ -647,7 +647,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
     }
 
     private void deleteAll(final String tableName, final UUID rootJobKey) {
-        logger.info("Deleting all " + tableName + " with rootJobKey=" + rootJobKey);
+        LOGGER.info("Deleting all " + tableName + " with rootJobKey=" + rootJobKey);
         databaseClient.readWriteTransaction().run(new TransactionRunner.TransactionCallable<Void>() {
             @Nullable
             @Override
@@ -679,11 +679,11 @@ public class AppEngineBackEnd implements PipelineBackEnd {
      *                               {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#STOPPED} state.
      */
     @Override
-    public void deletePipeline(UUID rootJobKey, boolean force, boolean async)
+    public void deletePipeline(final UUID rootJobKey, final boolean force, final boolean async)
             throws IllegalStateException {
         if (!force) {
             try {
-                JobRecord rootJobRecord = queryJob(rootJobKey, JobRecord.InflationType.NONE);
+                final JobRecord rootJobRecord = queryJob(rootJobKey, JobRecord.InflationType.NONE);
                 switch (rootJobRecord.getState()) {
                     case FINALIZED:
                     case STOPPED:
@@ -691,14 +691,14 @@ public class AppEngineBackEnd implements PipelineBackEnd {
                     default:
                         throw new IllegalStateException("Pipeline is still running: " + rootJobRecord);
                 }
-            } catch (NoSuchObjectException ex) {
+            } catch (NoSuchObjectException ignore) {
                 // Consider missing rootJobRecord as a non-active job and allow further delete
             }
         }
         if (async) {
             // We do all the checks above before bothering to enqueue a task.
             // They will have to be done again when the task is processed.
-            DeletePipelineTask task = new DeletePipelineTask(rootJobKey, force, new QueueSettings());
+            final DeletePipelineTask task = new DeletePipelineTask(rootJobKey, force, new QueueSettings());
             taskQueue.enqueue(task);
             return;
         }
@@ -709,15 +709,15 @@ public class AppEngineBackEnd implements PipelineBackEnd {
         deleteAll(FanoutTaskRecord.DATA_STORE_KIND, rootJobKey);
     }
 
-    private static class MutationsAndBlobs {
+    private static final class MutationsAndBlobs {
         private final List<Mutation> mutations = Lists.newArrayList();
         private final List<PipelineMutation.BlobMutation> blobs = Lists.newArrayList();
 
-        public void addMutation(Mutation mutation) {
+        public void addMutation(final Mutation mutation) {
             mutations.add(mutation);
         }
 
-        public void addBlob(PipelineMutation.BlobMutation blob) {
+        public void addBlob(final PipelineMutation.BlobMutation blob) {
             blobs.add(blob);
         }
 
@@ -734,7 +734,7 @@ public class AppEngineBackEnd implements PipelineBackEnd {
 
         private final String name;
 
-        Operation(String name) {
+        Operation(final String name) {
             this.name = name;
         }
 

@@ -31,7 +31,7 @@ import java.util.logging.Logger;
  *
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class TaskHandler {
+public final class TaskHandler {
 
     public static final String PATH_COMPONENT = "handleTask";
     public static final String TASK_NAME_REQUEST_HEADER = "X-AppEngine-TaskName";
@@ -39,12 +39,15 @@ public class TaskHandler {
     public static final String TASK_QUEUE_NAME_HEADER = "X-AppEngine-QueueName";
     private static Logger logger = Logger.getLogger(TaskHandler.class.getName());
 
+    private TaskHandler() {
+    }
+
     public static String handleTaskUrl() {
         return PipelineServlet.baseUrl() + PATH_COMPONENT;
     }
 
-    public static void doPost(HttpServletRequest req) throws ServletException {
-        Task task = reconstructTask(req);
+    public static void doPost(final HttpServletRequest req) throws ServletException {
+        final Task task = reconstructTask(req);
         int retryCount;
         try {
             retryCount = req.getIntHeader(TASK_RETRY_COUNT_HEADER);
@@ -59,24 +62,24 @@ public class TaskHandler {
         }
     }
 
-    private static Task reconstructTask(HttpServletRequest request) {
-        Properties properties = new Properties();
-        Enumeration<?> paramNames = request.getParameterNames();
+    private static Task reconstructTask(final HttpServletRequest request) {
+        final Properties properties = new Properties();
+        final Enumeration<?> paramNames = request.getParameterNames();
         while (paramNames.hasMoreElements()) {
-            String paramName = (String) paramNames.nextElement();
-            String paramValue = request.getParameter(paramName);
+            final String paramName = (String) paramNames.nextElement();
+            final String paramValue = request.getParameter(paramName);
             properties.setProperty(paramName, paramValue);
         }
-        String taskName = request.getHeader(TASK_NAME_REQUEST_HEADER);
-        Task task = Task.fromProperties(taskName, properties);
+        final String taskName = request.getHeader(TASK_NAME_REQUEST_HEADER);
+        final Task task = Task.fromProperties(taskName, properties);
         task.getQueueSettings().setDelayInSeconds(null);
-        String queueName = request.getHeader(TASK_QUEUE_NAME_HEADER);
+        final String queueName = request.getHeader(TASK_QUEUE_NAME_HEADER);
         if (queueName != null && !queueName.isEmpty()) {
-            String onQueue = task.getQueueSettings().getOnQueue();
+            final String onQueue = task.getQueueSettings().getOnQueue();
             if (onQueue == null || onQueue.isEmpty()) {
                 task.getQueueSettings().setOnQueue(queueName);
             }
-            Map<String, Object> attributes = ApiProxy.getCurrentEnvironment().getAttributes();
+            final Map<String, Object> attributes = ApiProxy.getCurrentEnvironment().getAttributes();
             attributes.put(TASK_QUEUE_NAME_HEADER, queueName);
         }
         return task;

@@ -26,14 +26,17 @@ import java.util.UUID;
 /**
  * @author ozarov@google.com (Arie Ozarov)
  */
-public class AbortJobHandler {
+public final class AbortJobHandler {
 
     public static final String PATH_COMPONENT = "rpc/abort";
     private static final String ROOT_PIPELINE_ID = "root_pipeline_id";
 
-    public static void doGet(HttpServletRequest req, HttpServletResponse resp)
+    private AbortJobHandler() {
+    }
+
+    public static void doGet(final HttpServletRequest req, final HttpServletResponse resp)
             throws IOException, ServletException {
-        UUID rootJobHandle = UUID.fromString(req.getParameter(ROOT_PIPELINE_ID));
+        final UUID rootJobHandle = UUID.fromString(req.getParameter(ROOT_PIPELINE_ID));
         if (null == rootJobHandle) {
             throw new ServletException(ROOT_PIPELINE_ID + " parameter not found.");
         }

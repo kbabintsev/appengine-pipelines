@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
  *
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class Barrier extends PipelineModelObject {
+public final class Barrier extends PipelineModelObject {
 
     public static final String DATA_STORE_KIND = "Barrier";
     private static final String TYPE_PROPERTY = "barrierType";
@@ -74,7 +74,7 @@ public class Barrier extends PipelineModelObject {
     // transient
     private List<SlotDescriptor> waitingOnInflated;
 
-    private Barrier(Type type, UUID rootJobKey, UUID jobKey, UUID generatorJobKey, String graphGUID) {
+    private Barrier(final Type type, final UUID rootJobKey, final UUID jobKey, final UUID generatorJobKey, final String graphGUID) {
         super(DATA_STORE_KIND, rootJobKey, getEgParentKey(type, jobKey), null, generatorJobKey, graphGUID);
         this.jobKey = jobKey;
         this.type = type;
@@ -83,12 +83,12 @@ public class Barrier extends PipelineModelObject {
         waitingOnKeys = new LinkedList<>();
     }
 
-    public Barrier(Type type, JobRecord jobRecord) {
+    public Barrier(final Type type, final JobRecord jobRecord) {
         this(type, jobRecord.getRootJobKey(), jobRecord.getKey(), jobRecord.getGeneratorJobKey(),
                 jobRecord.getGraphGuid());
     }
 
-    public Barrier(StructReader entity) {
+    public Barrier(final StructReader entity) {
         super(DATA_STORE_KIND, entity);
         jobKey = UUID.fromString(entity.getString(JOB_KEY_PROPERTY)); // probably not null?
         type = Type.valueOf(entity.getString(TYPE_PROPERTY)); // probably not null?
@@ -104,7 +104,7 @@ public class Barrier extends PipelineModelObject {
      * model</a>: If B is the finalize barrier of a Job J, then the entity group
      * parent of B is J. Run barriers do not have an entity group parent.
      */
-    private static UUID getEgParentKey(Type type, UUID jobKey) {
+    private static UUID getEgParentKey(final Type type, final UUID jobKey) {
         switch (type) {
             case RUN:
                 return null;
@@ -113,18 +113,20 @@ public class Barrier extends PipelineModelObject {
                     throw new IllegalArgumentException("jobKey is null");
                 }
                 break;
+            default:
+                break;
         }
         return jobKey;
     }
 
     public static Barrier dummyInstanceForTesting() {
-        UUID dummyKey = UUID.fromString("00000000-0000-0000-0000-000000000bad");
+        final UUID dummyKey = UUID.fromString("00000000-0000-0000-0000-000000000bad");
         return new Barrier(Type.RUN, dummyKey, dummyKey, dummyKey, "abc");
     }
 
     @Override
     public PipelineMutation toEntity() {
-        PipelineMutation mutation = toProtoEntity();
+        final PipelineMutation mutation = toProtoEntity();
         final Mutation.WriteBuilder entity = mutation.getDatabaseMutation();
         entity.set(JOB_KEY_PROPERTY).to(jobKey.toString());
         entity.set(TYPE_PROPERTY).to(type.toString());
@@ -139,17 +141,17 @@ public class Barrier extends PipelineModelObject {
         return DATA_STORE_KIND;
     }
 
-    public void inflate(Map<UUID, Slot> pool) {
-        int numSlots = waitingOnKeys.size();
+    public void inflate(final Map<UUID, Slot> pool) {
+        final int numSlots = waitingOnKeys.size();
         waitingOnInflated = new ArrayList<>(numSlots);
         for (int i = 0; i < numSlots; i++) {
-            UUID key = waitingOnKeys.get(i);
-            int groupSize = waitingOnGroupSizes.get(i).intValue();
-            Slot slot = pool.get(key);
+            final UUID key = waitingOnKeys.get(i);
+            final int groupSize = waitingOnGroupSizes.get(i).intValue();
+            final Slot slot = pool.get(key);
             if (null == slot) {
                 throw new RuntimeException("No slot in pool with key=" + key);
             }
-            SlotDescriptor descriptor = new SlotDescriptor(slot, groupSize);
+            final SlotDescriptor descriptor = new SlotDescriptor(slot, groupSize);
             waitingOnInflated.add(descriptor);
         }
     }
@@ -182,8 +184,8 @@ public class Barrier extends PipelineModelObject {
     }
 
     public Object[] buildArgumentArray() {
-        List<Object> argumentList = buildArgumentList();
-        Object[] argumentArray = new Object[argumentList.size()];
+        final List<Object> argumentList = buildArgumentList();
+        final Object[] argumentArray = new Object[argumentList.size()];
         argumentList.toArray(argumentArray);
         return argumentArray;
     }
@@ -192,31 +194,31 @@ public class Barrier extends PipelineModelObject {
         if (null == waitingOnInflated) {
             throw new RuntimeException("" + this + " has not been inflated.");
         }
-        List<Object> argumentList = new LinkedList<>();
+        final List<Object> argumentList = new LinkedList<>();
         ArrayList<Object> currentListArg = null;
         int currentListArgExpectedSize = -1;
-        for (SlotDescriptor descriptor : waitingOnInflated) {
-            if (!descriptor.slot.isFilled()) {
-                throw new RuntimeException("Slot is not filled: " + descriptor.slot);
+        for (final SlotDescriptor descriptor : waitingOnInflated) {
+            if (!descriptor.getSlot().isFilled()) {
+                throw new RuntimeException("Slot is not filled: " + descriptor.getSlot());
             }
-            Object nextValue = descriptor.slot.getValue();
+            final Object nextValue = descriptor.getSlot().getValue();
             if (currentListArg != null) {
                 // Assert: currentListArg.size() < currentListArgExpectedSize
-                if (descriptor.groupSize != currentListArgExpectedSize + 1) {
+                if (descriptor.getGroupSize() != currentListArgExpectedSize + 1) {
                     throw new RuntimeException("expectedGroupSize: " + currentListArgExpectedSize
-                            + ", groupSize: " + descriptor.groupSize + "; nextValue=" + nextValue);
+                            + ", groupSize: " + descriptor.getGroupSize() + "; nextValue=" + nextValue);
                 }
                 currentListArg.add(nextValue);
             } else {
-                if (descriptor.groupSize > 0) {
+                if (descriptor.getGroupSize() > 0) {
                     // We are not in the midst of a list and this element indicates
                     // a new list is starting. This element itself is a dummy
                     // marker, its value is ignored. The list is comprised
                     // of the next groupSize - 1 elements.
-                    currentListArgExpectedSize = descriptor.groupSize - 1;
+                    currentListArgExpectedSize = descriptor.getGroupSize() - 1;
                     currentListArg = new ArrayList<>(currentListArgExpectedSize);
                     argumentList.add(currentListArg);
-                } else if (descriptor.groupSize == 0) {
+                } else if (descriptor.getGroupSize() == 0) {
                     // We are not in the midst of a list and this element is not part of
                     // a list
                     argumentList.add(nextValue);
@@ -233,31 +235,31 @@ public class Barrier extends PipelineModelObject {
         return argumentList;
     }
 
-    private void addSlotDescriptor(SlotDescriptor slotDescr) {
+    private void addSlotDescriptor(final SlotDescriptor slotDescr) {
         if (null == waitingOnInflated) {
             waitingOnInflated = new LinkedList<>();
         }
         waitingOnInflated.add(slotDescr);
-        waitingOnGroupSizes.add((long) slotDescr.groupSize);
-        Slot slot = slotDescr.slot;
+        waitingOnGroupSizes.add((long) slotDescr.getGroupSize());
+        final Slot slot = slotDescr.getSlot();
         slot.addWaiter(this);
-        waitingOnKeys.add(slotDescr.slot.getKey());
+        waitingOnKeys.add(slotDescr.getSlot().getKey());
     }
 
-    public void addRegularArgumentSlot(Slot slot) {
+    public void addRegularArgumentSlot(final Slot slot) {
         verifyStateBeforAdd(slot);
         addSlotDescriptor(new SlotDescriptor(slot, 0));
     }
 
-    public void addPhantomArgumentSlot(Slot slot) {
+    public void addPhantomArgumentSlot(final Slot slot) {
         verifyStateBeforAdd(slot);
         addSlotDescriptor(new SlotDescriptor(slot, -1));
     }
 
-    private void verifyStateBeforAdd(Slot slot) {
+    private void verifyStateBeforAdd(final Slot slot) {
         if (getType() == Type.FINALIZE && waitingOnInflated != null && !waitingOnInflated.isEmpty()) {
-            throw new IllegalStateException("Trying to add a slot, " + slot +
-                    ", to an already populated finalized barrier: " + this);
+            throw new IllegalStateException("Trying to add a slot, " + slot
+                    + ", to an already populated finalized barrier: " + this);
         }
     }
 
@@ -269,14 +271,14 @@ public class Barrier extends PipelineModelObject {
      *                 as the elements of the list Job argument.
      * @throws IllegalArgumentException if intialSlot is not filled.
      */
-    public void addListArgumentSlots(Slot initialSlot, List<Slot> slotList) {
+    public void addListArgumentSlots(final Slot initialSlot, final List<Slot> slotList) {
         if (!initialSlot.isFilled()) {
             throw new IllegalArgumentException("initialSlot must be filled");
         }
         verifyStateBeforAdd(initialSlot);
-        int groupSize = slotList.size() + 1;
+        final int groupSize = slotList.size() + 1;
         addSlotDescriptor(new SlotDescriptor(initialSlot, groupSize));
-        for (Slot slot : slotList) {
+        for (final Slot slot : slotList) {
             addSlotDescriptor(new SlotDescriptor(slot, groupSize));
         }
     }
@@ -293,7 +295,7 @@ public class Barrier extends PipelineModelObject {
     /**
      * The type of Barrier
      */
-    public static enum Type {
+    public enum Type {
         RUN, FINALIZE
     }
 }

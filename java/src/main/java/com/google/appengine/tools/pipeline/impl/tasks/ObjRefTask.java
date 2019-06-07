@@ -45,7 +45,7 @@ public abstract class ObjRefTask extends Task {
      *                   will refer. It will be used as part of the task name if
      *                   combined with {@code namePrefix}.
      */
-    protected ObjRefTask(Type type, String namePrefix, UUID key, QueueSettings queueSettings) {
+    protected ObjRefTask(final Type type, final String namePrefix, final UUID key, final QueueSettings queueSettings) {
         super(type, createTaskName(namePrefix, key), queueSettings.clone());
         this.key = key;
     }
@@ -62,12 +62,12 @@ public abstract class ObjRefTask extends Task {
      *                   the {@link #key} of the object to which this {@code ObjRefTask}
      *                   refers.
      */
-    protected ObjRefTask(Type type, String taskName, Properties properties) {
+    protected ObjRefTask(final Type type, final String taskName, final Properties properties) {
         super(type, taskName, properties);
         key = UUID.fromString(properties.getProperty(KEY_PARAM));
     }
 
-    private static String createTaskName(String namePrefix, UUID key) {
+    private static String createTaskName(final String namePrefix, final UUID key) {
         if (null == key) {
             throw new IllegalArgumentException("key is null.");
         }
@@ -77,13 +77,13 @@ public abstract class ObjRefTask extends Task {
         return namePrefix + key.toString();
     }
 
-    public UUID getKey() {
+    public final UUID getKey() {
         return key;
     }
 
     @Override
-    protected void addProperties(Properties properties) {
-        String keyString = key.toString();
+    protected void addProperties(final Properties properties) {
+        final String keyString = key.toString();
         properties.setProperty(KEY_PARAM, keyString);
     }
 

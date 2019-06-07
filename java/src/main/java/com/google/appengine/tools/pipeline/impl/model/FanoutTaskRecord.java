@@ -27,7 +27,7 @@ import java.util.UUID;
  *
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class FanoutTaskRecord extends PipelineModelObject {
+public final class FanoutTaskRecord extends PipelineModelObject {
 
     public static final String DATA_STORE_KIND = "FanoutTask";
     private static final String PAYLOAD_PROPERTY = "payload";
@@ -40,7 +40,7 @@ public class FanoutTaskRecord extends PipelineModelObject {
 
     private final byte[] payload;
 
-    public FanoutTaskRecord(UUID rootJobKey, byte[] payload) {
+    public FanoutTaskRecord(final UUID rootJobKey, final byte[] payload) {
         super(DATA_STORE_KIND, rootJobKey, null, null);
         if (payload == null) {
             throw new RuntimeException("Payload must not be null");
@@ -48,9 +48,9 @@ public class FanoutTaskRecord extends PipelineModelObject {
         this.payload = payload;
     }
 
-    public FanoutTaskRecord(StructReader entity) {
+    public FanoutTaskRecord(final StructReader entity) {
         super(DATA_STORE_KIND, entity);
-        ByteArray payloadBlob = entity.getBytes(PAYLOAD_PROPERTY);
+        final ByteArray payloadBlob = entity.getBytes(PAYLOAD_PROPERTY);
         payload = payloadBlob.toByteArray();
     }
 
@@ -65,7 +65,7 @@ public class FanoutTaskRecord extends PipelineModelObject {
 
     @Override
     public PipelineMutation toEntity() {
-        PipelineMutation mutation = toProtoEntity();
+        final PipelineMutation mutation = toProtoEntity();
         final Mutation.WriteBuilder entity = mutation.getDatabaseMutation();
         entity.set(PAYLOAD_PROPERTY).to(ByteArray.copyFrom(payload));
         return mutation;

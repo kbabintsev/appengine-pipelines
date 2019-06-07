@@ -31,30 +31,33 @@ import java.util.logging.Logger;
  * @author rudominer@google.com (Mitch Rudominer)
  */
 // TODO(user): consider depending and using guava instead.
-public class StringUtils {
+public final class StringUtils {
 
     public static final Charset UTF_8 = Charset.forName("UTF-8");
 
-    public static String printStackTraceToString(Throwable t) {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw, true);
+    private StringUtils() {
+    }
+
+    public static String printStackTraceToString(final Throwable t) {
+        final StringWriter sw = new StringWriter();
+        final PrintWriter pw = new PrintWriter(sw, true);
         t.printStackTrace(pw);
         pw.flush();
         sw.flush();
         return sw.toString();
     }
 
-    public static String toString(Object x) {
+    public static String toString(final Object x) {
         if (x instanceof UUID) {
             return ((UUID) x).toString();
         }
         return x == null ? "null" : x.toString();
     }
 
-    public static String toString(Object[] array) {
-        StringBuilder builder = new StringBuilder(1024);
+    public static String toString(final Object[] array) {
+        final StringBuilder builder = new StringBuilder(1024);
         builder.append('[');
-        for (Object x : array) {
+        for (final Object x : array) {
             builder.append(toString(x));
             builder.append(", ");
         }
@@ -65,15 +68,15 @@ public class StringUtils {
         return builder.toString();
     }
 
-    public static <E, F> String toStringParallel(List<E> listA, List<F> listB) {
+    public static <E, F> String toStringParallel(final List<E> listA, final List<F> listB) {
         if (listA.size() != listB.size()) {
             throw new IllegalArgumentException("The two lists must have the same length.");
         }
-        StringBuilder builder = new StringBuilder(1024);
+        final StringBuilder builder = new StringBuilder(1024);
         builder.append('<');
         int i = 0;
-        for (E x : listA) {
-            F y = listB.get(i++);
+        for (final E x : listA) {
+            final F y = listB.get(i++);
             if (i > 1) {
                 builder.append(", ");
             }
@@ -83,8 +86,8 @@ public class StringUtils {
         return builder.toString();
     }
 
-    public static void logRetryMessage(Logger logger, Task task, int retryCount, Exception e) {
-        String message = "Will retry task: " + task + ". retryCount=" + retryCount;
+    public static void logRetryMessage(final Logger logger, final Task task, final int retryCount, final Exception e) {
+        final String message = "Will retry task: " + task + ". retryCount=" + retryCount;
         if (e instanceof ConcurrentModificationException) {
             // Don't print stack trace in this case.
             logger.log(Level.INFO, message + " " + e.getMessage());

@@ -28,23 +28,26 @@ import java.util.zip.InflaterInputStream;
 /**
  * @author rudominer@google.com (Your Name Here)
  */
-public class SerializationUtils {
+public final class SerializationUtils {
 
     private static final int MAX_UNCOMPRESSED_BYTE_SIZE = 1000000;
     private static final int ZLIB_COMPRESSION = 1;
 
-    public static byte[] serialize(Object x) throws IOException {
-        InternalByteArrayOutputStream bytes = new InternalByteArrayOutputStream(512);
+    private SerializationUtils() {
+    }
+
+    public static byte[] serialize(final Object x) throws IOException {
+        final InternalByteArrayOutputStream bytes = new InternalByteArrayOutputStream(512);
         try (ObjectOutputStream out = new ObjectOutputStream(bytes)) {
             out.writeObject(x);
         }
         if (bytes.size() <= MAX_UNCOMPRESSED_BYTE_SIZE) {
             return bytes.toByteArray();
         }
-        ByteArrayOutputStream compressedBytes = new ByteArrayOutputStream(bytes.size() / 4);
+        final ByteArrayOutputStream compressedBytes = new ByteArrayOutputStream(bytes.size() / 4);
         compressedBytes.write(0);
         compressedBytes.write(ZLIB_COMPRESSION);
-        Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION, true);
+        final Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION, true);
         try (DeflaterOutputStream out = new DeflaterOutputStream(compressedBytes, deflater)) {
             // Use internal buffer to avoid copying it.
             out.write(bytes.getInternalBuffer(), 0, bytes.size());
@@ -54,7 +57,7 @@ public class SerializationUtils {
         return compressedBytes.toByteArray();
     }
 
-    public static Object deserialize(byte[] bytes) throws IOException {
+    public static Object deserialize(final byte[] bytes) throws IOException {
         if (bytes == null) {
             return null;
         }
@@ -90,7 +93,7 @@ public class SerializationUtils {
 
     private static class InternalByteArrayOutputStream extends ByteArrayOutputStream {
 
-        public InternalByteArrayOutputStream(int size) {
+        InternalByteArrayOutputStream(final int size) {
             super(size);
         }
 

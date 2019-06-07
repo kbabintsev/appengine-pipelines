@@ -50,32 +50,32 @@ import java.util.List;
  * @author rudominer@google.com (Mitch Rudominer)
  */
 public final class FutureList<E> implements Value<List<E>> {
-  private List<? extends Value<E>> listOfValues;
+    private final List<? extends Value<E>> listOfValues;
 
-  /**
-   * Constructs a {@code FutureList} from a {@code List} of {@code Values}.
-   *
-   * @param listOfValues a {@code List} of {@code Values}. This object takes
-   *                     ownership of the list. The client should not continue to hold a
-   *                     reference to it.
-   */
-  public FutureList(List<? extends Value<E>> listOfValues) {
-    if (null == listOfValues) {
-      throw new IllegalArgumentException("lisOfValues is null");
+    /**
+     * Constructs a {@code FutureList} from a {@code List} of {@code Values}.
+     *
+     * @param listOfValues a {@code List} of {@code Values}. This object takes
+     *                     ownership of the list. The client should not continue to hold a
+     *                     reference to it.
+     */
+    public FutureList(final List<? extends Value<E>> listOfValues) {
+        if (null == listOfValues) {
+            throw new IllegalArgumentException("lisOfValues is null");
+        }
+        this.listOfValues = ImmutableList.copyOf(listOfValues);
     }
-    this.listOfValues = ImmutableList.copyOf(listOfValues);
-  }
 
-  @SafeVarargs
-  public FutureList(Value<E> first, Value<E>... rest) {
-    this(ImmutableList.<Value<E>>builder().add(first).add(rest).build());
-  }
+    @SafeVarargs
+    public FutureList(final Value<E> first, final Value<E>... rest) {
+        this(ImmutableList.<Value<E>>builder().add(first).add(rest).build());
+    }
 
-  /**
-   * This method is used by the framework to retrieve the list of values.
-   * User-code should not invoke this method.
-   */
-  public List<? extends Value<E>> getListOfValues() {
-    return listOfValues;
-  }
+    /**
+     * This method is used by the framework to retrieve the list of values.
+     * User-code should not invoke this method.
+     */
+    public List<? extends Value<E>> getListOfValues() {
+        return listOfValues;
+    }
 }
