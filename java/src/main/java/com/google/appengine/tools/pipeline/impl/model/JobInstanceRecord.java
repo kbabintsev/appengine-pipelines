@@ -31,10 +31,10 @@ import java.util.UUID;
  */
 public class JobInstanceRecord extends PipelineModelObject {
 
-  public static final String DATA_STORE_KIND = "JobInstance";
-  private static final String JOB_KEY_PROPERTY = "jobKey";
-  private static final String JOB_CLASS_NAME_PROPERTY = "jobClassName";
-  public static final String JOB_DISPLAY_NAME_PROPERTY = "jobDisplayName";
+    public static final String DATA_STORE_KIND = "JobInstance";
+    public static final String JOB_DISPLAY_NAME_PROPERTY = "jobDisplayName";
+    private static final String JOB_KEY_PROPERTY = "jobKey";
+    private static final String JOB_CLASS_NAME_PROPERTY = "jobClassName";
     public static final List<String> PROPERTIES = ImmutableList.<String>builder()
             .addAll(BASE_PROPERTIES)
             .add(
@@ -44,81 +44,81 @@ public class JobInstanceRecord extends PipelineModelObject {
             )
             .build();
 
-  // persistent
-  private final UUID jobKey;
-  private final String jobClassName;
-  private final String jobDisplayName;
-  private final byte[] value;
+    // persistent
+    private final UUID jobKey;
+    private final String jobClassName;
+    private final String jobDisplayName;
+    private final byte[] value;
 
-  // transient
-  private Job<?> jobInstance;
+    // transient
+    private Job<?> jobInstance;
 
-  public JobInstanceRecord(JobRecord job, Job<?> jobInstance) {
-    super(DATA_STORE_KIND, job.getRootJobKey(), job.getGeneratorJobKey(), job.getGraphGuid());
-    jobKey = job.getKey();
-    jobClassName = jobInstance.getClass().getName();
-    jobDisplayName = jobInstance.getJobDisplayName();
-    try {
-        value = PipelineManager.getBackEnd().serializeValue(this, jobInstance);
-    } catch (IOException e) {
-      throw new RuntimeException("Exception while attempting to serialize the jobInstance "
-          + jobInstance, e);
-    }
- }
-
-  public JobInstanceRecord(StructReader entity) {
-    super(DATA_STORE_KIND, entity);
-    jobKey = UUID.fromString(entity.getString(JOB_KEY_PROPERTY)); // probably not null?
-    jobClassName = entity.getString(JOB_CLASS_NAME_PROPERTY); // probably not null?
-    if (!entity.isNull(JOB_DISPLAY_NAME_PROPERTY)) {
-      jobDisplayName = entity.getString(JOB_DISPLAY_NAME_PROPERTY);
-    } else {
-      jobDisplayName = jobClassName;
+    public JobInstanceRecord(JobRecord job, Job<?> jobInstance) {
+        super(DATA_STORE_KIND, job.getRootJobKey(), job.getGeneratorJobKey(), job.getGraphGuid());
+        jobKey = job.getKey();
+        jobClassName = jobInstance.getClass().getName();
+        jobDisplayName = jobInstance.getJobDisplayName();
+        try {
+            value = PipelineManager.getBackEnd().serializeValue(this, jobInstance);
+        } catch (IOException e) {
+            throw new RuntimeException("Exception while attempting to serialize the jobInstance "
+                    + jobInstance, e);
+        }
     }
 
-    value = PipelineManager.getBackEnd().retrieveBlob(getRootJobKey(), JobInstanceRecord.DATA_STORE_KIND, getKey());
-  }
+    public JobInstanceRecord(StructReader entity) {
+        super(DATA_STORE_KIND, entity);
+        jobKey = UUID.fromString(entity.getString(JOB_KEY_PROPERTY)); // probably not null?
+        jobClassName = entity.getString(JOB_CLASS_NAME_PROPERTY); // probably not null?
+        if (!entity.isNull(JOB_DISPLAY_NAME_PROPERTY)) {
+            jobDisplayName = entity.getString(JOB_DISPLAY_NAME_PROPERTY);
+        } else {
+            jobDisplayName = jobClassName;
+        }
 
-  @Override
-  public PipelineMutation toEntity() {
-    PipelineMutation mutation = toProtoEntity();
-    final Mutation.WriteBuilder entity = mutation.getDatabaseMutation();
-    entity.set(JOB_KEY_PROPERTY).to(jobKey.toString());
-    entity.set(JOB_CLASS_NAME_PROPERTY).to(jobClassName);
-    entity.set(JOB_DISPLAY_NAME_PROPERTY).to(jobDisplayName);
-    mutation.setBlobMutation(new PipelineMutation.BlobMutation(getRootJobKey(), DATA_STORE_KIND, getKey(), value));
-    return mutation;
-  }
-
-  @Override
-  protected String getDatastoreKind() {
-    return DATA_STORE_KIND;
-  }
-
-  public UUID getJobKey() {
-    return jobKey;
-  }
-
-  /**
-   * Returns the job class name for display purpose only.
-   */
-  public String getJobDisplayName() {
-    return jobDisplayName;
-  }
-
-  public String getClassName() {
-    return jobClassName;
-  }
-
-  public synchronized Job<?> getJobInstanceDeserialized() {
-    if (null == jobInstance) {
-      try {
-        jobInstance = (Job<?>) PipelineManager.getBackEnd().deserializeValue(this, value);
-      } catch (IOException e) {
-        throw new RuntimeException(
-            "Exception while attempting to deserialize jobInstance for " + jobKey, e);
-      }
+        value = PipelineManager.getBackEnd().retrieveBlob(getRootJobKey(), JobInstanceRecord.DATA_STORE_KIND, getKey());
     }
-    return jobInstance;
-  }
+
+    @Override
+    public PipelineMutation toEntity() {
+        PipelineMutation mutation = toProtoEntity();
+        final Mutation.WriteBuilder entity = mutation.getDatabaseMutation();
+        entity.set(JOB_KEY_PROPERTY).to(jobKey.toString());
+        entity.set(JOB_CLASS_NAME_PROPERTY).to(jobClassName);
+        entity.set(JOB_DISPLAY_NAME_PROPERTY).to(jobDisplayName);
+        mutation.setBlobMutation(new PipelineMutation.BlobMutation(getRootJobKey(), DATA_STORE_KIND, getKey(), value));
+        return mutation;
+    }
+
+    @Override
+    protected String getDatastoreKind() {
+        return DATA_STORE_KIND;
+    }
+
+    public UUID getJobKey() {
+        return jobKey;
+    }
+
+    /**
+     * Returns the job class name for display purpose only.
+     */
+    public String getJobDisplayName() {
+        return jobDisplayName;
+    }
+
+    public String getClassName() {
+        return jobClassName;
+    }
+
+    public synchronized Job<?> getJobInstanceDeserialized() {
+        if (null == jobInstance) {
+            try {
+                jobInstance = (Job<?>) PipelineManager.getBackEnd().deserializeValue(this, value);
+            } catch (IOException e) {
+                throw new RuntimeException(
+                        "Exception while attempting to deserialize jobInstance for " + jobKey, e);
+            }
+        }
+        return jobInstance;
+    }
 }

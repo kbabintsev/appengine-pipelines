@@ -19,13 +19,12 @@ import com.google.appengine.tools.pipeline.impl.tasks.Task;
 import com.google.appengine.tools.pipeline.impl.util.StringUtils;
 import com.google.apphosting.api.ApiProxy;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * A ServletHelper that handles all requests from the task queue.
@@ -34,54 +33,52 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class TaskHandler {
 
-  private static Logger logger = Logger.getLogger(TaskHandler.class.getName());
+    public static final String PATH_COMPONENT = "handleTask";
+    public static final String TASK_NAME_REQUEST_HEADER = "X-AppEngine-TaskName";
+    public static final String TASK_RETRY_COUNT_HEADER = "X-AppEngine-TaskRetryCount";
+    public static final String TASK_QUEUE_NAME_HEADER = "X-AppEngine-QueueName";
+    private static Logger logger = Logger.getLogger(TaskHandler.class.getName());
 
-  public static final String PATH_COMPONENT = "handleTask";
-  public static final String TASK_NAME_REQUEST_HEADER = "X-AppEngine-TaskName";
-  public static final String TASK_RETRY_COUNT_HEADER = "X-AppEngine-TaskRetryCount";
-  public static final String TASK_QUEUE_NAME_HEADER = "X-AppEngine-QueueName";
-
-
-  public static String handleTaskUrl() {
-    return PipelineServlet.baseUrl() + PATH_COMPONENT;
-  }
-
-  public static void doPost(HttpServletRequest req) throws ServletException {
-    Task task = reconstructTask(req);
-    int retryCount;
-    try {
-      retryCount = req.getIntHeader(TASK_RETRY_COUNT_HEADER);
-    } catch (NumberFormatException e) {
-      retryCount = -1;
+    public static String handleTaskUrl() {
+        return PipelineServlet.baseUrl() + PATH_COMPONENT;
     }
-    try {
-      PipelineManager.processTask(task);
-    } catch (RuntimeException e) {
-      StringUtils.logRetryMessage(logger, task, retryCount, e);
-      throw new ServletException(e);
-    }
-  }
 
-  private static Task reconstructTask(HttpServletRequest request) {
-    Properties properties = new Properties();
-    Enumeration<?> paramNames = request.getParameterNames();
-    while (paramNames.hasMoreElements()) {
-      String paramName = (String) paramNames.nextElement();
-      String paramValue = request.getParameter(paramName);
-      properties.setProperty(paramName, paramValue);
+    public static void doPost(HttpServletRequest req) throws ServletException {
+        Task task = reconstructTask(req);
+        int retryCount;
+        try {
+            retryCount = req.getIntHeader(TASK_RETRY_COUNT_HEADER);
+        } catch (NumberFormatException e) {
+            retryCount = -1;
+        }
+        try {
+            PipelineManager.processTask(task);
+        } catch (RuntimeException e) {
+            StringUtils.logRetryMessage(logger, task, retryCount, e);
+            throw new ServletException(e);
+        }
     }
-    String taskName = request.getHeader(TASK_NAME_REQUEST_HEADER);
-    Task task = Task.fromProperties(taskName, properties);
-    task.getQueueSettings().setDelayInSeconds(null);
-    String queueName = request.getHeader(TASK_QUEUE_NAME_HEADER);
-    if (queueName != null && !queueName.isEmpty()) {
-      String onQueue = task.getQueueSettings().getOnQueue();
-       if (onQueue == null || onQueue.isEmpty()) {
-         task.getQueueSettings().setOnQueue(queueName);
-       }
-       Map<String, Object> attributes = ApiProxy.getCurrentEnvironment().getAttributes();
-       attributes.put(TASK_QUEUE_NAME_HEADER, queueName);
+
+    private static Task reconstructTask(HttpServletRequest request) {
+        Properties properties = new Properties();
+        Enumeration<?> paramNames = request.getParameterNames();
+        while (paramNames.hasMoreElements()) {
+            String paramName = (String) paramNames.nextElement();
+            String paramValue = request.getParameter(paramName);
+            properties.setProperty(paramName, paramValue);
+        }
+        String taskName = request.getHeader(TASK_NAME_REQUEST_HEADER);
+        Task task = Task.fromProperties(taskName, properties);
+        task.getQueueSettings().setDelayInSeconds(null);
+        String queueName = request.getHeader(TASK_QUEUE_NAME_HEADER);
+        if (queueName != null && !queueName.isEmpty()) {
+            String onQueue = task.getQueueSettings().getOnQueue();
+            if (onQueue == null || onQueue.isEmpty()) {
+                task.getQueueSettings().setOnQueue(queueName);
+            }
+            Map<String, Object> attributes = ApiProxy.getCurrentEnvironment().getAttributes();
+            attributes.put(TASK_QUEUE_NAME_HEADER, queueName);
+        }
+        return task;
     }
-    return task;
-  }
 }

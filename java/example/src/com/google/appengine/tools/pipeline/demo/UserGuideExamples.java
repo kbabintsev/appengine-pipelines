@@ -71,6 +71,15 @@ public class UserGuideExamples {
 
     private static final long serialVersionUID = -8312140484895836265L;
 
+    @SuppressWarnings("unused")
+    public static void getIntFromUser(
+            String prompt, String userEmail, UUID promiseHandle) {
+      // 1. Send the user an e-mail containing the prompt.
+      // 2. Ask user to submit one more integer on some web page.
+      // 3. promiseHandle is a query string argument
+      // 4. Handler for submit invokes submitPromisedValue(promiseHandle, value)
+    }
+
     @Override
     public Value<Integer> run(String userEmail) {
       // Invoke ComplexJob on three promised values
@@ -86,19 +95,10 @@ public class UserGuideExamples {
 
       // Send the user the intermediate result and ask for one more integer
       FutureValue<Integer> oneMoreInt =
-        futureCall(new PromptJob(), intermediate, immediate(userEmail));
+              futureCall(new PromptJob(), intermediate, immediate(userEmail));
 
       // Invoke MultJob on intermediate and oneMoreInt
       return futureCall(new MultJob(), intermediate, oneMoreInt);
-    }
-
-    @SuppressWarnings("unused")
-    public static void getIntFromUser(
-        String prompt, String userEmail, UUID promiseHandle) {
-      // 1. Send the user an e-mail containing the prompt.
-      // 2. Ask user to submit one more integer on some web page.
-      // 3. promiseHandle is a query string argument
-      // 4. Handler for submit invokes submitPromisedValue(promiseHandle, value)
     }
   }
 
@@ -112,8 +112,8 @@ public class UserGuideExamples {
     @Override
     public Value<Integer> run(Integer intermediate, String userEmail) {
       String prompt =
-          "The intermediate result is " + intermediate + "."
-               + " Please give one more int";
+              "The intermediate result is " + intermediate + "."
+                      + " Please give one more int";
       PromisedValue<Integer> oneMoreInt = newPromise();
       ExternalAgentJob.getIntFromUser(prompt, userEmail, oneMoreInt.getHandle());
       return oneMoreInt;

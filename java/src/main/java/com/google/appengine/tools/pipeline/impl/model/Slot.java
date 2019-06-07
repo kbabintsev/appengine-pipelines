@@ -36,9 +36,8 @@ import java.util.stream.Collectors;
  * @author rudominer@google.com (Mitch Rudominer)
  */
 public class Slot extends PipelineModelObject {
-  private static final int DATABASE_VALUE_LIMIT = 5000000;
-
   public static final String DATA_STORE_KIND = "Slot";
+  private static final int DATABASE_VALUE_LIMIT = 5000000;
   private static final String FILLED_PROPERTY = "filled";
   private static final String WAITING_ON_ME_PROPERTY = "waitingOnMe";
   private static final String FILL_TIME_PROPERTY = "fillTime";
@@ -56,19 +55,16 @@ public class Slot extends PipelineModelObject {
                   DATABASE_VALUE_PROPERTY
           )
           .build();
-
+  private final List<UUID> waitingOnMeKeys;
   // persistent
   private boolean filled;
   private Date fillTime;
   private UUID sourceJobKey;
-  private final List<UUID> waitingOnMeKeys;
-
   // transient
   private List<Barrier> waitingOnMeInflated;
   private ValueLocation valueLocation;
   private Object value;
   private boolean valueLoaded;
-
 
   public Slot(UUID rootJobKey, UUID generatorJobKey, String graphGUID) {
     super(DATA_STORE_KIND, rootJobKey, generatorJobKey, graphGUID);
@@ -98,7 +94,7 @@ public class Slot extends PipelineModelObject {
         } else if (valueLocation == ValueLocation.DATABASE) {
           value = SerializationUtils.deserialize(databaseValue);
         } else {
-          throw new RuntimeException("Unknown ValueLocation: "+ valueLocation);
+          throw new RuntimeException("Unknown ValueLocation: " + valueLocation);
         }
         valueLoaded = true;
       } catch (IOException e) {
@@ -121,19 +117,19 @@ public class Slot extends PipelineModelObject {
       }
       valueLocation = serialized.length < DATABASE_VALUE_LIMIT ? ValueLocation.DATABASE : ValueLocation.STORAGE;
       if (valueLocation == ValueLocation.STORAGE) {
-          mutation.setBlobMutation(new PipelineMutation.BlobMutation(
-                  getRootJobKey(),
-                  DATA_STORE_KIND,
-                  getKey(),
-                  serialized
-          ));
+        mutation.setBlobMutation(new PipelineMutation.BlobMutation(
+                getRootJobKey(),
+                DATA_STORE_KIND,
+                getKey(),
+                serialized
+        ));
       } else {
-          entity.set(DATABASE_VALUE_PROPERTY).to(ByteArray.copyFrom(serialized));
+        entity.set(DATABASE_VALUE_PROPERTY).to(ByteArray.copyFrom(serialized));
       }
     } else {
-        valueLocation = ValueLocation.DATABASE;
+      valueLocation = ValueLocation.DATABASE;
     }
-    
+
     entity.set(VALUE_LOCATION_PROPERTY).to(valueLocation.name());
     entity.set(FILLED_PROPERTY).to(filled);
     if (null != fillTime) {
@@ -219,7 +215,7 @@ public class Slot extends PipelineModelObject {
   @Override
   public String toString() {
     return "Slot[" + getKeyName(getKey()) + ", value=" + (valueLoaded ? value : "...")
-        + ", filled=" + filled + ", waitingOnMe=" + waitingOnMeKeys + ", parent="
-        + getKeyName(getGeneratorJobKey()) + ", guid=" + getGraphGuid() + "]";
+            + ", filled=" + filled + ", waitingOnMe=" + waitingOnMeKeys + ", parent="
+            + getKeyName(getGeneratorJobKey()) + ", guid=" + getGraphGuid() + "]";
   }
 }

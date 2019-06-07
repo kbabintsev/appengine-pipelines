@@ -30,37 +30,37 @@ import java.util.UUID;
  */
 public class JsonTreeHandler {
 
-  public static final String PATH_COMPONENT = "rpc/tree";
-  private static final String ROOT_PIPELINE_ID = "root_pipeline_id";
+    public static final String PATH_COMPONENT = "rpc/tree";
+    private static final String ROOT_PIPELINE_ID = "root_pipeline_id";
 
-  public static void doGet(HttpServletRequest req, HttpServletResponse resp)
-      throws ServletException {
+    public static void doGet(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException {
 
-    UUID rootJobHandle = UUID.fromString(req.getParameter(ROOT_PIPELINE_ID));
-    if (null == rootJobHandle) {
-      throw new ServletException(ROOT_PIPELINE_ID + " parameter not found.");
+        UUID rootJobHandle = UUID.fromString(req.getParameter(ROOT_PIPELINE_ID));
+        if (null == rootJobHandle) {
+            throw new ServletException(ROOT_PIPELINE_ID + " parameter not found.");
+        }
+        try {
+            JobRecord jobInfo;
+            try {
+                jobInfo = PipelineManager.getJob(rootJobHandle);
+            } catch (NoSuchObjectException nsoe) {
+                resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
+            UUID rootJobKey = jobInfo.getRootJobKey();
+            if (!rootJobKey.equals(rootJobHandle)) {
+                resp.addHeader(ROOT_PIPELINE_ID, rootJobKey.toString());
+                resp.sendError(449, rootJobKey.toString());
+                return;
+            }
+            PipelineObjects pipelineObjects = PipelineManager.queryFullPipeline(rootJobKey);
+            String asJson = JsonGenerator.pipelineObjectsToJson(pipelineObjects);
+            // TODO(user): Temporary until we support abort/delete in Python
+            resp.addHeader("Pipeline-Lang", "Java");
+            resp.getWriter().write(asJson);
+        } catch (IOException e) {
+            throw new ServletException(e);
+        }
     }
-    try {
-      JobRecord jobInfo;
-      try {
-        jobInfo = PipelineManager.getJob(rootJobHandle);
-      } catch (NoSuchObjectException nsoe) {
-        resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-        return;
-      }
-      UUID rootJobKey = jobInfo.getRootJobKey();
-      if (!rootJobKey.equals(rootJobHandle)) {
-        resp.addHeader(ROOT_PIPELINE_ID, rootJobKey.toString());
-        resp.sendError(449, rootJobKey.toString());
-        return;
-      }
-      PipelineObjects pipelineObjects = PipelineManager.queryFullPipeline(rootJobKey);
-      String asJson = JsonGenerator.pipelineObjectsToJson(pipelineObjects);
-      // TODO(user): Temporary until we support abort/delete in Python
-      resp.addHeader("Pipeline-Lang", "Java");
-      resp.getWriter().write(asJson);
-    } catch (IOException e) {
-      throw new ServletException(e);
-    }
-  }
 }

@@ -22,20 +22,19 @@ import java.util.UUID;
 /**
  * Implements {@link PromisedValue} by wrapping a newly created {@link Slot}
  * which will contain the promised value when it is delivered.
- * 
- * @author rudominer@google.com (Mitch Rudominer)
  *
  * @param <E> The type of the value represented by this {@code PromisedValue}
+ * @author rudominer@google.com (Mitch Rudominer)
  */
 public class PromisedValueImpl<E> extends FutureValueImpl<E> implements PromisedValue<E> {
 
-  public PromisedValueImpl(UUID rootJobGuid, UUID generatorJobKey, String graphGUID) {
-    super(new Slot(rootJobGuid, generatorJobKey, graphGUID));
-  }
+    public PromisedValueImpl(UUID rootJobGuid, UUID generatorJobKey, String graphGUID) {
+        super(new Slot(rootJobGuid, generatorJobKey, graphGUID));
+    }
 
-  @Override
-  public UUID getHandle() {
-    return slot.getKey();
-  }
+    @Override
+    public UUID getHandle() {
+        return slot.getKey();
+    }
 
 }

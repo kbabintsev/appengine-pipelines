@@ -24,26 +24,25 @@ import java.util.UUID;
  * handle the fact that the specified slot has been filled.
  *
  * @author rudominer@google.com (Mitch Rudominer)
- *
  */
 public class HandleSlotFilledTask extends ObjRefTask {
 
-  /**
-   * This constructor is used on the sending side. That is, it is used to
-   * construct a {@code HandleSlotFilledTask}to be enqueued.
-   * <p>
-   *
-   * @param slotKey The key of the Slot whose filling is to be handled
-   */
-  public HandleSlotFilledTask(UUID slotKey, QueueSettings queueSettings) {
-    super(Type.HANDLE_SLOT_FILLED, "handleSlotFilled", slotKey, queueSettings);
-  }
+    /**
+     * This constructor is used on the sending side. That is, it is used to
+     * construct a {@code HandleSlotFilledTask}to be enqueued.
+     * <p>
+     *
+     * @param slotKey The key of the Slot whose filling is to be handled
+     */
+    public HandleSlotFilledTask(UUID slotKey, QueueSettings queueSettings) {
+        super(Type.HANDLE_SLOT_FILLED, "handleSlotFilled", slotKey, queueSettings);
+    }
 
-  protected HandleSlotFilledTask(Type type, String taskName, Properties properties) {
-    super(type, taskName, properties);
-  }
+    protected HandleSlotFilledTask(Type type, String taskName, Properties properties) {
+        super(type, taskName, properties);
+    }
 
-  public UUID getSlotKey() {
-    return getKey();
-  }
+    public UUID getSlotKey() {
+        return getKey();
+    }
 }

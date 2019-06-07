@@ -35,36 +35,36 @@ package com.google.appengine.tools.pipeline.impl.model;
  * <li>groupSize < 0 : The slot is phantom
  * <li>groupSize = 0 : The slot is a single argument
  * <li>groupSize > 0 : The slot is a member of a list of length groupSize - 1. The
- *                     first slot in the group is ignored. This allows us to encode
- *                     lists of length zero.
+ * first slot in the group is ignored. This allows us to encode
+ * lists of length zero.
  * </ul>
  *
  * @author rudominer@google.com (Mitch Rudominer)
  */
 public class SlotDescriptor {
 
-  public final Slot slot;
-  public final int groupSize;
+    public final Slot slot;
+    public final int groupSize;
 
-  SlotDescriptor(Slot sl, int groupSize) {
-    this.slot = sl;
-    this.groupSize = groupSize;
-  }
+    SlotDescriptor(Slot sl, int groupSize) {
+        this.slot = sl;
+        this.groupSize = groupSize;
+    }
 
-  public boolean isPhantom() {
-    return groupSize < 0;
-  }
+    public boolean isPhantom() {
+        return groupSize < 0;
+    }
 
-  public boolean isSingleArgument() {
-    return groupSize == 0;
-  }
+    public boolean isSingleArgument() {
+        return groupSize == 0;
+    }
 
-  public boolean isListElement() {
-    return groupSize > 0;
-  }
+    public boolean isListElement() {
+        return groupSize > 0;
+    }
 
-  @Override
-  public String toString() {
-    return "SlotDescriptor [" + slot.getKey() + "," + groupSize + "]";
-  }
+    @Override
+    public String toString() {
+        return "SlotDescriptor [" + slot.getKey() + "," + groupSize + "]";
+    }
 }

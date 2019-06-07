@@ -14,31 +14,33 @@
  * limitations under the License.
  */
 html, body {
-  padding: 0;
-  margin: 0;
-  width: 100%;
-  font-family: helvetica, sans-serif;
-  font-size: 14px;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    font-family: helvetica, sans-serif;
+    font-size: 14px;
 }
+
 #butter {
-  position: absolute;
-  top: 0;
-  min-width: 300px;
-  background-color: #C5D7EF;
-  text-align: center;
-  padding: 5px;
-  border-left: 1px solid #3366CC;
-  border-right: 1px solid #3366CC;
-  border-bottom: 1px solid #3366CC;
+    position: absolute;
+    top: 0;
+    min-width: 300px;
+    background-color: #C5D7EF;
+    text-align: center;
+    padding: 5px;
+    border-left: 1px solid #3366CC;
+    border-right: 1px solid #3366CC;
+    border-bottom: 1px solid #3366CC;
 }
+
 #butter.error {
-  /* Make stack traces legible. */
-  text-align: left;
+    /* Make stack traces legible. */
+    text-align: left;
 }
 
 #butter a:visited,
 #butter a:active,
 #butter a:link,
 #butter a:hover {
-  color: #3366CC;
+    color: #3366CC;
 }

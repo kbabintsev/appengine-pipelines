@@ -19,12 +19,10 @@ import com.google.appengine.tools.pipeline.impl.tasks.Task;
 import java.util.Collection;
 
 /**
- * 
  * @author rudominer@google.com (Mitch Rudominer)
- * 
  */
 public interface PipelineTaskQueue {
-  public void enqueue(Task task);
+    public void enqueue(Task task);
 
-  public void enqueue(final Collection<Task> tasks);
+    public void enqueue(final Collection<Task> tasks);
 }

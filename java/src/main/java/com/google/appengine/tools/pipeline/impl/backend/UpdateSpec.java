@@ -41,7 +41,7 @@ import java.util.UUID;
  * <li>A set of {@link #getOrCreateTransaction(String) named transactional groups}
  * <li>A {@link #getFinalTransaction() final transactional group}.
  * <ol>
- *
+ * <p>
  * When an {@code UpdateSpec} is {@link PipelineBackEnd#save saved},
  * the groups will be saved in the following order using the following
  * transactions:
@@ -55,7 +55,7 @@ import java.util.UUID;
  * <li>each element of the {@link #getFinalTransaction() final transactional
  * group} will be saved in a transaction.
  * <ol>
- *
+ * <p>
  * The {@link #getFinalTransaction() final transactional group} is a
  * {@link TransactionWithTasks} and so may contain {@link Task tasks}. The tasks
  * will be enqueued in the final transaction. If there are too many tasks to
@@ -67,159 +67,159 @@ import java.util.UUID;
  */
 public class UpdateSpec {
 
-  private Group nonTransactionalGroup = new Group();
-  private Map<String, Transaction> transactions = new HashMap<>(10);
-  private TransactionWithTasks finalTransaction = new TransactionWithTasks();
-  private UUID rootJobKey;
+    private Group nonTransactionalGroup = new Group();
+    private Map<String, Transaction> transactions = new HashMap<>(10);
+    private TransactionWithTasks finalTransaction = new TransactionWithTasks();
+    private UUID rootJobKey;
 
-  public UpdateSpec(UUID rootJobKey) {
-    this.rootJobKey = rootJobKey;
-  }
-
-  public void setRootJobKey(UUID rootJobKey) {
-    this.rootJobKey = rootJobKey;
-  }
-
-  public UUID getRootJobKey() {
-    return rootJobKey;
-  }
-
-  public Transaction getOrCreateTransaction(String transactionName) {
-    Transaction transaction = transactions.get(transactionName);
-    if (null == transaction) {
-      transaction = new Transaction();
-      transactions.put(transactionName, transaction);
+    public UpdateSpec(UUID rootJobKey) {
+        this.rootJobKey = rootJobKey;
     }
-    return transaction;
-  }
 
-  // TODO(user): could be removed, current code only have 1 entity per
-  // transaction (Barrier) and for that we don't need the transaction.
-  public Collection<Transaction> getTransactions() {
-    return transactions.values();
-  }
+    public UUID getRootJobKey() {
+        return rootJobKey;
+    }
 
-  public TransactionWithTasks getFinalTransaction() {
-    return finalTransaction;
-  }
+    public void setRootJobKey(UUID rootJobKey) {
+        this.rootJobKey = rootJobKey;
+    }
 
-  public Group getNonTransactionalGroup() {
-    return nonTransactionalGroup;
-  }
+    public Transaction getOrCreateTransaction(String transactionName) {
+        Transaction transaction = transactions.get(transactionName);
+        if (null == transaction) {
+            transaction = new Transaction();
+            transactions.put(transactionName, transaction);
+        }
+        return transaction;
+    }
 
-  /**
-   * A group of Pipeline model objects that should be saved to the data store.
-   * The model object types are:
-   * <ol>
-   * <li> {@link Barrier}
-   * <li> {@link Slot}
-   * <li> {@link JobRecord}
-   * <li> {@link JobInstanceRecord}
-   * </ol>
-   * The objects are stored in maps keyed by their {@link UUID}, so there is no
-   * danger of inadvertently adding the same object twice.
-   *
-   * @author rudominer@google.com (Mitch Rudominer)
-   */
-  public static class Group {
-    private static final int INITIAL_SIZE = 20;
+    // TODO(user): could be removed, current code only have 1 entity per
+    // transaction (Barrier) and for that we don't need the transaction.
+    public Collection<Transaction> getTransactions() {
+        return transactions.values();
+    }
 
-    private Map<UUID, JobRecord> jobMap = new HashMap<>(INITIAL_SIZE);
-    private Map<UUID, Barrier> barrierMap = new HashMap<>(INITIAL_SIZE);
-    private Map<UUID, Slot> slotMap = new HashMap<>(INITIAL_SIZE);
-    private Map<UUID, JobInstanceRecord> jobInstanceMap = new HashMap<>(INITIAL_SIZE);
-    private Map<UUID, ExceptionRecord> failureMap = new HashMap<>(INITIAL_SIZE);
+    public TransactionWithTasks getFinalTransaction() {
+        return finalTransaction;
+    }
 
-    private static <E extends PipelineModelObject> void put(Map<UUID, E> map, E object) {
-      map.put(object.getKey(), object);
+    public Group getNonTransactionalGroup() {
+        return nonTransactionalGroup;
     }
 
     /**
-     * Include the given Barrier in the group of objects to be saved.
+     * A group of Pipeline model objects that should be saved to the data store.
+     * The model object types are:
+     * <ol>
+     * <li> {@link Barrier}
+     * <li> {@link Slot}
+     * <li> {@link JobRecord}
+     * <li> {@link JobInstanceRecord}
+     * </ol>
+     * The objects are stored in maps keyed by their {@link UUID}, so there is no
+     * danger of inadvertently adding the same object twice.
+     *
+     * @author rudominer@google.com (Mitch Rudominer)
      */
-    public void includeBarrier(Barrier barrier) {
-      put(barrierMap, barrier);
-    }
+    public static class Group {
+        private static final int INITIAL_SIZE = 20;
 
-    public Collection<Barrier> getBarriers() {
-      return barrierMap.values();
+        private Map<UUID, JobRecord> jobMap = new HashMap<>(INITIAL_SIZE);
+        private Map<UUID, Barrier> barrierMap = new HashMap<>(INITIAL_SIZE);
+        private Map<UUID, Slot> slotMap = new HashMap<>(INITIAL_SIZE);
+        private Map<UUID, JobInstanceRecord> jobInstanceMap = new HashMap<>(INITIAL_SIZE);
+        private Map<UUID, ExceptionRecord> failureMap = new HashMap<>(INITIAL_SIZE);
+
+        private static <E extends PipelineModelObject> void put(Map<UUID, E> map, E object) {
+            map.put(object.getKey(), object);
+        }
+
+        /**
+         * Include the given Barrier in the group of objects to be saved.
+         */
+        public void includeBarrier(Barrier barrier) {
+            put(barrierMap, barrier);
+        }
+
+        public Collection<Barrier> getBarriers() {
+            return barrierMap.values();
+        }
+
+        /**
+         * Include the given JobRecord in the group of objects to be saved.
+         */
+        public void includeJob(JobRecord job) {
+            put(jobMap, job);
+        }
+
+        public Collection<JobRecord> getJobs() {
+            return jobMap.values();
+        }
+
+        /**
+         * Include the given Slot in the group of objects to be saved.
+         */
+        public void includeSlot(Slot slot) {
+            put(slotMap, slot);
+        }
+
+        public Collection<Slot> getSlots() {
+            return slotMap.values();
+        }
+
+        /**
+         * Include the given JobInstanceRecord in the group of objects to be saved.
+         */
+        public void includeJobInstanceRecord(JobInstanceRecord record) {
+            put(jobInstanceMap, record);
+        }
+
+        public Collection<JobInstanceRecord> getJobInstanceRecords() {
+            return jobInstanceMap.values();
+        }
+
+        public void includeException(ExceptionRecord failureRecord) {
+            put(failureMap, failureRecord);
+        }
+
+        public Collection<ExceptionRecord> getFailureRecords() {
+            return failureMap.values();
+        }
     }
 
     /**
-     * Include the given JobRecord in the group of objects to be saved.
+     * An extension of {@link Group} with the added implication that all objects
+     * added to the group must be saved in a single data store transaction.
+     *
+     * @author rudominer@google.com (Mitch Rudominer)
      */
-    public void includeJob(JobRecord job) {
-      put(jobMap, job);
-    }
-
-    public Collection<JobRecord> getJobs() {
-      return jobMap.values();
+    public static class Transaction extends Group {
     }
 
     /**
-     * Include the given Slot in the group of objects to be saved.
+     * An extension of {@link Transaction} that also accepts
+     * {@link Task Tasks}. Each task included in the group will
+     * be enqueued to the task queue as part of the same transaction
+     * in which the objects are saved. If there are too many tasks
+     * to include in a single transaction then a
+     * {@link com.google.appengine.tools.pipeline.impl.tasks.FanoutTask} will be
+     * used.
+     *
+     * @author rudominer@google.com (Mitch Rudominer)
      */
-    public void includeSlot(Slot slot) {
-      put(slotMap, slot);
+    public class TransactionWithTasks extends Transaction {
+        private static final int INITIAL_SIZE = 20;
+        private final Set<Task> taskSet = new HashSet<>(INITIAL_SIZE);
+
+        public void registerTask(Task task) {
+            taskSet.add(task);
+        }
+
+        /**
+         * @return Unmodifiable collection of Tasks.
+         */
+        public Collection<Task> getTasks() {
+            return Collections.unmodifiableCollection(taskSet);
+        }
     }
-
-    public Collection<Slot> getSlots() {
-      return slotMap.values();
-    }
-
-    /**
-     * Include the given JobInstanceRecord in the group of objects to be saved.
-     */
-    public void includeJobInstanceRecord(JobInstanceRecord record) {
-      put(jobInstanceMap, record);
-    }
-
-    public Collection<JobInstanceRecord> getJobInstanceRecords() {
-      return jobInstanceMap.values();
-    }
-
-    public void includeException(ExceptionRecord failureRecord) {
-      put(failureMap, failureRecord);
-    }
-
-    public Collection<ExceptionRecord> getFailureRecords() {
-      return failureMap.values();
-    }
-  }
-
-  /**
-   * An extension of {@link Group} with the added implication that all objects
-   * added to the group must be saved in a single data store transaction.
-   *
-   * @author rudominer@google.com (Mitch Rudominer)
-   */
-  public static class Transaction extends Group {
-  }
-
-  /**
-   * An extension of {@link Transaction} that also accepts
-   * {@link Task Tasks}. Each task included in the group will
-   * be enqueued to the task queue as part of the same transaction
-   * in which the objects are saved. If there are too many tasks
-   * to include in a single transaction then a
-   * {@link com.google.appengine.tools.pipeline.impl.tasks.FanoutTask} will be
-   * used.
-   *
-   * @author rudominer@google.com (Mitch Rudominer)
-   */
-  public class TransactionWithTasks extends Transaction {
-    private static final int INITIAL_SIZE = 20;
-    private final Set<Task> taskSet = new HashSet<>(INITIAL_SIZE);
-
-    public void registerTask(Task task) {
-      taskSet.add(task);
-    }
-
-    /**
-     * @return Unmodifiable collection of Tasks.
-     */
-    public Collection<Task> getTasks() {
-      return Collections.unmodifiableCollection(taskSet);
-    }
-  }
 }

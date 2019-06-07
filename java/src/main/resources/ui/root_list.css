@@ -14,28 +14,34 @@
  * limitations under the License.
  */
 #content {
-  margin: 10px 20px;
+    margin: 10px 20px;
 }
+
 #root-list {
-  border-collapse: collapse;
-  width: 80%;
+    border-collapse: collapse;
+    width: 80%;
 }
+
 #root-list th,
 #root-list td {
-  text-align: left;
-  padding: 4px 8px;
-  min-width: 75px;
+    text-align: left;
+    padding: 4px 8px;
+    min-width: 75px;
 }
+
 #root-list tbody td {
-  border-top: 1px solid #ccc;
+    border-top: 1px solid #ccc;
 }
+
 #filter_form {
-  margin: 0 0 1em 0;
+    margin: 0 0 1em 0;
 }
+
 .status {
-  text-transform: capitalize;
+    text-transform: capitalize;
 }
+
 abbr {
-  cursor: help;
-  border: 0;
+    cursor: help;
+    border: 0;
 }

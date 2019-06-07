@@ -14,7 +14,6 @@
 
 package com.google.appengine.tools.pipeline;
 
-
 /**
  * An abstract representation of a value slot that will be filled in the future
  * when some job runs and produces output.
@@ -28,12 +27,12 @@ package com.google.appengine.tools.pipeline;
  * argumnet...)} indicating that the output from the first job should be an
  * input to the second job. For example the following code might appear inside
  * of the {@code run()} method of a Job. <blockquote>
- * 
+ *
  * <pre>
  * FutureValue&lt;Integer&gt; age = futureCall(new GetAgeJob());
  * futureCall(new UseAgeJob(), age);
  * </pre>
- * 
+ *
  * </blockquote> The invocation of {@code futureCall(new UseAgeJob(), age)}
  * above instructs the framework that after the value slot corresponding to age
  * has been filled, the {@code run()} method of {@code UseAgeJob} should be
@@ -42,30 +41,30 @@ package com.google.appengine.tools.pipeline;
  * <p>
  * A {@code FutureValue} may also be the return value of the {@code run()}
  * method.
- * 
+ *
  * @param <E> The type of the value represented by this {@code FutureValue}
- * */
+ */
 public interface FutureValue<E> extends Value<E> {
 
-  /**
-   * Returns a String uniquely identifying the Job whose output will fill the
-   * value slot represented by this {@code FutureValue}. This String may be
-   * passed to {@link PipelineService#getJobInfo(String)} in order to query the
-   * state of the Job.
-   * 
-   * @return a String uniquely identifying the source job.
-   */
-  public String getSourceJobHandle();
+    /**
+     * Returns a String uniquely identifying the Job whose output will fill the
+     * value slot represented by this {@code FutureValue}. This String may be
+     * passed to {@link PipelineService#getJobInfo(String)} in order to query the
+     * state of the Job.
+     *
+     * @return a String uniquely identifying the source job.
+     */
+    public String getSourceJobHandle();
 
-  /**
-   * Returns a String uniquely identifying the Pipeline that this {@code
-   * FutureValue} belongs to. This is the same as the handle of the root job of
-   * the Pipeline. This String may be passed to
-   * {@link PipelineService#getJobInfo(String)} in order to query the state of
-   * the root Job.
-   * 
-   * @return a String uniquely identifying the Pipeline
-   */
-  public String getPipelineHandle();
+    /**
+     * Returns a String uniquely identifying the Pipeline that this {@code
+     * FutureValue} belongs to. This is the same as the handle of the root job of
+     * the Pipeline. This String may be passed to
+     * {@link PipelineService#getJobInfo(String)} in order to query the state of
+     * the root Job.
+     *
+     * @return a String uniquely identifying the Pipeline
+     */
+    public String getPipelineHandle();
 
 }

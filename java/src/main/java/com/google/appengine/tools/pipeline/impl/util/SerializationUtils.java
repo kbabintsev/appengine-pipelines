@@ -27,75 +27,75 @@ import java.util.zip.InflaterInputStream;
 
 /**
  * @author rudominer@google.com (Your Name Here)
- *
  */
 public class SerializationUtils {
 
-  private static final int MAX_UNCOMPRESSED_BYTE_SIZE = 1000000;
-  private static final int ZLIB_COMPRESSION = 1;
+    private static final int MAX_UNCOMPRESSED_BYTE_SIZE = 1000000;
+    private static final int ZLIB_COMPRESSION = 1;
 
-  private static class InternalByteArrayOutputStream extends ByteArrayOutputStream {
-
-    public InternalByteArrayOutputStream(int size) {
-      super(size);
-    }
-
-    private byte[] getInternalBuffer() {
-      return buf;
-    }
-  }
-
-  public static byte[] serialize(Object x) throws IOException {
-    InternalByteArrayOutputStream bytes = new InternalByteArrayOutputStream(512);
-    try (ObjectOutputStream out = new ObjectOutputStream(bytes)) {
-      out.writeObject(x);
-    }
-    if (bytes.size() <= MAX_UNCOMPRESSED_BYTE_SIZE) {
-      return bytes.toByteArray();
-    }
-    ByteArrayOutputStream compressedBytes = new ByteArrayOutputStream(bytes.size() / 4);
-    compressedBytes.write(0);
-    compressedBytes.write(ZLIB_COMPRESSION);
-    Deflater deflater =  new Deflater(Deflater.BEST_COMPRESSION, true);
-    try (DeflaterOutputStream out = new DeflaterOutputStream(compressedBytes, deflater)) {
-      // Use internal buffer to avoid copying it.
-      out.write(bytes.getInternalBuffer(), 0, bytes.size());
-    } finally {
-      deflater.end();
-    }
-    return compressedBytes.toByteArray();
-  }
-
-  public static Object deserialize(byte[] bytes) throws IOException {
-    if (bytes == null) {
-      return null;
-    }
-    if (bytes.length < 2) {
-      throw new IOException("Invalid bytes content");
-    }
-    InputStream in = new ByteArrayInputStream(bytes);
-    if (bytes[0] == 0) {
-      in.read(); // consume the marker;
-      if (in.read() != ZLIB_COMPRESSION) {
-        throw new IOException("Unknown compression type");
-      }
-      final Inflater inflater =  new Inflater(true);
-      in = new InflaterInputStream(in, inflater) {
-        @Override public void close() throws IOException {
-          try {
-            super.close();
-          } finally {
-            inflater.end();
-          }
+    public static byte[] serialize(Object x) throws IOException {
+        InternalByteArrayOutputStream bytes = new InternalByteArrayOutputStream(512);
+        try (ObjectOutputStream out = new ObjectOutputStream(bytes)) {
+            out.writeObject(x);
         }
-      };
+        if (bytes.size() <= MAX_UNCOMPRESSED_BYTE_SIZE) {
+            return bytes.toByteArray();
+        }
+        ByteArrayOutputStream compressedBytes = new ByteArrayOutputStream(bytes.size() / 4);
+        compressedBytes.write(0);
+        compressedBytes.write(ZLIB_COMPRESSION);
+        Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION, true);
+        try (DeflaterOutputStream out = new DeflaterOutputStream(compressedBytes, deflater)) {
+            // Use internal buffer to avoid copying it.
+            out.write(bytes.getInternalBuffer(), 0, bytes.size());
+        } finally {
+            deflater.end();
+        }
+        return compressedBytes.toByteArray();
     }
-    try (ObjectInputStream oin = new ObjectInputStream(in)) {
-      try {
-        return oin.readObject();
-      } catch (ClassNotFoundException e) {
-        throw new IOException("Exception while deserilaizing.", e);
-      }
+
+    public static Object deserialize(byte[] bytes) throws IOException {
+        if (bytes == null) {
+            return null;
+        }
+        if (bytes.length < 2) {
+            throw new IOException("Invalid bytes content");
+        }
+        InputStream in = new ByteArrayInputStream(bytes);
+        if (bytes[0] == 0) {
+            in.read(); // consume the marker;
+            if (in.read() != ZLIB_COMPRESSION) {
+                throw new IOException("Unknown compression type");
+            }
+            final Inflater inflater = new Inflater(true);
+            in = new InflaterInputStream(in, inflater) {
+                @Override
+                public void close() throws IOException {
+                    try {
+                        super.close();
+                    } finally {
+                        inflater.end();
+                    }
+                }
+            };
+        }
+        try (ObjectInputStream oin = new ObjectInputStream(in)) {
+            try {
+                return oin.readObject();
+            } catch (ClassNotFoundException e) {
+                throw new IOException("Exception while deserilaizing.", e);
+            }
+        }
     }
-  }
+
+    private static class InternalByteArrayOutputStream extends ByteArrayOutputStream {
+
+        public InternalByteArrayOutputStream(int size) {
+            super(size);
+        }
+
+        private byte[] getInternalBuffer() {
+            return buf;
+        }
+    }
 }

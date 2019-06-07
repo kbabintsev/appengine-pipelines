@@ -27,32 +27,32 @@ import java.util.UUID;
  */
 public class RunJobTask extends ObjRefTask {
 
-  private final Integer attemptNumber;
+    private final Integer attemptNumber;
 
-  public RunJobTask(UUID jobKey, Integer attemptNumber, QueueSettings queueSettings) {
-    super(Type.RUN_JOB, "runJob", jobKey, queueSettings);
-    this.attemptNumber = attemptNumber;
-  }
-
-  public RunJobTask(UUID jobKey, QueueSettings queueSettings) {
-    this(jobKey, null, queueSettings);
-  }
-
-  protected RunJobTask(Type type, String taskName, Properties properties) {
-    super(type, taskName, properties);
-    attemptNumber = null;
-  }
-
-  @Override
-  public String getName() {
-    String name = super.getName();
-    if (null != attemptNumber) {
-      name = name + "-attemptNumber-" + attemptNumber;
+    public RunJobTask(UUID jobKey, Integer attemptNumber, QueueSettings queueSettings) {
+        super(Type.RUN_JOB, "runJob", jobKey, queueSettings);
+        this.attemptNumber = attemptNumber;
     }
-    return name;
-  }
 
-  public UUID getJobKey() {
-    return getKey();
-  }
+    public RunJobTask(UUID jobKey, QueueSettings queueSettings) {
+        this(jobKey, null, queueSettings);
+    }
+
+    protected RunJobTask(Type type, String taskName, Properties properties) {
+        super(type, taskName, properties);
+        attemptNumber = null;
+    }
+
+    @Override
+    public String getName() {
+        String name = super.getName();
+        if (null != attemptNumber) {
+            name = name + "-attemptNumber-" + attemptNumber;
+        }
+        return name;
+    }
+
+    public UUID getJobKey() {
+        return getKey();
+    }
 }

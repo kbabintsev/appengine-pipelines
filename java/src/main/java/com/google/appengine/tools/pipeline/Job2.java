@@ -18,21 +18,20 @@ package com.google.appengine.tools.pipeline;
  * A user's job class should subclass a specialization of this class if the job
  * takes two input parameter.
  *
- * @author rudominer@google.com (Mitch Rudominer)
- *
- * @param <T> The type of the job's output.
+ * @param <T>  The type of the job's output.
  * @param <T1> The type of the job's first input.
  * @param <T2> The type of the job's second input.
+ * @author rudominer@google.com (Mitch Rudominer)
  * @see Job
  */
 public abstract class Job2<T, T1, T2> extends Job<T> {
 
-  private static final long serialVersionUID = 901033253788850280L;
+    private static final long serialVersionUID = 901033253788850280L;
 
-  /**
-   * Users must define this method in their job class.
-   *
-   * @throws Exception in case of job failure.
-   */
-  public abstract Value<T> run(T1 param1, T2 param2) throws Exception;
+    /**
+     * Users must define this method in their job class.
+     *
+     * @throws Exception in case of job failure.
+     */
+    public abstract Value<T> run(T1 param1, T2 param2) throws Exception;
 }

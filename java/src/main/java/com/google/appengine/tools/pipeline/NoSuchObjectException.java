@@ -18,13 +18,13 @@ package com.google.appengine.tools.pipeline;
  * @author rudominer@google.com (Mitch Rudominer)
  */
 public class NoSuchObjectException extends Exception {
-  private static final long serialVersionUID = 949320101929454628L;
+    private static final long serialVersionUID = 949320101929454628L;
 
-  public NoSuchObjectException(String key) {
-    super(key);
-  }
+    public NoSuchObjectException(String key) {
+        super(key);
+    }
 
-  public NoSuchObjectException(String key, Throwable cause) {
-    super(key, cause);
-  }
+    public NoSuchObjectException(String key, Throwable cause) {
+        super(key, cause);
+    }
 }

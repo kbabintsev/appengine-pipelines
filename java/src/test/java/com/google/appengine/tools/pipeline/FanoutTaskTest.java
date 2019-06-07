@@ -37,69 +37,68 @@ import static com.google.appengine.tools.pipeline.impl.util.GUIDGenerator.USE_SI
  */
 public class FanoutTaskTest extends TestCase {
 
-  private LocalServiceTestHelper helper =
-      new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
+    byte[] encodedBytes;
+    private LocalServiceTestHelper helper =
+            new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
+    private List<? extends Task> listOfTasks;
+    private QueueSettings queueSettings1 = new QueueSettings();
+    private QueueSettings queueSettings2 = new QueueSettings().setOnQueue("queue1");
 
-  private List<? extends Task> listOfTasks;
-  byte[] encodedBytes;
-  private QueueSettings queueSettings1 = new QueueSettings();
-  private QueueSettings queueSettings2 = new QueueSettings().setOnQueue("queue1");
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+        helper.setUp();
+        System.setProperty(USE_SIMPLE_GUIDS_FOR_DEBUGGING, "true");
+        UUID key = UUID.fromString("00000000-0000-0000-0001-000000000001");
+        RunJobTask runJobTask = new RunJobTask(key, queueSettings1);
+        key = UUID.fromString("00000000-0000-0000-0001-000000000002");
+        RunJobTask runJobTask2 = new RunJobTask(key, queueSettings2);
+        key = UUID.fromString("00000000-0000-0000-0001-000000000003");
+        FinalizeJobTask finalizeJobTask = new FinalizeJobTask(key, queueSettings1);
+        key = UUID.fromString("00000000-0000-0000-0002-000000000001");
+        HandleSlotFilledTask hsfTask = new HandleSlotFilledTask(key, queueSettings2);
+        listOfTasks = ImmutableList.of(runJobTask, runJobTask2, finalizeJobTask, hsfTask);
+        encodedBytes = FanoutTask.encodeTasks(listOfTasks);
+    }
 
-  @Override
-  public void setUp() throws Exception {
-    super.setUp();
-    helper.setUp();
-    System.setProperty(USE_SIMPLE_GUIDS_FOR_DEBUGGING, "true");
-    UUID key = UUID.fromString("00000000-0000-0000-0001-000000000001");
-    RunJobTask runJobTask = new RunJobTask(key, queueSettings1);
-    key = UUID.fromString("00000000-0000-0000-0001-000000000002");
-    RunJobTask runJobTask2 = new RunJobTask(key, queueSettings2);
-    key = UUID.fromString("00000000-0000-0000-0001-000000000003");
-    FinalizeJobTask finalizeJobTask = new FinalizeJobTask(key, queueSettings1);
-    key = UUID.fromString("00000000-0000-0000-0002-000000000001");
-    HandleSlotFilledTask hsfTask = new HandleSlotFilledTask(key, queueSettings2);
-    listOfTasks = ImmutableList.of(runJobTask, runJobTask2, finalizeJobTask, hsfTask);
-    encodedBytes = FanoutTask.encodeTasks(listOfTasks);
-  }
+    @Override
+    public void tearDown() throws Exception {
+        helper.tearDown();
+        super.tearDown();
+    }
 
-  @Override
-  public void tearDown() throws Exception {
-    helper.tearDown();
-    super.tearDown();
-  }
+    /**
+     * Tests the methods {@link FanoutTask#encodeTasks(java.util.Collection)} and
+     * {@link FanoutTask#decodeTasks(byte[])}
+     */
+    public void testEncodeDecode() throws Exception {
+        checkBytes(encodedBytes);
+    }
 
-  /**
-   * Tests the methods {@link FanoutTask#encodeTasks(java.util.Collection)} and
-   * {@link FanoutTask#decodeTasks(byte[])}
-   */
-  public void testEncodeDecode() throws Exception {
-    checkBytes(encodedBytes);
-  }
-
-  /**
-   * Tests conversion of {@link FanoutTaskRecord} to and from an {@link Entity}
-   */
-  public void testFanoutTaskRecord() throws Exception {
-    UUID rootJobKey = UUID.fromString("00000000-0000-0000-0001-000000000001");
-    FanoutTaskRecord record = new FanoutTaskRecord(rootJobKey, encodedBytes);
+    /**
+     * Tests conversion of {@link FanoutTaskRecord} to and from an {@link Entity}
+     */
+    public void testFanoutTaskRecord() throws Exception {
+        UUID rootJobKey = UUID.fromString("00000000-0000-0000-0001-000000000001");
+        FanoutTaskRecord record = new FanoutTaskRecord(rootJobKey, encodedBytes);
 //    Entity entity = record.toEntity();
 ////     reconstitute entity
 //    record = new FanoutTaskRecord(entity);
-    checkBytes(record.getPayload());
-  }
-
-  private void checkBytes(byte[] bytes) {
-    List<Task> reconstituted = FanoutTask.decodeTasks(bytes);
-    assertEquals(listOfTasks.size(), reconstituted.size());
-    for (int i = 0; i < listOfTasks.size(); i++) {
-      Task expected = listOfTasks.get(i);
-      Task actual = reconstituted.get(i);
-      assertEquals(i, expected, actual);
+        checkBytes(record.getPayload());
     }
-  }
 
-  private void assertEquals(int i, Task expected, Task actual) {
-    assertEquals("i=" + i, expected.getType(), actual.getType());
-    assertEquals("i=" + i, expected.toProperties(), actual.toProperties());
-  }
+    private void checkBytes(byte[] bytes) {
+        List<Task> reconstituted = FanoutTask.decodeTasks(bytes);
+        assertEquals(listOfTasks.size(), reconstituted.size());
+        for (int i = 0; i < listOfTasks.size(); i++) {
+            Task expected = listOfTasks.get(i);
+            Task actual = reconstituted.get(i);
+            assertEquals(i, expected, actual);
+        }
+    }
+
+    private void assertEquals(int i, Task expected, Task actual) {
+        assertEquals("i=" + i, expected.getType(), actual.getType());
+        assertEquals("i=" + i, expected.toProperties(), actual.toProperties());
+    }
 }

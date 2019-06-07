@@ -22,53 +22,53 @@ import java.util.UUID;
 
 /**
  * A subclass of {@link ObjRefTask} used to implement delayed value.
- * @see com.google.appengine.tools.pipeline.Job#newDelayedValue(long)
  *
  * @author maximf@google.com (Maxim Fateev)
+ * @see com.google.appengine.tools.pipeline.Job#newDelayedValue(long)
  */
 public class DelayedSlotFillTask extends ObjRefTask {
 
-  private static final String ROOT_JOB_KEY_PARAM = "rootJobKey";
+    private static final String ROOT_JOB_KEY_PARAM = "rootJobKey";
 
-  private final UUID rootJobKey;
+    private final UUID rootJobKey;
 
-  /**
-   * This constructor is used on the sending side. That is, it is used to
-   * construct a {@code HandleSlotFilledTask}to be enqueued.
-   * <p>
-   *
-   * @param slot The Slot whose filling is to be handled
-   * @param delay The delay in seconds before task gets executed
-   * @param rootJobKey The key of the root job of the pipeline
-   * @param queueSettings The queue settings
-   */
-  public DelayedSlotFillTask(Slot slot, long delay, UUID rootJobKey, QueueSettings queueSettings) {
-    super(Type.DELAYED_SLOT_FILL, "delayedSlotFillTask", slot.getKey(), queueSettings);
-    getQueueSettings().setDelayInSeconds(delay);
-    this.rootJobKey = rootJobKey;
-  }
+    /**
+     * This constructor is used on the sending side. That is, it is used to
+     * construct a {@code HandleSlotFilledTask}to be enqueued.
+     * <p>
+     *
+     * @param slot          The Slot whose filling is to be handled
+     * @param delay         The delay in seconds before task gets executed
+     * @param rootJobKey    The key of the root job of the pipeline
+     * @param queueSettings The queue settings
+     */
+    public DelayedSlotFillTask(Slot slot, long delay, UUID rootJobKey, QueueSettings queueSettings) {
+        super(Type.DELAYED_SLOT_FILL, "delayedSlotFillTask", slot.getKey(), queueSettings);
+        getQueueSettings().setDelayInSeconds(delay);
+        this.rootJobKey = rootJobKey;
+    }
 
-  protected DelayedSlotFillTask(Type type, String taskName, Properties properties) {
-    super(type, taskName, properties);
-    rootJobKey = UUID.fromString(properties.getProperty(ROOT_JOB_KEY_PARAM));
-  }
+    protected DelayedSlotFillTask(Type type, String taskName, Properties properties) {
+        super(type, taskName, properties);
+        rootJobKey = UUID.fromString(properties.getProperty(ROOT_JOB_KEY_PARAM));
+    }
 
-  @Override
-  protected void addProperties(Properties properties) {
-    super.addProperties(properties);
-    properties.setProperty(ROOT_JOB_KEY_PARAM, rootJobKey.toString());
-  }
+    @Override
+    protected void addProperties(Properties properties) {
+        super.addProperties(properties);
+        properties.setProperty(ROOT_JOB_KEY_PARAM, rootJobKey.toString());
+    }
 
-  @Override
-  public String propertiesAsString() {
-    return super.propertiesAsString() + ", rootJobKey=" + rootJobKey;
-  }
+    @Override
+    public String propertiesAsString() {
+        return super.propertiesAsString() + ", rootJobKey=" + rootJobKey;
+    }
 
-  public UUID getSlotKey() {
-    return getKey();
-  }
+    public UUID getSlotKey() {
+        return getKey();
+    }
 
-  public UUID getRootJobKey() {
-    return rootJobKey;
-  }
+    public UUID getRootJobKey() {
+        return rootJobKey;
+    }
 }

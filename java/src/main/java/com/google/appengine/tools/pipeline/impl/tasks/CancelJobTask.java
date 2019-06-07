@@ -27,15 +27,15 @@ import java.util.UUID;
  */
 public class CancelJobTask extends ObjRefTask {
 
-  public CancelJobTask(UUID jobKey, QueueSettings queueSettings) {
-    super(Type.CANCEL_JOB, "cancelJob", jobKey, queueSettings);
-  }
+    public CancelJobTask(UUID jobKey, QueueSettings queueSettings) {
+        super(Type.CANCEL_JOB, "cancelJob", jobKey, queueSettings);
+    }
 
-  protected CancelJobTask(Type type, String taskName, Properties properties) {
-    super(type, taskName, properties);
-  }
+    protected CancelJobTask(Type type, String taskName, Properties properties) {
+        super(type, taskName, properties);
+    }
 
-  public UUID getJobKey() {
-    return getKey();
-  }
+    public UUID getJobKey() {
+        return getKey();
+    }
 }

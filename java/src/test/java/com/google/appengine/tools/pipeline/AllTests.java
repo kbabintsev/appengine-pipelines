@@ -15,33 +15,30 @@
 package com.google.appengine.tools.pipeline;
 
 import com.google.appengine.tools.pipeline.impl.backend.AppEngineTaskQueueTest;
-
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
 /**
- * 
  * @author rudominer@google.com (Mitch Rudominer)
- * 
  */
 public class AllTests {
 
-  public static Test suite() {
-    TestSuite suite = new TestSuite(AllTests.class.getName());
-    suite.addTestSuite(StaticContentHandlerTest.class);
-    suite.addTestSuite(BarrierTest.class);
-    suite.addTestSuite(FanoutTaskTest.class);
-    suite.addTestSuite(MiscPipelineTest.class);
-    suite.addTestSuite(UserGuideTest.class);
-    suite.addTestSuite(OrphanedJobGraphTest.class);
-    suite.addTestSuite(LetterCounterTest.class);
-    suite.addTestSuite(FutureListTest.class);
-    suite.addTestSuite(GCDTest.class);
-    suite.addTestSuite(RetryTest.class);
-    suite.addTestSuite(AppEngineTaskQueueTest.class);
-    suite.addTestSuite(PipelinesErrorHandlingTest.class);
-    suite.addTestSuite(DelayedValueTest.class);
-    return suite;
-  }
+    public static Test suite() {
+        TestSuite suite = new TestSuite(AllTests.class.getName());
+        suite.addTestSuite(StaticContentHandlerTest.class);
+        suite.addTestSuite(BarrierTest.class);
+        suite.addTestSuite(FanoutTaskTest.class);
+        suite.addTestSuite(MiscPipelineTest.class);
+        suite.addTestSuite(UserGuideTest.class);
+        suite.addTestSuite(OrphanedJobGraphTest.class);
+        suite.addTestSuite(LetterCounterTest.class);
+        suite.addTestSuite(FutureListTest.class);
+        suite.addTestSuite(GCDTest.class);
+        suite.addTestSuite(RetryTest.class);
+        suite.addTestSuite(AppEngineTaskQueueTest.class);
+        suite.addTestSuite(PipelinesErrorHandlingTest.class);
+        suite.addTestSuite(DelayedValueTest.class);
+        return suite;
+    }
 
 }

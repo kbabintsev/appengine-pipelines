@@ -23,48 +23,47 @@ package com.google.appengine.tools.pipeline;
  * futureCall()} is invoked, then this argument must be passed as an argument to
  * {@code futureCall()} as and {@code ImmediateValue}. For example the following
  * code might appear inside of the {@code run()} method of a Job. <blockquote>
- * 
+ *
  * <pre>
  * FutureValue&lt;String&gt; name = futureCall(new GetNameJob());
  * futureCall(new GreetingJob(), new ImmediateValue(&quot;Hello&quot;), name);
  * </pre>
- * 
+ *
  * </blockquote> The arguments to {@code futureCall()} following the {@code Job}
  * argument must be {@code Values}. Thus in the above code in order to indicate
  * that the String "Hello" should be passed as the first argument to {@code
  * GreetingJob}, the argument {@code new ImmediateValue("Hello")} is passed to
- * {@code futureCall()}. Notice that the second argument to {@code futureCall()}, 
+ * {@code futureCall()}. Notice that the second argument to {@code futureCall()},
  * {@code name}, is already a {@code Value}, namely a {@code FutureValue}, and
  * so it is passed directly.
  * <p>
  * As some syntactic sugar the framework provides the method
  * {@link Job#immediate(Object)}. Thus the above code could instead be written
  * as follows: blockquote>
- * 
+ *
  * <pre>
  * FutureValue&lt;String&gt; name = futureCall(new GetNameJob());
  * futureCall(new GreetingJob(), immediate(&quot;Hello&quot;), name);
  * </pre>
- * 
+ *
  * </blockquote>
  * <p>
  * The second place where an {@code ImmediateValue} may be used in the framework
  * is as a return value from a {@code run()} method. Thus the following code may
  * appear inside of the {@code run()} method of a Job. <blockquote>
- * 
+ *
  * <pre>
  * int x = calculateValue(y);
  * return immediate(x)
  * </pre>
- * 
+ *
  * </blockquote> Again, the return value from {@code run()} must be a {@code
  * Value} and so a concrete value such as {@code x} above must be wrapped in an
  * {@code ImmediateValue}.
- * 
- * @author rudominer@google.com (Mitch Rudominer)
- * 
+ *
  * @param <E> The type of the underlying value wrapped by this {@code
- *        ImmediateValue}
+ *            ImmediateValue}
+ * @author rudominer@google.com (Mitch Rudominer)
  */
 public final class ImmediateValue<E> implements Value<E> {
 

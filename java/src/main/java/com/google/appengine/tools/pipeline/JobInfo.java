@@ -18,67 +18,67 @@ package com.google.appengine.tools.pipeline;
  * A record about a job that has been registered with the framework. A {@code
  * JobInfo} is obtained via the method
  * {@link PipelineService#getJobInfo(String)}.
- * 
+ *
  * @author rudominer@google.com (Mitch Rudominer)
  */
 public interface JobInfo {
 
-  /**
-   * The state of the job.
-   */
-  static enum State {
     /**
-     * Job is currently executing.
+     * Get the job's {@link State}.
      */
-    RUNNING, 
-    /**
-     * Job has completed successfully.
-     */
-    COMPLETED_SUCCESSFULLY, 
-    /**
-     * Job was stopped through {@link PipelineService#stopPipeline(String)}.
-     */
-    STOPPED_BY_REQUEST, 
-    /**
-     * Job execution was stopped due to unhandled failure. 
-     */
-    STOPPED_BY_ERROR, 
-    /**
-     * Job has failed and is going to retry later.
-     */
-    WAITING_TO_RETRY,
-    /**
-     * Job was cancelled either through
-     * {@link PipelineService#cancelPipeline(String)} or due to unhandled
-     * failure in a sibling job.
-     */
-    CANCELED_BY_REQUEST
-  }
+    State getJobState();
 
-  /**
-   * Get the job's {@link State}.
-   */
-  State getJobState();
+    /**
+     * If the job's {@link State State} is {@link State#COMPLETED_SUCCESSFULLY
+     * COMPLETED_SUCCESSFULLY}, returns the job's output. Otherwise returns
+     * {@code null}.
+     */
+    Object getOutput();
 
-  /**
-   * If the job's {@link State State} is {@link State#COMPLETED_SUCCESSFULLY
-   * COMPLETED_SUCCESSFULLY}, returns the job's output. Otherwise returns
-   * {@code null}.
-   */
-  Object getOutput();
+    /**
+     * If the job's {@link State State} is {@link State#STOPPED_BY_ERROR
+     * STOPPED_BY_ERROR}, returns the error stack trace. Otherwise returns {@code
+     * null}
+     */
+    String getError();
 
-  /**
-   * If the job's {@link State State} is {@link State#STOPPED_BY_ERROR
-   * STOPPED_BY_ERROR}, returns the error stack trace. Otherwise returns {@code
-   * null}
-   */
-  String getError();
-  
-  /**
-   * If the job's {@link State State} is {@link State#STOPPED_BY_ERROR
-   * STOPPED_BY_ERROR}, returns the error. Otherwise returns {@code
-   * null}
-   */
-  Throwable getException();
+    /**
+     * If the job's {@link State State} is {@link State#STOPPED_BY_ERROR
+     * STOPPED_BY_ERROR}, returns the error. Otherwise returns {@code
+     * null}
+     */
+    Throwable getException();
+
+    /**
+     * The state of the job.
+     */
+    static enum State {
+        /**
+         * Job is currently executing.
+         */
+        RUNNING,
+        /**
+         * Job has completed successfully.
+         */
+        COMPLETED_SUCCESSFULLY,
+        /**
+         * Job was stopped through {@link PipelineService#stopPipeline(String)}.
+         */
+        STOPPED_BY_REQUEST,
+        /**
+         * Job execution was stopped due to unhandled failure.
+         */
+        STOPPED_BY_ERROR,
+        /**
+         * Job has failed and is going to retry later.
+         */
+        WAITING_TO_RETRY,
+        /**
+         * Job was cancelled either through
+         * {@link PipelineService#cancelPipeline(String)} or due to unhandled
+         * failure in a sibling job.
+         */
+        CANCELED_BY_REQUEST
+    }
 
 }

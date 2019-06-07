@@ -26,97 +26,97 @@ import java.util.UUID;
  */
 public class FutureListTest extends PipelineTest {
 
-  public void testFutureList() throws Exception {
-    PipelineService service = PipelineServiceFactory.newPipelineService();
-    UUID pipelineId = service.startNewPipeline(new SumsListJob1());
-    Integer sum = waitForJobToComplete(pipelineId);
-    assertEquals(21, sum.intValue());
-  }
-
-  public void testReturnFutureList() throws Exception {
-    PipelineService service = PipelineServiceFactory.newPipelineService();
-    UUID pipelineId = service.startNewPipeline(new SumsListJob2());
-    Integer sum = waitForJobToComplete(pipelineId);
-    assertEquals(21, sum.intValue());
-  }
-
-  // Thanks to Ronoaldo José de Lana Pereira for
-  // suggesting this.
-  public void testEmptyFutureList() throws Exception {
-    PipelineService service = PipelineServiceFactory.newPipelineService();
-    UUID pipelineId = service.startNewPipeline(new SumsEmptyListJob());
-    Integer sum = waitForJobToComplete(pipelineId);
-    assertEquals(0, sum.intValue());
-  }
-
-  /**
-   * In this job, the call to futureList() happens not in a child job but in
-   * this job itself. This means that the FutureList is not the return value of
-   * any job.
-   */
-  @SuppressWarnings("serial")
-  private static class SumsListJob1 extends Job0<Integer> {
-    @Override
-    public Value<Integer> run() {
-      Returns5Job returns5Job = new Returns5Job();
-      SumJob sumJob = new SumJob();
-      List<Value<Integer>> valueList = new ArrayList<>(4);
-      valueList.add(futureCall(returns5Job));
-      valueList.add(immediate(7));
-      valueList.add(futureCall(returns5Job));
-      valueList.add(immediate(4));
-      return futureCall(sumJob, futureList(valueList));
+    public void testFutureList() throws Exception {
+        PipelineService service = PipelineServiceFactory.newPipelineService();
+        UUID pipelineId = service.startNewPipeline(new SumsListJob1());
+        Integer sum = waitForJobToComplete(pipelineId);
+        assertEquals(21, sum.intValue());
     }
-  }
 
-  /**
-   * In this job, the call to futureList() happens in a child job, ReturnsList
-   * job. This means that the FutureList is the return value of the child job
-   */
-  @SuppressWarnings("serial")
-  private static class SumsListJob2 extends Job0<Integer> {
-    @Override
-    public Value<Integer> run() {
-      return futureCall(new SumJob(), futureCall(new ReturnsListJob()));
+    public void testReturnFutureList() throws Exception {
+        PipelineService service = PipelineServiceFactory.newPipelineService();
+        UUID pipelineId = service.startNewPipeline(new SumsListJob2());
+        Integer sum = waitForJobToComplete(pipelineId);
+        assertEquals(21, sum.intValue());
     }
-  }
 
-  @SuppressWarnings("serial")
-  private static class SumsEmptyListJob extends Job0<Integer> {
-    @Override
-    public Value<Integer> run() {
-      List<Value<Integer>> emptyValueList = new ArrayList<>(0);
-      return futureCall(new SumJob(), futureList(emptyValueList));
+    // Thanks to Ronoaldo José de Lana Pereira for
+    // suggesting this.
+    public void testEmptyFutureList() throws Exception {
+        PipelineService service = PipelineServiceFactory.newPipelineService();
+        UUID pipelineId = service.startNewPipeline(new SumsEmptyListJob());
+        Integer sum = waitForJobToComplete(pipelineId);
+        assertEquals(0, sum.intValue());
     }
-  }
 
-  @SuppressWarnings("serial")
-  private static class ReturnsListJob extends Job0<List<Integer>> {
-    @Override
-    public Value<List<Integer>> run() {
-      Returns5Job returns5Job = new Returns5Job();
-      return new FutureList<>(
-          futureCall(returns5Job), immediate(7), futureCall(returns5Job), immediate(4));
+    /**
+     * In this job, the call to futureList() happens not in a child job but in
+     * this job itself. This means that the FutureList is not the return value of
+     * any job.
+     */
+    @SuppressWarnings("serial")
+    private static class SumsListJob1 extends Job0<Integer> {
+        @Override
+        public Value<Integer> run() {
+            Returns5Job returns5Job = new Returns5Job();
+            SumJob sumJob = new SumJob();
+            List<Value<Integer>> valueList = new ArrayList<>(4);
+            valueList.add(futureCall(returns5Job));
+            valueList.add(immediate(7));
+            valueList.add(futureCall(returns5Job));
+            valueList.add(immediate(4));
+            return futureCall(sumJob, futureList(valueList));
+        }
     }
-  }
 
-  @SuppressWarnings("serial")
-  private static class Returns5Job extends Job0<Integer> {
-    @Override
-    public Value<Integer> run() {
-      return immediate(5);
+    /**
+     * In this job, the call to futureList() happens in a child job, ReturnsList
+     * job. This means that the FutureList is the return value of the child job
+     */
+    @SuppressWarnings("serial")
+    private static class SumsListJob2 extends Job0<Integer> {
+        @Override
+        public Value<Integer> run() {
+            return futureCall(new SumJob(), futureCall(new ReturnsListJob()));
+        }
     }
-  }
 
-  @SuppressWarnings("serial")
-  private static class SumJob extends Job1<Integer, List<Integer>> {
-    @Override
-    public Value<Integer> run(List<Integer> list) {
-      int sum = 0;
-      for (int x : list) {
-        sum += x;
-      }
-      return immediate(sum);
+    @SuppressWarnings("serial")
+    private static class SumsEmptyListJob extends Job0<Integer> {
+        @Override
+        public Value<Integer> run() {
+            List<Value<Integer>> emptyValueList = new ArrayList<>(0);
+            return futureCall(new SumJob(), futureList(emptyValueList));
+        }
     }
-  }
+
+    @SuppressWarnings("serial")
+    private static class ReturnsListJob extends Job0<List<Integer>> {
+        @Override
+        public Value<List<Integer>> run() {
+            Returns5Job returns5Job = new Returns5Job();
+            return new FutureList<>(
+                    futureCall(returns5Job), immediate(7), futureCall(returns5Job), immediate(4));
+        }
+    }
+
+    @SuppressWarnings("serial")
+    private static class Returns5Job extends Job0<Integer> {
+        @Override
+        public Value<Integer> run() {
+            return immediate(5);
+        }
+    }
+
+    @SuppressWarnings("serial")
+    private static class SumJob extends Job1<Integer, List<Integer>> {
+        @Override
+        public Value<Integer> run(List<Integer> list) {
+            int sum = 0;
+            for (int x : list) {
+                sum += x;
+            }
+            return immediate(sum);
+        }
+    }
 }

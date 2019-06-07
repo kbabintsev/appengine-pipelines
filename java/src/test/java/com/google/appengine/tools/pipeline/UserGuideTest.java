@@ -32,69 +32,69 @@ import static com.google.appengine.tools.pipeline.impl.util.GUIDGenerator.USE_SI
  */
 public class UserGuideTest extends TestCase {
 
-  private transient LocalServiceTestHelper helper;
+    private transient LocalServiceTestHelper helper;
 
-  public UserGuideTest() {
-    LocalTaskQueueTestConfig taskQueueConfig = new LocalTaskQueueTestConfig();
-    taskQueueConfig.setCallbackClass(TestingTaskQueueCallback.class);
-    taskQueueConfig.setDisableAutoTaskExecution(false);
-    taskQueueConfig.setShouldCopyApiProxyEnvironment(true);
-    helper = new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig(), taskQueueConfig,
-        new LocalModulesServiceTestConfig());
-  }
-
-  @Override
-  public void setUp() throws Exception {
-    super.setUp();
-    helper.setUp();
-    System.setProperty(USE_SIMPLE_GUIDS_FOR_DEBUGGING, "true");
-  }
-
-  @Override
-  public void tearDown() throws Exception {
-    helper.tearDown();
-    super.tearDown();
-  }
-
-  public void testComplexJob() throws Exception {
-    doComplexJobTest(3, 7, 11);
-    doComplexJobTest(-5, 71, 6);
-  }
-
-  private void doComplexJobTest(int x, int y, int z) throws Exception {
-    PipelineService service = PipelineServiceFactory.newPipelineService();
-    UUID pipelineId = service.startNewPipeline(new ComplexJob(), x, y, z);
-    JobInfo jobInfo = service.getJobInfo(pipelineId);
-    JobInfo.State state = jobInfo.getJobState();
-    if (JobInfo.State.COMPLETED_SUCCESSFULLY == state) {
-      System.out.println("The output is " + jobInfo.getOutput());
+    public UserGuideTest() {
+        LocalTaskQueueTestConfig taskQueueConfig = new LocalTaskQueueTestConfig();
+        taskQueueConfig.setCallbackClass(TestingTaskQueueCallback.class);
+        taskQueueConfig.setDisableAutoTaskExecution(false);
+        taskQueueConfig.setShouldCopyApiProxyEnvironment(true);
+        helper = new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig(), taskQueueConfig,
+                new LocalModulesServiceTestConfig());
     }
-    int output = (Integer) waitForJobToComplete(pipelineId);
-    assertEquals(((x - y) * (x - z)) - 2, output);
-  }
 
-  @SuppressWarnings("unchecked")
-  private <E> E waitForJobToComplete(UUID pipelineId) throws Exception {
-    PipelineService service = PipelineServiceFactory.newPipelineService();
-    while (true) {
-      Thread.sleep(2000);
-      JobInfo jobInfo = service.getJobInfo(pipelineId);
-      switch (jobInfo.getJobState()) {
-        case COMPLETED_SUCCESSFULLY:
-          return (E) jobInfo.getOutput();
-        case RUNNING:
-          break;
-        case WAITING_TO_RETRY:
-          break;
-        case STOPPED_BY_ERROR:
-          throw new RuntimeException("Job stopped " + jobInfo.getError());
-        case STOPPED_BY_REQUEST:
-          throw new RuntimeException("Job stopped by request.");
-        case CANCELED_BY_REQUEST:
-          throw new RuntimeException("Job cancelled by request.");
-        default:
-          throw new RuntimeException("Unknown Job state: " + jobInfo.getJobState());
-      }
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+        helper.setUp();
+        System.setProperty(USE_SIMPLE_GUIDS_FOR_DEBUGGING, "true");
     }
-  }
+
+    @Override
+    public void tearDown() throws Exception {
+        helper.tearDown();
+        super.tearDown();
+    }
+
+    public void testComplexJob() throws Exception {
+        doComplexJobTest(3, 7, 11);
+        doComplexJobTest(-5, 71, 6);
+    }
+
+    private void doComplexJobTest(int x, int y, int z) throws Exception {
+        PipelineService service = PipelineServiceFactory.newPipelineService();
+        UUID pipelineId = service.startNewPipeline(new ComplexJob(), x, y, z);
+        JobInfo jobInfo = service.getJobInfo(pipelineId);
+        JobInfo.State state = jobInfo.getJobState();
+        if (JobInfo.State.COMPLETED_SUCCESSFULLY == state) {
+            System.out.println("The output is " + jobInfo.getOutput());
+        }
+        int output = (Integer) waitForJobToComplete(pipelineId);
+        assertEquals(((x - y) * (x - z)) - 2, output);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <E> E waitForJobToComplete(UUID pipelineId) throws Exception {
+        PipelineService service = PipelineServiceFactory.newPipelineService();
+        while (true) {
+            Thread.sleep(2000);
+            JobInfo jobInfo = service.getJobInfo(pipelineId);
+            switch (jobInfo.getJobState()) {
+                case COMPLETED_SUCCESSFULLY:
+                    return (E) jobInfo.getOutput();
+                case RUNNING:
+                    break;
+                case WAITING_TO_RETRY:
+                    break;
+                case STOPPED_BY_ERROR:
+                    throw new RuntimeException("Job stopped " + jobInfo.getError());
+                case STOPPED_BY_REQUEST:
+                    throw new RuntimeException("Job stopped by request.");
+                case CANCELED_BY_REQUEST:
+                    throw new RuntimeException("Job cancelled by request.");
+                default:
+                    throw new RuntimeException("Unknown Job state: " + jobInfo.getJobState());
+            }
+        }
+    }
 }

@@ -1,22 +1,22 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <link rel="stylesheet" href="common.css" type="text/css" charset="utf-8">
-  <link rel="stylesheet" href="list.css" type="text/css" charset="utf-8">
-  <link rel="stylesheet" href="jquery.treeview.css" type="text/css" charset="utf-8">
-  <script type="text/javascript" src="jquery-1.4.2.min.js"></script>
-  <script type="text/javascript" src="jquery.cookie.js"></script>
-  <script type="text/javascript" src="jquery.treeview.min.js"></script>
-  <script type="text/javascript" src="jquery.timeago.js"></script>
-  <script type="text/javascript" src="jquery.ba-hashchange.min.js"></script>
-  <script type="text/javascript" src="jquery.json.min.js"></script>
-  <script type="text/javascript" src="common.js"></script>
-  <script type="text/javascript" src="list.js"></script>
-  <script type="text/javascript">
-    $(document).ready(initRootList);
-  </script>
-  <title>Root Pipelines</title>
+    <meta charset="utf-8">
+    <link charset="utf-8" href="common.css" rel="stylesheet" type="text/css">
+    <link charset="utf-8" href="list.css" rel="stylesheet" type="text/css">
+    <link charset="utf-8" href="jquery.treeview.css" rel="stylesheet" type="text/css">
+    <script src="jquery-1.4.2.min.js" type="text/javascript"></script>
+    <script src="jquery.cookie.js" type="text/javascript"></script>
+    <script src="jquery.treeview.min.js" type="text/javascript"></script>
+    <script src="jquery.timeago.js" type="text/javascript"></script>
+    <script src="jquery.ba-hashchange.min.js" type="text/javascript"></script>
+    <script src="jquery.json.min.js" type="text/javascript"></script>
+    <script src="common.js" type="text/javascript"></script>
+    <script src="list.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        $(document).ready(initRootList);
+    </script>
+    <title>Root Pipelines</title>
 </head>
 <body>
 
@@ -24,36 +24,36 @@
 
 <div id="content">
 
-  <h1 class="page-title">Root Pipelines</h1>
+    <h1 class="page-title">Root Pipelines</h1>
 
-  <form method="get" id="filter_form">
-    Filter:
-    <select name="class_path" id="filter_menu" onchange="form.submit()" autocomplete="off">
-      <option value="">All</option>
-    </select>
-  </form>
+    <form id="filter_form" method="get">
+        Filter:
+        <select autocomplete="off" id="filter_menu" name="class_path" onchange="form.submit()">
+            <option value="">All</option>
+        </select>
+    </form>
 
-  <table id="root-list" style="display: none">
-    <thead>
-      <tr>
-        <th>Class Path</th>
-        <th>Status</th>
-        <th>Start Time</th>
-        <th>Run Time</th>
-        <th>Links</th>
-      </tr>
-    </thead>
-    <tfoot>
-      <tr>
-        <td colspan="5">
-          <a href="" id="next-link" style="display: none">Next &raquo;</a>
-        </td>
-      </tr>
-    </tfoot>
-    <tbody></tbody>
-  </table>
+    <table id="root-list" style="display: none">
+        <thead>
+        <tr>
+            <th>Class Path</th>
+            <th>Status</th>
+            <th>Start Time</th>
+            <th>Run Time</th>
+            <th>Links</th>
+        </tr>
+        </thead>
+        <tfoot>
+        <tr>
+            <td colspan="5">
+                <a href="" id="next-link" style="display: none">Next &raquo;</a>
+            </td>
+        </tr>
+        </tfoot>
+        <tbody></tbody>
+    </table>
 
-  <div id="empty-list-message" style="display: none"></div>
+    <div id="empty-list-message" style="display: none"></div>
 
 </div>
 

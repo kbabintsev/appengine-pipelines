@@ -32,78 +32,78 @@ import java.util.TreeMap;
  */
 public class LetterCountExample {
 
-  /**
-   * Letter counter job.
-   */
-  public static class LetterCounter extends Job1<SortedMap<Character, Integer>, String> {
-
-    private static final long serialVersionUID = -42446767578960124L;
-
-    @Override
-    public Value<SortedMap<Character, Integer>> run(String text) {
-      String[] words = text.split("[^a-zA-Z]");
-      List<FutureValue<SortedMap<Character, Integer>>> countsForEachWord = new LinkedList<>();
-      for (String word : words) {
-        countsForEachWord.add(futureCall(new SingleWordCounterJob(), immediate(word)));
-      }
-      return futureCall(new CountCombinerJob(), futureList(countsForEachWord));
-    }
-  }
-
-  /**
-   * Character counter per word.
-   */
-  public static class SingleWordCounterJob extends Job1<SortedMap<Character, Integer>, String> {
-
-    private static final long serialVersionUID = 3257449383642363412L;
-
-    @Override
-    public Value<SortedMap<Character, Integer>> run(String word) {
-      return immediate(countLetters(word));
-    }
-  }
-
-  public static SortedMap<Character, Integer> countLetters(String text) {
-    SortedMap<Character, Integer> charMap = new TreeMap<>();
-    for (char c : text.toCharArray()) {
-      incrementCount(c, 1, charMap);
-    }
-    return charMap;
-  }
-
-  /**
-   * Combiner for the letter counting.
-   */
-  public static class CountCombinerJob extends
-      Job1<SortedMap<Character, Integer>, List<SortedMap<Character, Integer>>> {
-
-    private static final long serialVersionUID = -142472702334430476L;
-
-    @Override
-    public Value<SortedMap<Character, Integer>> run(
-        List<SortedMap<Character, Integer>> listOfMaps) {
-      SortedMap<Character, Integer> totalMap = new TreeMap<>();
-      for (SortedMap<Character, Integer> charMap : listOfMaps) {
-        for (Entry<Character, Integer> pair : charMap.entrySet()) {
-          incrementCount(pair.getKey(), pair.getValue(), totalMap);
+    public static SortedMap<Character, Integer> countLetters(String text) {
+        SortedMap<Character, Integer> charMap = new TreeMap<>();
+        for (char c : text.toCharArray()) {
+            incrementCount(c, 1, charMap);
         }
-      }
-      return immediate(totalMap);
+        return charMap;
     }
-  }
 
-  private static void incrementCount(char c, int increment, Map<Character, Integer> charMap) {
-    Integer countInteger = charMap.get(c);
-    int count = (null == countInteger ? 0 : countInteger) + increment;
-    charMap.put(c, count);
-  }
-
-  public static void main(String[] args) {
-    String text = "ab cd";
-    String regex = "[^a-z,A-Z]";
-    String[] words = text.split(regex);
-    for (String word : words) {
-      System.out.println("[" + word + "]");
+    private static void incrementCount(char c, int increment, Map<Character, Integer> charMap) {
+        Integer countInteger = charMap.get(c);
+        int count = (null == countInteger ? 0 : countInteger) + increment;
+        charMap.put(c, count);
     }
-  }
+
+    public static void main(String[] args) {
+        String text = "ab cd";
+        String regex = "[^a-z,A-Z]";
+        String[] words = text.split(regex);
+        for (String word : words) {
+            System.out.println("[" + word + "]");
+        }
+    }
+
+    /**
+     * Letter counter job.
+     */
+    public static class LetterCounter extends Job1<SortedMap<Character, Integer>, String> {
+
+        private static final long serialVersionUID = -42446767578960124L;
+
+        @Override
+        public Value<SortedMap<Character, Integer>> run(String text) {
+            String[] words = text.split("[^a-zA-Z]");
+            List<FutureValue<SortedMap<Character, Integer>>> countsForEachWord = new LinkedList<>();
+            for (String word : words) {
+                countsForEachWord.add(futureCall(new SingleWordCounterJob(), immediate(word)));
+            }
+            return futureCall(new CountCombinerJob(), futureList(countsForEachWord));
+        }
+    }
+
+    /**
+     * Character counter per word.
+     */
+    public static class SingleWordCounterJob extends Job1<SortedMap<Character, Integer>, String> {
+
+        private static final long serialVersionUID = 3257449383642363412L;
+
+        @Override
+        public Value<SortedMap<Character, Integer>> run(String word) {
+            return immediate(countLetters(word));
+        }
+    }
+
+    /**
+     * Combiner for the letter counting.
+     */
+    public static class CountCombinerJob extends
+            Job1<SortedMap<Character, Integer>, List<SortedMap<Character, Integer>>> {
+
+        private static final long serialVersionUID = -142472702334430476L;
+
+        @Override
+        public Value<SortedMap<Character, Integer>> run(
+                List<SortedMap<Character, Integer>> listOfMaps) {
+            SortedMap<Character, Integer> totalMap = new TreeMap<>();
+            for (SortedMap<Character, Integer> charMap : listOfMaps) {
+                for (Entry<Character, Integer> pair : charMap.entrySet()) {
+                    incrementCount(pair.getKey(), pair.getValue(), totalMap);
+                }
+            }
+            return immediate(totalMap);
+        }
+    }
 }

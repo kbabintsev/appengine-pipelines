@@ -28,67 +28,67 @@ import java.util.UUID;
  */
 public abstract class ObjRefTask extends Task {
 
-  private static final String KEY_PARAM = "key";
+    private static final String KEY_PARAM = "key";
 
-  /**
-   * The {@code Key} of the object to which this {@code ObjRefTask} refers.
-   */
-  private final UUID key;
+    /**
+     * The {@code Key} of the object to which this {@code ObjRefTask} refers.
+     */
+    private final UUID key;
 
-  /**
-   * This constructor is used on the sending side. That is, it is used to
-   * construct a task to be enqueued.
-   *
-   * @param type The type of task being constructed
-   * @param namePrefix for the task name.
-   * @param key The {@code Key} of the object to which this {@code ObjRefTask}
-   *        will refer. It will be used as part of the task name if
-   *        combined with {@code namePrefix}.
-   */
-  protected ObjRefTask(Type type, String namePrefix, UUID key, QueueSettings queueSettings) {
-    super(type, createTaskName(namePrefix, key), queueSettings.clone());
-    this.key = key;
-  }
-
-  private static String createTaskName(String namePrefix, UUID key) {
-    if (null == key) {
-      throw new IllegalArgumentException("key is null.");
+    /**
+     * This constructor is used on the sending side. That is, it is used to
+     * construct a task to be enqueued.
+     *
+     * @param type       The type of task being constructed
+     * @param namePrefix for the task name.
+     * @param key        The {@code Key} of the object to which this {@code ObjRefTask}
+     *                   will refer. It will be used as part of the task name if
+     *                   combined with {@code namePrefix}.
+     */
+    protected ObjRefTask(Type type, String namePrefix, UUID key, QueueSettings queueSettings) {
+        super(type, createTaskName(namePrefix, key), queueSettings.clone());
+        this.key = key;
     }
-    if (namePrefix == null) {
-      throw new IllegalArgumentException("namePrix is null.");
+
+    /**
+     * This constructor is used on the receiving side. That is, it is used to
+     * construct an {@code ObjRefTask} from an HttpRequest sent from the App
+     * Engine task queue.
+     *
+     * @param type       The type of task being constructed
+     * @param properties In addition to the properties specified in the parent
+     *                   constructor, {@code properties} must also contain a property named "key"
+     *                   with a value of a stringified data store key. This will be used as
+     *                   the {@link #key} of the object to which this {@code ObjRefTask}
+     *                   refers.
+     */
+    protected ObjRefTask(Type type, String taskName, Properties properties) {
+        super(type, taskName, properties);
+        key = UUID.fromString(properties.getProperty(KEY_PARAM));
     }
-    return namePrefix + key.toString();
-  }
 
-  /**
-   * This constructor is used on the receiving side. That is, it is used to
-   * construct an {@code ObjRefTask} from an HttpRequest sent from the App
-   * Engine task queue.
-   *
-   * @param type The type of task being constructed
-   * @param properties In addition to the properties specified in the parent
-   *        constructor, {@code properties} must also contain a property named "key"
-   *        with a value of a stringified data store key. This will be used as
-   *        the {@link #key} of the object to which this {@code ObjRefTask}
-   *        refers.
-   */
-  protected ObjRefTask(Type type, String taskName, Properties properties) {
-    super(type, taskName, properties);
-    key = UUID.fromString(properties.getProperty(KEY_PARAM));
-  }
+    private static String createTaskName(String namePrefix, UUID key) {
+        if (null == key) {
+            throw new IllegalArgumentException("key is null.");
+        }
+        if (namePrefix == null) {
+            throw new IllegalArgumentException("namePrix is null.");
+        }
+        return namePrefix + key.toString();
+    }
 
-  public UUID getKey() {
-    return key;
-  }
+    public UUID getKey() {
+        return key;
+    }
 
-  @Override
-  protected void addProperties(Properties properties) {
-    String keyString = key.toString();
-    properties.setProperty(KEY_PARAM, keyString);
-  }
+    @Override
+    protected void addProperties(Properties properties) {
+        String keyString = key.toString();
+        properties.setProperty(KEY_PARAM, keyString);
+    }
 
-  @Override
-  public String propertiesAsString() {
-    return "key=" + key;
-  }
+    @Override
+    public String propertiesAsString() {
+        return "key=" + key;
+    }
 }

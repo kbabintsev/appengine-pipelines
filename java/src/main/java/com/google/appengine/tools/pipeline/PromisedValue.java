@@ -49,10 +49,9 @@ import java.util.UUID;
  * would be to pass the promisedValue to a child job before, optionally, passing
  * it externally.
  *
- * @author rudominer@google.com (Mitch Rudominer)
- *
  * @param <E> The type of the value represented by this {@code PromisedValue}
+ * @author rudominer@google.com (Mitch Rudominer)
  */
 public interface PromisedValue<E> extends FutureValue<E> {
-  UUID getHandle();
+    UUID getHandle();
 }

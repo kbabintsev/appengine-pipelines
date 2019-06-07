@@ -29,45 +29,45 @@ import java.util.UUID;
  */
 public class FanoutTaskRecord extends PipelineModelObject {
 
-  public static final String DATA_STORE_KIND = "FanoutTask";
-  private static final String PAYLOAD_PROPERTY = "payload";
-  public static final List<String> PROPERTIES = ImmutableList.<String>builder()
-          .addAll(BASE_PROPERTIES)
-          .add(
-                  PAYLOAD_PROPERTY
-          )
-          .build();
+    public static final String DATA_STORE_KIND = "FanoutTask";
+    private static final String PAYLOAD_PROPERTY = "payload";
+    public static final List<String> PROPERTIES = ImmutableList.<String>builder()
+            .addAll(BASE_PROPERTIES)
+            .add(
+                    PAYLOAD_PROPERTY
+            )
+            .build();
 
-  private final byte[] payload;
+    private final byte[] payload;
 
-  public FanoutTaskRecord(UUID rootJobKey, byte[] payload) {
-    super(DATA_STORE_KIND, rootJobKey, null, null);
-    if (payload == null) {
-      throw new RuntimeException("Payload must not be null");
+    public FanoutTaskRecord(UUID rootJobKey, byte[] payload) {
+        super(DATA_STORE_KIND, rootJobKey, null, null);
+        if (payload == null) {
+            throw new RuntimeException("Payload must not be null");
+        }
+        this.payload = payload;
     }
-    this.payload = payload;
-  }
 
-  public FanoutTaskRecord(StructReader entity) {
-    super(DATA_STORE_KIND, entity);
-    ByteArray payloadBlob = entity.getBytes(PAYLOAD_PROPERTY);
-    payload = payloadBlob.toByteArray();
-  }
+    public FanoutTaskRecord(StructReader entity) {
+        super(DATA_STORE_KIND, entity);
+        ByteArray payloadBlob = entity.getBytes(PAYLOAD_PROPERTY);
+        payload = payloadBlob.toByteArray();
+    }
 
-  public byte[] getPayload() {
-    return payload;
-  }
+    public byte[] getPayload() {
+        return payload;
+    }
 
-  @Override
-  protected String getDatastoreKind() {
-    return DATA_STORE_KIND;
-  }
+    @Override
+    protected String getDatastoreKind() {
+        return DATA_STORE_KIND;
+    }
 
-  @Override
-  public PipelineMutation toEntity() {
-    PipelineMutation mutation = toProtoEntity();
-    final Mutation.WriteBuilder entity = mutation.getDatabaseMutation();
-    entity.set(PAYLOAD_PROPERTY).to(ByteArray.copyFrom(payload));
-    return mutation;
-  }
+    @Override
+    public PipelineMutation toEntity() {
+        PipelineMutation mutation = toProtoEntity();
+        final Mutation.WriteBuilder entity = mutation.getDatabaseMutation();
+        entity.set(PAYLOAD_PROPERTY).to(ByteArray.copyFrom(payload));
+        return mutation;
+    }
 }

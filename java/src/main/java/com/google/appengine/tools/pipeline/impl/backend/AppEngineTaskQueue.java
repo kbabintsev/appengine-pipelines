@@ -47,135 +47,132 @@ import java.util.logging.Logger;
  * Encapsulates access to the App Engine Task Queue API
  *
  * @author rudominer@google.com (Mitch Rudominer)
- *
  */
 public class AppEngineTaskQueue implements PipelineTaskQueue {
 
-  private static final Logger logger = Logger.getLogger(AppEngineTaskQueue.class.getName());
+    static final int MAX_TASKS_PER_ENQUEUE = QueueConstants.maxTasksPerAdd();
+    private static final Logger logger = Logger.getLogger(AppEngineTaskQueue.class.getName());
+    private static final ExceptionHandler MODULES_EXCEPTION_HANDLER =
+            new ExceptionHandler.Builder().retryOn(ModulesException.class).build();
 
-  static final int MAX_TASKS_PER_ENQUEUE = QueueConstants.maxTasksPerAdd();
-
-  private static final ExceptionHandler MODULES_EXCEPTION_HANDLER =
-      new ExceptionHandler.Builder().retryOn(ModulesException.class).build();
-
-  @Override
-  public void enqueue(Task task) {
-    logger.finest("Enqueueing: " + task);
-    TaskOptions taskOptions = toTaskOptions(task);
-    Queue queue = getQueue(task.getQueueSettings().getOnQueue());
-    try {
-      queue.add(taskOptions);
-    } catch (TaskAlreadyExistsException ingore) {
-      // ignore
-    }
-  }
-
-  private static Queue getQueue(String queueName) {
-    if (queueName == null) {
-      Map<String, Object> attributes = ApiProxy.getCurrentEnvironment().getAttributes();
-      queueName = (String) attributes.get(TaskHandler.TASK_QUEUE_NAME_HEADER);
-    }
-    return queueName == null ? QueueFactory.getDefaultQueue() : QueueFactory.getQueue(queueName);
-  }
-
-  @Override
-  public void enqueue(final Collection<Task> tasks) {
-    addToQueue(tasks);
-  }
-
-  //VisibleForTesting
-  List<TaskHandle> addToQueue(final Collection<Task> tasks) {
-    List<TaskHandle> handles = new ArrayList<>();
-    Map<String, List<TaskOptions>> queueNameToTaskOptions = new HashMap<>();
-    for (Task task : tasks) {
-      logger.finest("Enqueueing: " + task);
-      String queueName = task.getQueueSettings().getOnQueue();
-      TaskOptions taskOptions = toTaskOptions(task);
-      List<TaskOptions> taskOptionsList = queueNameToTaskOptions.get(queueName);
-      if (taskOptionsList == null) {
-        taskOptionsList = new ArrayList<>();
-        queueNameToTaskOptions.put(queueName, taskOptionsList);
-      }
-      taskOptionsList.add(taskOptions);
-    }
-    for (Map.Entry<String, List<TaskOptions>> entry : queueNameToTaskOptions.entrySet()) {
-      Queue queue = getQueue(entry.getKey());
-      handles.addAll(addToQueue(queue, entry.getValue()));
-    }
-    return handles;
-  }
-
-  private List<TaskHandle> addToQueue(Queue queue, List<TaskOptions> tasks) {
-    int limit = tasks.size();
-    int start = 0;
-    List<Future<List<TaskHandle>>> futures = new ArrayList<>(limit / MAX_TASKS_PER_ENQUEUE + 1);
-    while (start < limit) {
-      int end = Math.min(limit, start + MAX_TASKS_PER_ENQUEUE);
-      futures.add(queue.addAsync(tasks.subList(start, end)));
-      start = end;
+    private static Queue getQueue(String queueName) {
+        if (queueName == null) {
+            Map<String, Object> attributes = ApiProxy.getCurrentEnvironment().getAttributes();
+            queueName = (String) attributes.get(TaskHandler.TASK_QUEUE_NAME_HEADER);
+        }
+        return queueName == null ? QueueFactory.getDefaultQueue() : QueueFactory.getQueue(queueName);
     }
 
-    List<TaskHandle> taskHandles = new ArrayList<>(limit);
-    for (Future<List<TaskHandle>> future : futures) {
-      try {
-        taskHandles.addAll(future.get());
-      } catch (InterruptedException e) {
-        logger.throwing("AppEngineTaskQueue", "addToQueue", e);
-        Thread.currentThread().interrupt();
-        throw new RuntimeException("addToQueue failed", e);
-      } catch (ExecutionException e) {
-        if (e.getCause() instanceof TaskAlreadyExistsException) {
-          // Ignore, as that suggests all non-duplicate tasks were sent successfully
+    private static void addProperties(TaskOptions taskOptions, Properties properties) {
+        for (String paramName : properties.stringPropertyNames()) {
+            String paramValue = properties.getProperty(paramName);
+            taskOptions.param(paramName, paramValue);
+        }
+    }
+
+    @Override
+    public void enqueue(Task task) {
+        logger.finest("Enqueueing: " + task);
+        TaskOptions taskOptions = toTaskOptions(task);
+        Queue queue = getQueue(task.getQueueSettings().getOnQueue());
+        try {
+            queue.add(taskOptions);
+        } catch (TaskAlreadyExistsException ingore) {
+            // ignore
+        }
+    }
+
+    @Override
+    public void enqueue(final Collection<Task> tasks) {
+        addToQueue(tasks);
+    }
+
+    //VisibleForTesting
+    List<TaskHandle> addToQueue(final Collection<Task> tasks) {
+        List<TaskHandle> handles = new ArrayList<>();
+        Map<String, List<TaskOptions>> queueNameToTaskOptions = new HashMap<>();
+        for (Task task : tasks) {
+            logger.finest("Enqueueing: " + task);
+            String queueName = task.getQueueSettings().getOnQueue();
+            TaskOptions taskOptions = toTaskOptions(task);
+            List<TaskOptions> taskOptionsList = queueNameToTaskOptions.get(queueName);
+            if (taskOptionsList == null) {
+                taskOptionsList = new ArrayList<>();
+                queueNameToTaskOptions.put(queueName, taskOptionsList);
+            }
+            taskOptionsList.add(taskOptions);
+        }
+        for (Map.Entry<String, List<TaskOptions>> entry : queueNameToTaskOptions.entrySet()) {
+            Queue queue = getQueue(entry.getKey());
+            handles.addAll(addToQueue(queue, entry.getValue()));
+        }
+        return handles;
+    }
+
+    private List<TaskHandle> addToQueue(Queue queue, List<TaskOptions> tasks) {
+        int limit = tasks.size();
+        int start = 0;
+        List<Future<List<TaskHandle>>> futures = new ArrayList<>(limit / MAX_TASKS_PER_ENQUEUE + 1);
+        while (start < limit) {
+            int end = Math.min(limit, start + MAX_TASKS_PER_ENQUEUE);
+            futures.add(queue.addAsync(tasks.subList(start, end)));
+            start = end;
+        }
+
+        List<TaskHandle> taskHandles = new ArrayList<>(limit);
+        for (Future<List<TaskHandle>> future : futures) {
+            try {
+                taskHandles.addAll(future.get());
+            } catch (InterruptedException e) {
+                logger.throwing("AppEngineTaskQueue", "addToQueue", e);
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("addToQueue failed", e);
+            } catch (ExecutionException e) {
+                if (e.getCause() instanceof TaskAlreadyExistsException) {
+                    // Ignore, as that suggests all non-duplicate tasks were sent successfully
+                } else {
+                    throw new RuntimeException("addToQueue failed", e.getCause());
+                }
+            }
+        }
+        return taskHandles;
+    }
+
+    private TaskOptions toTaskOptions(Task task) {
+        final QueueSettings queueSettings = task.getQueueSettings();
+
+        TaskOptions taskOptions = TaskOptions.Builder.withUrl(TaskHandler.handleTaskUrl());
+        if (queueSettings.getOnBackend() != null) {
+            taskOptions.header("Host", BackendServiceFactory.getBackendService().getBackendAddress(
+                    queueSettings.getOnBackend()));
         } else {
-          throw new RuntimeException("addToQueue failed", e.getCause());
+
+            String versionHostname = RetryHelper.runWithRetries(new Callable<String>() {
+                @Override
+                public String call() {
+                    ModulesService service = ModulesServiceFactory.getModulesService();
+                    String module = queueSettings.getOnModule();
+                    String version = queueSettings.getModuleVersion();
+                    if (module == null) {
+                        module = service.getCurrentModule();
+                        version = service.getCurrentVersion();
+                    }
+                    return service.getVersionHostname(module, version);
+                }
+            }, RetryParams.getDefaultInstance(), MODULES_EXCEPTION_HANDLER);
+            taskOptions.header("Host", versionHostname);
         }
-      }
-    }
-    return taskHandles;
-  }
 
-  private TaskOptions toTaskOptions(Task task) {
-    final QueueSettings queueSettings = task.getQueueSettings();
-
-    TaskOptions taskOptions = TaskOptions.Builder.withUrl(TaskHandler.handleTaskUrl());
-    if (queueSettings.getOnBackend() != null) {
-      taskOptions.header("Host", BackendServiceFactory.getBackendService().getBackendAddress(
-          queueSettings.getOnBackend()));
-    } else {
-
-      String versionHostname = RetryHelper.runWithRetries(new Callable<String>() {
-        @Override
-        public String call() {
-          ModulesService service = ModulesServiceFactory.getModulesService();
-          String module = queueSettings.getOnModule();
-          String version = queueSettings.getModuleVersion();
-          if (module == null) {
-            module = service.getCurrentModule();
-            version = service.getCurrentVersion();
-          }
-          return service.getVersionHostname(module, version);
+        Long delayInSeconds = queueSettings.getDelayInSeconds();
+        if (null != delayInSeconds) {
+            taskOptions.countdownMillis(delayInSeconds * 1000L);
+            queueSettings.setDelayInSeconds(null);
         }
-      }, RetryParams.getDefaultInstance(), MODULES_EXCEPTION_HANDLER);
-      taskOptions.header("Host", versionHostname);
+        addProperties(taskOptions, task.toProperties());
+        String taskName = task.getName();
+        if (null != taskName) {
+            taskOptions.taskName(taskName);
+        }
+        return taskOptions;
     }
-
-    Long delayInSeconds = queueSettings.getDelayInSeconds();
-    if (null != delayInSeconds) {
-      taskOptions.countdownMillis(delayInSeconds * 1000L);
-      queueSettings.setDelayInSeconds(null);
-    }
-    addProperties(taskOptions, task.toProperties());
-    String taskName = task.getName();
-    if (null != taskName) {
-      taskOptions.taskName(taskName);
-    }
-    return taskOptions;
-  }
-
-  private static void addProperties(TaskOptions taskOptions, Properties properties) {
-    for (String paramName : properties.stringPropertyNames()) {
-      String paramValue = properties.getProperty(paramName);
-      taskOptions.param(paramName, paramValue);
-    }
-  }
 }

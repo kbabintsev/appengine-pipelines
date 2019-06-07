@@ -55,22 +55,23 @@ public interface PipelineBackEnd {
    * data store and its {@link JobRecord#getState() state} will be checked to
    * see if it is one of the {@code expectedStates}. If not then the final
    * transaction will be aborted, and this method will return {@code false}.
+   *
    * @return {@code true} iff the transaction was applied successfully.
    */
   boolean saveWithJobStateCheck(UpdateSpec updateSpec, QueueSettings queueSettings,
-      UUID jobKey, JobRecord.State... expectedStates);
+                                UUID jobKey, JobRecord.State... expectedStates);
 
   /**
    * Get the JobRecord with the given Key from the data store, and optionally
    * also get some of the Barriers and Slots associated with it.
    *
-   * @param key The key of the JobRecord to be fetched
+   * @param key           The key of the JobRecord to be fetched
    * @param inflationType Specifies the manner in which the returned JobRecord
-   *        should be inflated.
+   *                      should be inflated.
    * @return A {@code JobRecord}, possibly with a partially-inflated associated
-   *         graph of objects.
+   * graph of objects.
    * @throws NoSuchObjectException If Either the JobRecord or any of the
-   *         associated Slots or Barriers are not found in the data store.
+   *                               associated Slots or Barriers are not found in the data store.
    */
   JobRecord queryJob(UUID key, JobRecord.InflationType inflationType) throws NoSuchObjectException;
 
@@ -79,19 +80,19 @@ public interface PipelineBackEnd {
    * get the Barriers that are waiting on the Slot, and the other Slots that
    * those Barriers are waiting on.
    *
-   * @param key The Key of the slot to fetch.
+   * @param key     The Key of the slot to fetch.
    * @param inflate If this is {@code true} then the Barriers that are waiting
-   *        on the Slot and the other Slots that those Barriers are waiting on
-   *        will also be fetched from the data store and used to partially
-   *        populate the graph of objects attached to the returned Slot. In
-   *        particular: {@link Slot#getWaitingOnMeInflated()} will not return
-   *        {@code null} and also that for each of the
-   *        {@link com.google.appengine.tools.pipeline.impl.model.Barrier Barriers}
-   *        returned from that method
-   *        {@link com.google.appengine.tools.pipeline.impl.model.Barrier#getWaitingOnInflated()}
-   *        will not return {@code null}.
+   *                on the Slot and the other Slots that those Barriers are waiting on
+   *                will also be fetched from the data store and used to partially
+   *                populate the graph of objects attached to the returned Slot. In
+   *                particular: {@link Slot#getWaitingOnMeInflated()} will not return
+   *                {@code null} and also that for each of the
+   *                {@link com.google.appengine.tools.pipeline.impl.model.Barrier Barriers}
+   *                returned from that method
+   *                {@link com.google.appengine.tools.pipeline.impl.model.Barrier#getWaitingOnInflated()}
+   *                will not return {@code null}.
    * @return A {@code Slot}, possibly with a partially-inflated associated graph
-   *         of objects.
+   * of objects.
    * @throws NoSuchObjectException
    */
   Slot querySlot(UUID key, boolean inflate) throws NoSuchObjectException;
@@ -123,13 +124,13 @@ public interface PipelineBackEnd {
    * Reverses the operation performed by
    * {@link #serializeValue(PipelineModelObject, Object)}.
    *
-   * @param model The model that is associated with the serialized version.
+   * @param model             The model that is associated with the serialized version.
    * @param serializedVersion The serialized version of an object.
    * @return The deserialized version of the object.
    * @throws IOException if any problem occurs
    */
   Object deserializeValue(PipelineModelObject model, byte[] serializedVersion)
-      throws IOException;
+          throws IOException;
 
   /**
    * Enqueues to the App Engine task queue the tasks encoded by the given
@@ -139,9 +140,9 @@ public interface PipelineBackEnd {
    *
    * @param fanoutTask The FanoutTask to handle
    * @throws NoSuchObjectException If the
-   *         {@link com.google.appengine.tools.pipeline.impl.model.FanoutTaskRecord}
-   *         specified by the {@link FanoutTask#getRecordKey() key} contained in
-   *         {@code fanoutTask} does not exist in the data store.
+   *                               {@link com.google.appengine.tools.pipeline.impl.model.FanoutTaskRecord}
+   *                               specified by the {@link FanoutTask#getRecordKey() key} contained in
+   *                               {@code fanoutTask} does not exist in the data store.
    */
   void handleFanoutTask(FanoutTask fanoutTask) throws NoSuchObjectException;
 
@@ -157,25 +158,25 @@ public interface PipelineBackEnd {
    * Delete all datastore entities corresponding to the given pipeline.
    *
    * @param rootJobKey The root job key identifying the pipeline
-   * @param force If this parameter is not {@code true} then this method will
-   *        throw an {@link IllegalStateException} if the specified pipeline is
-   *        not in the
-   *        {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#FINALIZED}
-   *        or
-   *        {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#STOPPED}
-   *        state.
-   * @param async If this parameter is {@code true} then instead of performing
-   *        the delete operation synchronously, this method will enqueue a task
-   *        to perform the operation.
+   * @param force      If this parameter is not {@code true} then this method will
+   *                   throw an {@link IllegalStateException} if the specified pipeline is
+   *                   not in the
+   *                   {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#FINALIZED}
+   *                   or
+   *                   {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#STOPPED}
+   *                   state.
+   * @param async      If this parameter is {@code true} then instead of performing
+   *                   the delete operation synchronously, this method will enqueue a task
+   *                   to perform the operation.
    * @throws IllegalStateException If {@code force = false} and the specified
-   *         pipeline is not in the
-   *         {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#FINALIZED}
-   *         or
-   *         {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#STOPPED}
-   *         state.
+   *                               pipeline is not in the
+   *                               {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#FINALIZED}
+   *                               or
+   *                               {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#STOPPED}
+   *                               state.
    */
   void deletePipeline(UUID rootJobKey, boolean force, boolean async)
-      throws IllegalStateException;
+          throws IllegalStateException;
 
   void cleanBlobs(String prefix);
 
@@ -197,12 +198,12 @@ public interface PipelineBackEnd {
    * Queries the data store for all root Pipeline.
    *
    * @param classFilter An optional filter by class display name.
-   * @param cursor An optional cursor (used for paging).
-   * @param limit Results limit (zero or negative will be treated as no limit).
+   * @param cursor      An optional cursor (used for paging).
+   * @param limit       Results limit (zero or negative will be treated as no limit).
    * @return a Pair of job records and a next cursor (or null, if no more results).
    */
   Pair<? extends Iterable<JobRecord>, String> queryRootPipelines(
-      String classFilter, String cursor, int limit);
+          String classFilter, String cursor, int limit);
 
   /**
    * Returns the set of all root pipelines display name.

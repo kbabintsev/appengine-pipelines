@@ -28,25 +28,25 @@ import java.util.UUID;
  */
 public class AbortJobHandler {
 
-  public static final String PATH_COMPONENT = "rpc/abort";
-  private static final String ROOT_PIPELINE_ID = "root_pipeline_id";
+    public static final String PATH_COMPONENT = "rpc/abort";
+    private static final String ROOT_PIPELINE_ID = "root_pipeline_id";
 
-  public static void doGet(HttpServletRequest req, HttpServletResponse resp)
-      throws IOException, ServletException {
-    UUID rootJobHandle = UUID.fromString(req.getParameter(ROOT_PIPELINE_ID));
-    if (null == rootJobHandle) {
-      throw new ServletException(ROOT_PIPELINE_ID + " parameter not found.");
+    public static void doGet(HttpServletRequest req, HttpServletResponse resp)
+            throws IOException, ServletException {
+        UUID rootJobHandle = UUID.fromString(req.getParameter(ROOT_PIPELINE_ID));
+        if (null == rootJobHandle) {
+            throw new ServletException(ROOT_PIPELINE_ID + " parameter not found.");
+        }
+        try {
+            PipelineManager.cancelJob(rootJobHandle);
+        } catch (NoSuchObjectException nsoe) {
+            resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+        try {
+            resp.getWriter().write("cancellation request was sent");
+        } catch (IOException e) {
+            throw new ServletException(e);
+        }
     }
-    try {
-      PipelineManager.cancelJob(rootJobHandle);
-    } catch (NoSuchObjectException nsoe) {
-      resp.sendError(HttpServletResponse.SC_NOT_FOUND);
-      return;
-    }
-    try {
-      resp.getWriter().write("cancellation request was sent");
-    } catch (IOException e) {
-      throw new ServletException(e);
-    }
-  }
 }

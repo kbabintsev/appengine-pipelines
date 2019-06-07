@@ -27,40 +27,40 @@ import java.util.UUID;
  */
 public class DeletePipelineTask extends ObjRefTask {
 
-  /**
-   * A parameter specifying that the Pipeline should be deleted no matter
-   *  what state it is in.
-   */
-  public static final String FORCE_PARAM = "force";
+    /**
+     * A parameter specifying that the Pipeline should be deleted no matter
+     * what state it is in.
+     */
+    public static final String FORCE_PARAM = "force";
 
-  private final boolean force;
+    private final boolean force;
 
-  public DeletePipelineTask(UUID rootJobKey, boolean force, QueueSettings queueSettings) {
-    super(Type.DELETE_PIPELINE, "deletePipeline", rootJobKey, queueSettings);
-    this.force = force;
-  }
+    public DeletePipelineTask(UUID rootJobKey, boolean force, QueueSettings queueSettings) {
+        super(Type.DELETE_PIPELINE, "deletePipeline", rootJobKey, queueSettings);
+        this.force = force;
+    }
 
-  protected DeletePipelineTask(Type type, String taskName, Properties properties) {
-    super(type, taskName, properties);
-    force = Boolean.parseBoolean(properties.getProperty(FORCE_PARAM));
-  }
+    protected DeletePipelineTask(Type type, String taskName, Properties properties) {
+        super(type, taskName, properties);
+        force = Boolean.parseBoolean(properties.getProperty(FORCE_PARAM));
+    }
 
-  @Override
-  protected void addProperties(Properties properties) {
-    super.addProperties(properties);
-    properties.setProperty(FORCE_PARAM, Boolean.toString(force));
-  }
+    @Override
+    protected void addProperties(Properties properties) {
+        super.addProperties(properties);
+        properties.setProperty(FORCE_PARAM, Boolean.toString(force));
+    }
 
-  @Override
-  public String propertiesAsString() {
-    return super.propertiesAsString() + ", force=" + force;
-  }
+    @Override
+    public String propertiesAsString() {
+        return super.propertiesAsString() + ", force=" + force;
+    }
 
-  public UUID getRootJobKey() {
-    return getKey();
-  }
+    public UUID getRootJobKey() {
+        return getKey();
+    }
 
-  public boolean shouldForce() {
-    return force;
-  }
+    public boolean shouldForce() {
+        return force;
+    }
 }

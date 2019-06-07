@@ -14,10 +14,10 @@
 
 package com.google.appengine.tools.pipeline.impl.tasks;
 
-import java.util.UUID;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 
 import java.util.Properties;
+import java.util.UUID;
 
 /**
  * A subclass of {@link ObjRefTask} used to request that the job
@@ -27,15 +27,15 @@ import java.util.Properties;
  */
 public class FinalizeJobTask extends ObjRefTask {
 
-  public FinalizeJobTask(UUID jobKey, QueueSettings queueSettings) {
-    super(Type.FINALIZE_JOB, "finalizeJob", jobKey, queueSettings);
-  }
+    public FinalizeJobTask(UUID jobKey, QueueSettings queueSettings) {
+        super(Type.FINALIZE_JOB, "finalizeJob", jobKey, queueSettings);
+    }
 
-  protected FinalizeJobTask(Type type, String taskName, Properties properties) {
-    super(type, taskName, properties);
-  }
+    protected FinalizeJobTask(Type type, String taskName, Properties properties) {
+        super(type, taskName, properties);
+    }
 
-  public UUID getJobKey() {
-    return getKey();
-  }
+    public UUID getJobKey() {
+        return getKey();
+    }
 }

@@ -34,7 +34,7 @@ import static com.google.appengine.tools.pipeline.impl.util.StringUtils.UTF_8;
  * part of of a data store transaction.
  * <li>Named task queue tasks may not be part of a data store transaction.
  * </ol>
- *
+ * <p>
  * This task is used as part of a strategy to get around those limitations:
  * Instead of enqueueing a set of tasks, a single {@code FanoutTask} may be
  * enqueued that, when handled, will cause a collection of other tasks to be
@@ -51,98 +51,98 @@ import static com.google.appengine.tools.pipeline.impl.util.StringUtils.UTF_8;
  * the original Collection of Tasks. Finally each of the tasks in the collection
  * may be enqueued non-transactionally.
  *
- * @see com.google.appengine.tools.pipeline.impl.backend.PipelineBackEnd#handleFanoutTask
  * @author rudominer@google.com (Mitch Rudominer)
+ * @see com.google.appengine.tools.pipeline.impl.backend.PipelineBackEnd#handleFanoutTask
  */
 public class FanoutTask extends Task {
 
-  private static final String KEY_VALUE_SEPERATOR = "::";
-  private static final String PROPERTY_SEPERATOR = ",,";
-  private static final String TASK_NAME_DELIMITTER = "--";
-  private static final String TASK_SEPERATOR = ";;";
-  private static final String RECORD_KEY_PROPERTY = "recordKey";
+    private static final String KEY_VALUE_SEPERATOR = "::";
+    private static final String PROPERTY_SEPERATOR = ",,";
+    private static final String TASK_NAME_DELIMITTER = "--";
+    private static final String TASK_SEPERATOR = ";;";
+    private static final String RECORD_KEY_PROPERTY = "recordKey";
 
-  private final UUID recordKey;
+    private final UUID recordKey;
 
-  /**
-   * Construct a new FanoutTask that contains the given data store Key. This
-   * constructor is used to construct an instance to be enqueued.
-   */
-  public FanoutTask(UUID recordKey, QueueSettings queueSettings) {
-    super(Type.FAN_OUT, null, queueSettings.clone());
-    this.recordKey = recordKey;
-  }
-
-  /**
-   * Construct a new FanoutTask from the given Properties. This constructor
-   * is used to construct an instance that is being handled.
-   */
-  public FanoutTask(Type type, String taskName, Properties properties) {
-    super(type, taskName, properties);
-    this.recordKey = UUID.fromString(properties.getProperty(RECORD_KEY_PROPERTY));
-  }
-
-  @Override
-  protected void addProperties(Properties properties) {
-    properties.setProperty(RECORD_KEY_PROPERTY, recordKey.toString());
-  }
-
-  public UUID getRecordKey() {
-    return recordKey;
-  }
-
-  public static byte[] encodeTasks(Collection<? extends Task> taskList) {
-    if (taskList.isEmpty()) {
-      return new byte[0];
+    /**
+     * Construct a new FanoutTask that contains the given data store Key. This
+     * constructor is used to construct an instance to be enqueued.
+     */
+    public FanoutTask(UUID recordKey, QueueSettings queueSettings) {
+        super(Type.FAN_OUT, null, queueSettings.clone());
+        this.recordKey = recordKey;
     }
-    StringBuilder builder = new StringBuilder(1024);
-    for (Task task : taskList) {
-      encodeTask(builder, task);
-      builder.append(TASK_SEPERATOR);
-    }
-    builder.setLength(builder.length() - TASK_SEPERATOR.length());
-    return builder.toString().getBytes(UTF_8);
-  }
 
-  private static void encodeTask(StringBuilder builder, Task task) {
-    String taskName = GUIDGenerator.nextGUID().toString();
-    builder.append(taskName);
-    builder.append(TASK_NAME_DELIMITTER);
-    Properties taskProps = task.toProperties();
-    if (!taskProps.isEmpty()) {
-      for (String propName : taskProps.stringPropertyNames()) {
-        String value = taskProps.getProperty(propName);
-        builder.append(propName).append(KEY_VALUE_SEPERATOR).append(value);
-        builder.append(PROPERTY_SEPERATOR);
-      }
-      builder.setLength(builder.length() - PROPERTY_SEPERATOR.length());
+    /**
+     * Construct a new FanoutTask from the given Properties. This constructor
+     * is used to construct an instance that is being handled.
+     */
+    public FanoutTask(Type type, String taskName, Properties properties) {
+        super(type, taskName, properties);
+        this.recordKey = UUID.fromString(properties.getProperty(RECORD_KEY_PROPERTY));
     }
-  }
 
-  public static List<Task> decodeTasks(byte[] encodedBytes) {
-    String encodedListOfTasks = new String(encodedBytes, UTF_8);
-    String[] encodedTaskArray = encodedListOfTasks.split(TASK_SEPERATOR);
-    List<Task> listOfTasks = new ArrayList<>(encodedTaskArray.length);
-    for (String encodedTask : encodedTaskArray) {
-      String[] nameAndProperties = encodedTask.split(TASK_NAME_DELIMITTER);
-      String taskName = nameAndProperties[0];
-      String encodedProperties = nameAndProperties[1];
-      String[] encodedPropertyArray = encodedProperties.split(PROPERTY_SEPERATOR);
-      Properties taskProperties = new Properties();
-      for (String encodedProperty : encodedPropertyArray) {
-        String[] keyValuePair = encodedProperty.split(KEY_VALUE_SEPERATOR);
-        String key = keyValuePair[0];
-        String value = keyValuePair[1];
-        taskProperties.setProperty(key, value);
-      }
-      Task task = Task.fromProperties(taskName, taskProperties);
-      listOfTasks.add(task);
+    public static byte[] encodeTasks(Collection<? extends Task> taskList) {
+        if (taskList.isEmpty()) {
+            return new byte[0];
+        }
+        StringBuilder builder = new StringBuilder(1024);
+        for (Task task : taskList) {
+            encodeTask(builder, task);
+            builder.append(TASK_SEPERATOR);
+        }
+        builder.setLength(builder.length() - TASK_SEPERATOR.length());
+        return builder.toString().getBytes(UTF_8);
     }
-    return listOfTasks;
-  }
 
-  @Override
-  public String propertiesAsString() {
-    return "key=" + recordKey;
-  }
+    private static void encodeTask(StringBuilder builder, Task task) {
+        String taskName = GUIDGenerator.nextGUID().toString();
+        builder.append(taskName);
+        builder.append(TASK_NAME_DELIMITTER);
+        Properties taskProps = task.toProperties();
+        if (!taskProps.isEmpty()) {
+            for (String propName : taskProps.stringPropertyNames()) {
+                String value = taskProps.getProperty(propName);
+                builder.append(propName).append(KEY_VALUE_SEPERATOR).append(value);
+                builder.append(PROPERTY_SEPERATOR);
+            }
+            builder.setLength(builder.length() - PROPERTY_SEPERATOR.length());
+        }
+    }
+
+    public static List<Task> decodeTasks(byte[] encodedBytes) {
+        String encodedListOfTasks = new String(encodedBytes, UTF_8);
+        String[] encodedTaskArray = encodedListOfTasks.split(TASK_SEPERATOR);
+        List<Task> listOfTasks = new ArrayList<>(encodedTaskArray.length);
+        for (String encodedTask : encodedTaskArray) {
+            String[] nameAndProperties = encodedTask.split(TASK_NAME_DELIMITTER);
+            String taskName = nameAndProperties[0];
+            String encodedProperties = nameAndProperties[1];
+            String[] encodedPropertyArray = encodedProperties.split(PROPERTY_SEPERATOR);
+            Properties taskProperties = new Properties();
+            for (String encodedProperty : encodedPropertyArray) {
+                String[] keyValuePair = encodedProperty.split(KEY_VALUE_SEPERATOR);
+                String key = keyValuePair[0];
+                String value = keyValuePair[1];
+                taskProperties.setProperty(key, value);
+            }
+            Task task = Task.fromProperties(taskName, taskProperties);
+            listOfTasks.add(task);
+        }
+        return listOfTasks;
+    }
+
+    @Override
+    protected void addProperties(Properties properties) {
+        properties.setProperty(RECORD_KEY_PROPERTY, recordKey.toString());
+    }
+
+    public UUID getRecordKey() {
+        return recordKey;
+    }
+
+    @Override
+    public String propertiesAsString() {
+        return "key=" + recordKey;
+    }
 }

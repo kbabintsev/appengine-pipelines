@@ -24,42 +24,41 @@ import java.util.UUID;
  * specified key should handle its child failure.
  *
  * @author maximf@google.com (Maxim Fateev)
- *
  */
 public class HandleChildExceptionTask extends ObjRefTask {
 
-  private static final String FAILED_CHILD_KEY_PARAM = "failedChildKey";
+    private static final String FAILED_CHILD_KEY_PARAM = "failedChildKey";
 
-  private final UUID failedChildKey;
+    private final UUID failedChildKey;
 
-  public HandleChildExceptionTask(UUID jobKey, UUID failedChildKey, QueueSettings queueSettings) {
-    super(Type.HANDLE_CHILD_EXCEPTION, "handleChildFailure", jobKey, queueSettings);
-    if (null == failedChildKey) {
-      throw new NullPointerException("failedChildKey");
+    public HandleChildExceptionTask(UUID jobKey, UUID failedChildKey, QueueSettings queueSettings) {
+        super(Type.HANDLE_CHILD_EXCEPTION, "handleChildFailure", jobKey, queueSettings);
+        if (null == failedChildKey) {
+            throw new NullPointerException("failedChildKey");
+        }
+        this.failedChildKey = failedChildKey;
     }
-    this.failedChildKey = failedChildKey;
-  }
 
-  protected HandleChildExceptionTask(Type type, String taskName, Properties properties) {
-    super(type, taskName, properties);
-    failedChildKey = UUID.fromString(properties.getProperty(FAILED_CHILD_KEY_PARAM));
-  }
+    protected HandleChildExceptionTask(Type type, String taskName, Properties properties) {
+        super(type, taskName, properties);
+        failedChildKey = UUID.fromString(properties.getProperty(FAILED_CHILD_KEY_PARAM));
+    }
 
-  @Override
-  protected void addProperties(Properties properties) {
-    super.addProperties(properties);
-    properties.setProperty(FAILED_CHILD_KEY_PARAM, failedChildKey.toString());
-  }
+    @Override
+    protected void addProperties(Properties properties) {
+        super.addProperties(properties);
+        properties.setProperty(FAILED_CHILD_KEY_PARAM, failedChildKey.toString());
+    }
 
-  @Override
-  public String propertiesAsString() {
-    return super.propertiesAsString() + ", failedChildKey=" + failedChildKey;
-  }
+    @Override
+    public String propertiesAsString() {
+        return super.propertiesAsString() + ", failedChildKey=" + failedChildKey;
+    }
 
-  /**
-   * @return the failedChildKey
-   */
-  public UUID getFailedChildKey() {
-    return failedChildKey;
-  }
+    /**
+     * @return the failedChildKey
+     */
+    public UUID getFailedChildKey() {
+        return failedChildKey;
+    }
 }

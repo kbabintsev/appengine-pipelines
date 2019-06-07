@@ -24,42 +24,40 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class DelayedValueTest extends PipelineTest {
 
-  private static final int EXPECTED_RESULT = 5;
-  private static final long DELAY_SECONDS = 10;
+    private static final int EXPECTED_RESULT = 5;
+    private static final long DELAY_SECONDS = 10;
+    private static AtomicLong duration1 = new AtomicLong();
+    private static AtomicLong duration2 = new AtomicLong();
+    private PipelineService service = PipelineServiceFactory.newPipelineService();
 
-  private PipelineService service = PipelineServiceFactory.newPipelineService();
-
-  private static AtomicLong duration1 = new AtomicLong();
-  private static AtomicLong duration2 = new AtomicLong();
-
-  @SuppressWarnings("serial")
-  static class DelayedJob extends Job0<Integer> {
-
-    @Override
-    public Value<Integer> run() throws Exception {
-      trace("DelayedJob.run");
-      duration2.set(System.currentTimeMillis());
-      return immediate(EXPECTED_RESULT);
+    public void testDelayedValue() throws Exception {
+        UUID pipelineId = service.startNewPipeline(new TestDelayedValueJob());
+        Integer five = waitForJobToComplete(pipelineId);
+        assertEquals(EXPECTED_RESULT, five.intValue());
+        assertEquals("TestDelayedValueJob.run DelayedJob.run", trace());
+        assertTrue(duration2.get() - duration1.get() >= DELAY_SECONDS * 1000);
     }
-  }
 
-  @SuppressWarnings("serial")
-  static class TestDelayedValueJob extends Job0<Integer> {
+    @SuppressWarnings("serial")
+    static class DelayedJob extends Job0<Integer> {
 
-    @Override
-    public Value<Integer> run() {
-      trace("TestDelayedValueJob.run");
-      duration1.set(System.currentTimeMillis());
-      Value<Void> delayedValue = newDelayedValue(DELAY_SECONDS);
-      return futureCall(new DelayedJob(), waitFor(delayedValue));
+        @Override
+        public Value<Integer> run() throws Exception {
+            trace("DelayedJob.run");
+            duration2.set(System.currentTimeMillis());
+            return immediate(EXPECTED_RESULT);
+        }
     }
-  }
 
-  public void testDelayedValue() throws Exception {
-    UUID pipelineId = service.startNewPipeline(new TestDelayedValueJob());
-    Integer five = waitForJobToComplete(pipelineId);
-    assertEquals(EXPECTED_RESULT, five.intValue());
-    assertEquals("TestDelayedValueJob.run DelayedJob.run", trace());
-    assertTrue(duration2.get() - duration1.get() >= DELAY_SECONDS * 1000);
-  }
+    @SuppressWarnings("serial")
+    static class TestDelayedValueJob extends Job0<Integer> {
+
+        @Override
+        public Value<Integer> run() {
+            trace("TestDelayedValueJob.run");
+            duration1.set(System.currentTimeMillis());
+            Value<Void> delayedValue = newDelayedValue(DELAY_SECONDS);
+            return futureCall(new DelayedJob(), waitFor(delayedValue));
+        }
+    }
 }

@@ -1,5 +1,6 @@
-<%@ page import="com.google.appengine.tools.pipeline.*" %>
-<%@ page import="com.google.appengine.tools.pipeline.demo.*" %>
+<%@ page import="com.google.appengine.tools.pipeline.JobInfo" %>
+<%@ page import="com.google.appengine.tools.pipeline.PipelineService" %>
+<%@ page import="com.google.appengine.tools.pipeline.PipelineServiceFactory" %>
 <%@ page import="com.google.appengine.tools.pipeline.demo.LetterCountExample.LetterCounter" %>
 <%@ page import="java.util.SortedMap" %>
 <%@taglib uri="http://github.com/GoogleCloudPlatform/appengine-pipelines/functions" prefix="f" %>
@@ -103,7 +104,7 @@ Calculation stopped. An error occurred.
           break;
     case CANCELED_BY_REQUEST:
 %>
-Calculation canceled.
+    Calculation canceled.
 <p>
 
 <form method="post">
@@ -111,11 +112,11 @@ Calculation canceled.
     <input name="<%=PIPELINE_ID_PARAM_NAME%>" value="" type="hidden">
     <input type="submit" value="Do it again">
 </form>
-        <%
-          break;        
-        case STOPPED_BY_REQUEST:
+<%
+        break;
+    case STOPPED_BY_REQUEST:
 %>
-    Calculation stopped by request;
+Calculation stopped by request;
 
 <p>
 
@@ -142,8 +143,8 @@ Enter some text:
     if (null != pipelineId) {
 %>
 <p>
-  <a href="${f:baseUrl()}status.html?root=<%=pipelineId%>" target="Pipeline Status">view status page</a>
-<%
+    <a href="${f:baseUrl()}status.html?root=<%=pipelineId%>" target="Pipeline Status">view status page</a>
+        <%
 }
 %>
 

@@ -120,9 +120,8 @@ import java.util.UUID;
  * method is allowed to throw any exception.
  * <p>
  *
- * @author rudominer@google.com (Mitch Rudominer)
- *
  * @param <E> The return type of the job.
+ * @author rudominer@google.com (Mitch Rudominer)
  */
 public abstract class Job<E> implements Serializable {
 
@@ -136,277 +135,11 @@ public abstract class Job<E> implements Serializable {
   private transient UpdateSpec updateSpec;
   private transient String currentRunGUID;
 
-  // This method will be invoked by reflection from PipelineManager
-  @SuppressWarnings("unused")
-  private void setJobRecord(JobRecord jobRecord) {
-    this.thisJobRecord = jobRecord;
-  }
-
-  // This method will be invoked by reflection from PipelineManager
-  @SuppressWarnings("unused")
-  private void setUpdateSpec(UpdateSpec spec) {
-    this.updateSpec = spec;
-  }
-
-  // This method will be invoked by reflection from PipelineManager
-  @SuppressWarnings("unused")
-  private void setCurrentRunGuid(String guid) {
-    this.currentRunGUID = guid;
-  }
-
-  /**
-   * This is the non-type-safe version of the {@code futureCall()} family of
-   * methods. Normally a user will not need to invoke this method directly.
-   * Instead, one of the type-safe methods such as
-   * {@link #futureCall(Job2, Value, Value, JobSetting...)} should be used. The
-   * only reason a user should invoke this method directly is if
-   * {@code jobInstance} is a direct subclass of {@code Job} instead of being a
-   * subclass of one of the {@code Jobn} classes and the {@code run()} method of
-   * {@code jobInstance} takes more arguments than the greatest {@code n} such
-   * that the framework offers a {@code Jobn} class.
-   *
-   * @param <T> The return type of the child job being specified
-   * @param settings
-   * @param jobInstance The user-written job object
-   * @param params The parameters to be passed to the {@code run} method of the
-   *        job
-   * @return a {@code FutureValue} representing an empty value slot that will be
-   *         filled by the output of {@code jobInstance} when it finalizes. This
-   *         may be passed in to further invocations of {@code futureCall()} in
-   *         order to specify a data dependency.
-   */
-  public <T> FutureValue<T> futureCallUnchecked(JobSetting[] settings, Job<?> jobInstance,
-      Object... params) {
-    JobRecord childJobRecord = PipelineManager.registerNewJobRecord(
-        updateSpec, settings, thisJobRecord, currentRunGUID, jobInstance, params);
-    thisJobRecord.appendChildKey(childJobRecord.getKey());
-    return new FutureValueImpl<>(childJobRecord.getOutputSlotInflated());
-  }
-
-  /**
-   * Invoke this method from within the {@code run} method of a <b>generator
-   * job</b> in order to specify a job node in the generated child job graph.
-   * This version of the method is for child jobs that take zero arguments.
-   *
-   * @param <T> The return type of the child job being specified
-   * @param jobInstance A user-written job object
-   * @param settings Optional one or more {@code JobSetting}
-   * @return a {@code FutureValue} representing an empty value slot that will be
-   *         filled by the output of {@code jobInstance} when it finalizes. This
-   *         may be passed in to further invocations of {@code futureCall()} in
-   *         order to specify a data dependency.
-   */
-  public <T> FutureValue<T> futureCall(Job0<T> jobInstance, JobSetting... settings) {
-    return futureCallUnchecked(settings, jobInstance);
-  }
-
-  /**
-   * Invoke this method from within the {@code run} method of a <b>generator
-   * job</b> in order to specify a job node in the generated child job graph.
-   * This version of the method is for child jobs that take one argument.
-   *
-   * @param <T> The return type of the child job being specified
-   * @param <T1> The type of the first input to the child job
-   * @param jobInstance A user-written job object
-   * @param v1 the first input to the child job
-   * @param settings Optional one or more {@code JobSetting}
-   * @return a {@code FutureValue} representing an empty value slot that will be
-   *         filled by the output of {@code jobInstance} when it finalizes. This
-   *         may be passed in to further invocations of {@code futureCall()} in
-   *         order to specify a data dependency.
-   */
-  public <T, T1> FutureValue<T> futureCall(
-      Job1<T, T1> jobInstance, Value<? extends T1> v1, JobSetting... settings) {
-    return futureCallUnchecked(settings, jobInstance, v1);
-  }
-
-  /**
-   * Invoke this method from within the {@code run} method of a <b>generator
-   * job</b> in order to specify a job node in the generated child job graph.
-   * This version of the method is for child jobs that take two arguments.
-   *
-   * @param <T> The return type of the child job being specified
-   * @param <T1> The type of the first input to the child job
-   * @param <T2> The type of the second input to the child job
-   * @param jobInstance A user-written job object
-   * @param v1 the first input to the child job
-   * @param v2 the second input to the child job
-   * @param settings Optional one or more {@code JobSetting}
-   * @return a {@code FutureValue} representing an empty value slot that will be
-   *         filled by the output of {@code jobInstance} when it finalizes. This
-   *         may be passed in to further invocations of {@code futureCall()} in
-   *         order to specify a data dependency.
-   */
-  public <T, T1, T2> FutureValue<T> futureCall(Job2<T, T1, T2> jobInstance, Value<? extends T1> v1,
-      Value<? extends T2> v2, JobSetting... settings) {
-    return futureCallUnchecked(settings, jobInstance, v1, v2);
-  }
-
-  /**
-   * Invoke this method from within the {@code run} method of a <b>generator
-   * job</b> in order to specify a job node in the generated child job graph.
-   * This version of the method is for child jobs that take three arguments.
-   *
-   * @param <T> The return type of the child job being specified
-   * @param <T1> The type of the first input to the child job
-   * @param <T2> The type of the second input to the child job
-   * @param <T3> The type of the third input to the child job
-   * @param jobInstance A user-written job object
-   * @param v1 the first input to the child job
-   * @param v2 the second input to the child job
-   * @param v3 the third input to the child job
-   * @param settings Optional one or more {@code JobSetting}
-   * @return a {@code FutureValue} representing an empty value slot that will be
-   *         filled by the output of {@code jobInstance} when it finalizes. This
-   *         may be passed in to further invocations of {@code futureCall()} in
-   *         order to specify a data dependency.
-   */
-  public <T, T1, T2, T3> FutureValue<T> futureCall(Job3<T, T1, T2, T3> jobInstance,
-      Value<? extends T1> v1, Value<? extends T2> v2, Value<? extends T3> v3,
-      JobSetting... settings) {
-    return futureCallUnchecked(settings, jobInstance, v1, v2, v3);
-  }
-
-  /**
-   * Invoke this method from within the {@code run} method of a <b>generator
-   * job</b> in order to specify a job node in the generated child job graph.
-   * This version of the method is for child jobs that take four arguments.
-   *
-   * @param <T> The return type of the child job being specified
-   * @param <T1> The type of the first input to the child job
-   * @param <T2> The type of the second input to the child job
-   * @param <T3> The type of the third input to the child job
-   * @param <T4> The type of the fourth input to the child job
-   * @param jobInstance A user-written job object
-   * @param v1 the first input to the child job
-   * @param v2 the second input to the child job
-   * @param v3 the third input to the child job
-   * @param v4 the fourth input to the child job
-   * @param settings Optional one or more {@code JobSetting}
-   * @return a {@code FutureValue} representing an empty value slot that will be
-   *         filled by the output of {@code jobInstance} when it finalizes. This
-   *         may be passed in to further invocations of {@code futureCall()} in
-   *         order to specify a data dependency.
-   */
-  public <T, T1, T2, T3, T4> FutureValue<T> futureCall(Job4<T, T1, T2, T3, T4> jobInstance,
-      Value<? extends T1> v1, Value<? extends T2> v2, Value<? extends T3> v3,
-      Value<? extends T4> v4, JobSetting... settings) {
-    return futureCallUnchecked(settings, jobInstance, v1, v2, v3, v4);
-  }
-
-
-  /**
-   * Invoke this method from within the {@code run} method of a <b>generator
-   * job</b> in order to specify a job node in the generated child job graph.
-   * This version of the method is for child jobs that take five arguments.
-   *
-   * @param <T> The return type of the child job being specified
-   * @param <T1> The type of the first input to the child job
-   * @param <T2> The type of the second input to the child job
-   * @param <T3> The type of the third input to the child job
-   * @param <T4> The type of the fourth input to the child job
-   * @param <T5> The type of the fifth input to the child job
-   * @param jobInstance A user-written job object
-   * @param v1 the first input to the child job
-   * @param v2 the second input to the child job
-   * @param v3 the third input to the child job
-   * @param v4 the fourth input to the child job
-   * @param v5 the fifth input to the child job
-   * @param settings Optional one or more {@code JobSetting}
-   * @return a {@code FutureValue} representing an empty value slot that will be
-   *         filled by the output of {@code jobInstance} when it finalizes. This
-   *         may be passed in to further invocations of {@code futureCall()} in
-   *         order to specify a data dependency.
-   */
-  public <T, T1, T2, T3, T4, T5> FutureValue<T> futureCall(Job5<T, T1, T2, T3, T4, T5> jobInstance,
-      Value<? extends T1> v1, Value<? extends T2> v2, Value<? extends T3> v3,
-      Value<? extends T4> v4, Value<? extends T5> v5, JobSetting... settings) {
-    return futureCallUnchecked(settings, jobInstance, v1, v2, v3, v4, v5);
-  }
-
-  /**
-   * Invoke this method from within the {@code run} method of a <b>generator
-   * job</b> in order to specify a job node in the generated child job graph.
-   * This version of the method is for child jobs that take six arguments.
-   *
-   * @param <T> The return type of the child job being specified
-   * @param <T1> The type of the first input to the child job
-   * @param <T2> The type of the second input to the child job
-   * @param <T3> The type of the third input to the child job
-   * @param <T4> The type of the fourth input to the child job
-   * @param <T5> The type of the fifth input to the child job
-   * @param <T6> The type of the sixth input to the child job
-   * @param jobInstance A user-written job object
-   * @param v1 the first input to the child job
-   * @param v2 the second input to the child job
-   * @param v3 the third input to the child job
-   * @param v4 the fourth input to the child job
-   * @param v5 the fifth input to the child job
-   * @param v6 the sixth input to the child job
-   * @param settings Optional one or more {@code JobSetting}
-   * @return a {@code FutureValue} representing an empty value slot that will be
-   *         filled by the output of {@code jobInstance} when it finalizes. This
-   *         may be passed in to further invocations of {@code futureCall()} in
-   *         order to specify a data dependency.
-   */
-  public <T, T1, T2, T3, T4, T5, T6> FutureValue<T> futureCall(
-      Job6<T, T1, T2, T3, T4, T5, T6> jobInstance, Value<? extends T1> v1, Value<? extends T2> v2,
-      Value<? extends T3> v3, Value<? extends T4> v4, Value<? extends T5> v5,
-      Value<? extends T6> v6, JobSetting... settings) {
-    return futureCallUnchecked(settings, jobInstance, v1, v2, v3, v4, v5, v6);
-  }
-
-  /**
-   * Invoke this method from within the {@code run} method of a <b>generator
-   * job</b> in order to declare that some value will be provided asynchronously
-   * by some external agent.
-   *
-   * @param <F> The type of the asynchronously provided value.
-   * @param klass A {@link Class} object used to specify the type of the
-   *        asynchronously provided value.
-   * @return A {@code PromisedValue} that represents an empty value slot that
-   *         will be filled at a later time when the external agent invokes
-   *         {@link PipelineService#submitPromisedValue(String, Object)}. This
-   *         may be passed in to further invocations of {@code futureCall()} in
-   *         order to specify a data dependency.
-   * @deprecate Use #newPromise() instead.
-   */
-  @Deprecated
-  public <F> PromisedValue<F> newPromise(Class<F> klass) {
-    PromisedValueImpl<F> promisedValue =
-        new PromisedValueImpl<>(getPipelineKey(), thisJobRecord.getKey(), currentRunGUID);
-    updateSpec.getNonTransactionalGroup().includeSlot(promisedValue.getSlot());
-    return promisedValue;
-  }
-
-  public <F> PromisedValue<F> newPromise() {
-    PromisedValueImpl<F> promisedValue =
-        new PromisedValueImpl<>(getPipelineKey(), thisJobRecord.getKey(), currentRunGUID);
-    updateSpec.getNonTransactionalGroup().includeSlot(promisedValue.getSlot());
-    return promisedValue;
-  }
-
-  /**
-   * Invoke this method from within the {@code run} method of a <b>generator
-   * job</b> in order to get a {@link PromisedValue} that becomes ready after
-   * a specified delay. The delay starts once this job's run method complete.
-   *
-   * @param delaySeconds Minimal delay after which the returned value becomes ready.
-   * @return A {@code PromisedValue} that represents an empty value slot that
-   *         will be filled by the pipelines framework after the specified delay.
-   */
-  public Value<Void> newDelayedValue(long delaySeconds) {
-    PromisedValueImpl<Void> promisedValue = (PromisedValueImpl<Void>) newPromise(Void.class);
-    PipelineManager.registerDelayedValue(
-        updateSpec, thisJobRecord, delaySeconds, promisedValue.getSlot());
-    return promisedValue;
-  }
-
   /**
    * Constructs a new {@code ImmediateValue}. This method is only syntactic
    * sugar. {@code immediate(x)} is equivalent to {@code new ImmediateValue(x)}.
    *
-   * @param <F> The type of value wrapped by the returned {@code ImmediateValue}
+   * @param <F>   The type of value wrapped by the returned {@code ImmediateValue}
    * @param value The value to be wrapped by the {@code ImmediateValue}
    * @return a new {@code ImmediateValue}
    */
@@ -503,12 +236,277 @@ public abstract class Job<E> implements Serializable {
    * {@code futureList(listOfValues)} is equivalent to {@code new
    * FutureList(listOfValues)}.
    *
-   * @param <F> The type of element in the list
+   * @param <F>          The type of element in the list
    * @param listOfValues A list of {@code Values<F>}
    * @return A new {@code FutureList<F>}.
    */
   public static <F> FutureList<F> futureList(List<? extends Value<F>> listOfValues) {
     return new FutureList<>(listOfValues);
+  }
+
+  // This method will be invoked by reflection from PipelineManager
+  @SuppressWarnings("unused")
+  private void setJobRecord(JobRecord jobRecord) {
+    this.thisJobRecord = jobRecord;
+  }
+
+  // This method will be invoked by reflection from PipelineManager
+  @SuppressWarnings("unused")
+  private void setUpdateSpec(UpdateSpec spec) {
+    this.updateSpec = spec;
+  }
+
+  // This method will be invoked by reflection from PipelineManager
+  @SuppressWarnings("unused")
+  private void setCurrentRunGuid(String guid) {
+    this.currentRunGUID = guid;
+  }
+
+  /**
+   * This is the non-type-safe version of the {@code futureCall()} family of
+   * methods. Normally a user will not need to invoke this method directly.
+   * Instead, one of the type-safe methods such as
+   * {@link #futureCall(Job2, Value, Value, JobSetting...)} should be used. The
+   * only reason a user should invoke this method directly is if
+   * {@code jobInstance} is a direct subclass of {@code Job} instead of being a
+   * subclass of one of the {@code Jobn} classes and the {@code run()} method of
+   * {@code jobInstance} takes more arguments than the greatest {@code n} such
+   * that the framework offers a {@code Jobn} class.
+   *
+   * @param <T>         The return type of the child job being specified
+   * @param settings
+   * @param jobInstance The user-written job object
+   * @param params      The parameters to be passed to the {@code run} method of the
+   *                    job
+   * @return a {@code FutureValue} representing an empty value slot that will be
+   * filled by the output of {@code jobInstance} when it finalizes. This
+   * may be passed in to further invocations of {@code futureCall()} in
+   * order to specify a data dependency.
+   */
+  public <T> FutureValue<T> futureCallUnchecked(JobSetting[] settings, Job<?> jobInstance,
+                                                Object... params) {
+    JobRecord childJobRecord = PipelineManager.registerNewJobRecord(
+            updateSpec, settings, thisJobRecord, currentRunGUID, jobInstance, params);
+    thisJobRecord.appendChildKey(childJobRecord.getKey());
+    return new FutureValueImpl<>(childJobRecord.getOutputSlotInflated());
+  }
+
+  /**
+   * Invoke this method from within the {@code run} method of a <b>generator
+   * job</b> in order to specify a job node in the generated child job graph.
+   * This version of the method is for child jobs that take zero arguments.
+   *
+   * @param <T>         The return type of the child job being specified
+   * @param jobInstance A user-written job object
+   * @param settings    Optional one or more {@code JobSetting}
+   * @return a {@code FutureValue} representing an empty value slot that will be
+   * filled by the output of {@code jobInstance} when it finalizes. This
+   * may be passed in to further invocations of {@code futureCall()} in
+   * order to specify a data dependency.
+   */
+  public <T> FutureValue<T> futureCall(Job0<T> jobInstance, JobSetting... settings) {
+    return futureCallUnchecked(settings, jobInstance);
+  }
+
+  /**
+   * Invoke this method from within the {@code run} method of a <b>generator
+   * job</b> in order to specify a job node in the generated child job graph.
+   * This version of the method is for child jobs that take one argument.
+   *
+   * @param <T>         The return type of the child job being specified
+   * @param <T1>        The type of the first input to the child job
+   * @param jobInstance A user-written job object
+   * @param v1          the first input to the child job
+   * @param settings    Optional one or more {@code JobSetting}
+   * @return a {@code FutureValue} representing an empty value slot that will be
+   * filled by the output of {@code jobInstance} when it finalizes. This
+   * may be passed in to further invocations of {@code futureCall()} in
+   * order to specify a data dependency.
+   */
+  public <T, T1> FutureValue<T> futureCall(
+          Job1<T, T1> jobInstance, Value<? extends T1> v1, JobSetting... settings) {
+    return futureCallUnchecked(settings, jobInstance, v1);
+  }
+
+  /**
+   * Invoke this method from within the {@code run} method of a <b>generator
+   * job</b> in order to specify a job node in the generated child job graph.
+   * This version of the method is for child jobs that take two arguments.
+   *
+   * @param <T>         The return type of the child job being specified
+   * @param <T1>        The type of the first input to the child job
+   * @param <T2>        The type of the second input to the child job
+   * @param jobInstance A user-written job object
+   * @param v1          the first input to the child job
+   * @param v2          the second input to the child job
+   * @param settings    Optional one or more {@code JobSetting}
+   * @return a {@code FutureValue} representing an empty value slot that will be
+   * filled by the output of {@code jobInstance} when it finalizes. This
+   * may be passed in to further invocations of {@code futureCall()} in
+   * order to specify a data dependency.
+   */
+  public <T, T1, T2> FutureValue<T> futureCall(Job2<T, T1, T2> jobInstance, Value<? extends T1> v1,
+                                               Value<? extends T2> v2, JobSetting... settings) {
+    return futureCallUnchecked(settings, jobInstance, v1, v2);
+  }
+
+  /**
+   * Invoke this method from within the {@code run} method of a <b>generator
+   * job</b> in order to specify a job node in the generated child job graph.
+   * This version of the method is for child jobs that take three arguments.
+   *
+   * @param <T>         The return type of the child job being specified
+   * @param <T1>        The type of the first input to the child job
+   * @param <T2>        The type of the second input to the child job
+   * @param <T3>        The type of the third input to the child job
+   * @param jobInstance A user-written job object
+   * @param v1          the first input to the child job
+   * @param v2          the second input to the child job
+   * @param v3          the third input to the child job
+   * @param settings    Optional one or more {@code JobSetting}
+   * @return a {@code FutureValue} representing an empty value slot that will be
+   * filled by the output of {@code jobInstance} when it finalizes. This
+   * may be passed in to further invocations of {@code futureCall()} in
+   * order to specify a data dependency.
+   */
+  public <T, T1, T2, T3> FutureValue<T> futureCall(Job3<T, T1, T2, T3> jobInstance,
+                                                   Value<? extends T1> v1, Value<? extends T2> v2, Value<? extends T3> v3,
+                                                   JobSetting... settings) {
+    return futureCallUnchecked(settings, jobInstance, v1, v2, v3);
+  }
+
+  /**
+   * Invoke this method from within the {@code run} method of a <b>generator
+   * job</b> in order to specify a job node in the generated child job graph.
+   * This version of the method is for child jobs that take four arguments.
+   *
+   * @param <T>         The return type of the child job being specified
+   * @param <T1>        The type of the first input to the child job
+   * @param <T2>        The type of the second input to the child job
+   * @param <T3>        The type of the third input to the child job
+   * @param <T4>        The type of the fourth input to the child job
+   * @param jobInstance A user-written job object
+   * @param v1          the first input to the child job
+   * @param v2          the second input to the child job
+   * @param v3          the third input to the child job
+   * @param v4          the fourth input to the child job
+   * @param settings    Optional one or more {@code JobSetting}
+   * @return a {@code FutureValue} representing an empty value slot that will be
+   * filled by the output of {@code jobInstance} when it finalizes. This
+   * may be passed in to further invocations of {@code futureCall()} in
+   * order to specify a data dependency.
+   */
+  public <T, T1, T2, T3, T4> FutureValue<T> futureCall(Job4<T, T1, T2, T3, T4> jobInstance,
+                                                       Value<? extends T1> v1, Value<? extends T2> v2, Value<? extends T3> v3,
+                                                       Value<? extends T4> v4, JobSetting... settings) {
+    return futureCallUnchecked(settings, jobInstance, v1, v2, v3, v4);
+  }
+
+  /**
+   * Invoke this method from within the {@code run} method of a <b>generator
+   * job</b> in order to specify a job node in the generated child job graph.
+   * This version of the method is for child jobs that take five arguments.
+   *
+   * @param <T>         The return type of the child job being specified
+   * @param <T1>        The type of the first input to the child job
+   * @param <T2>        The type of the second input to the child job
+   * @param <T3>        The type of the third input to the child job
+   * @param <T4>        The type of the fourth input to the child job
+   * @param <T5>        The type of the fifth input to the child job
+   * @param jobInstance A user-written job object
+   * @param v1          the first input to the child job
+   * @param v2          the second input to the child job
+   * @param v3          the third input to the child job
+   * @param v4          the fourth input to the child job
+   * @param v5          the fifth input to the child job
+   * @param settings    Optional one or more {@code JobSetting}
+   * @return a {@code FutureValue} representing an empty value slot that will be
+   * filled by the output of {@code jobInstance} when it finalizes. This
+   * may be passed in to further invocations of {@code futureCall()} in
+   * order to specify a data dependency.
+   */
+  public <T, T1, T2, T3, T4, T5> FutureValue<T> futureCall(Job5<T, T1, T2, T3, T4, T5> jobInstance,
+                                                           Value<? extends T1> v1, Value<? extends T2> v2, Value<? extends T3> v3,
+                                                           Value<? extends T4> v4, Value<? extends T5> v5, JobSetting... settings) {
+    return futureCallUnchecked(settings, jobInstance, v1, v2, v3, v4, v5);
+  }
+
+  /**
+   * Invoke this method from within the {@code run} method of a <b>generator
+   * job</b> in order to specify a job node in the generated child job graph.
+   * This version of the method is for child jobs that take six arguments.
+   *
+   * @param <T>         The return type of the child job being specified
+   * @param <T1>        The type of the first input to the child job
+   * @param <T2>        The type of the second input to the child job
+   * @param <T3>        The type of the third input to the child job
+   * @param <T4>        The type of the fourth input to the child job
+   * @param <T5>        The type of the fifth input to the child job
+   * @param <T6>        The type of the sixth input to the child job
+   * @param jobInstance A user-written job object
+   * @param v1          the first input to the child job
+   * @param v2          the second input to the child job
+   * @param v3          the third input to the child job
+   * @param v4          the fourth input to the child job
+   * @param v5          the fifth input to the child job
+   * @param v6          the sixth input to the child job
+   * @param settings    Optional one or more {@code JobSetting}
+   * @return a {@code FutureValue} representing an empty value slot that will be
+   * filled by the output of {@code jobInstance} when it finalizes. This
+   * may be passed in to further invocations of {@code futureCall()} in
+   * order to specify a data dependency.
+   */
+  public <T, T1, T2, T3, T4, T5, T6> FutureValue<T> futureCall(
+          Job6<T, T1, T2, T3, T4, T5, T6> jobInstance, Value<? extends T1> v1, Value<? extends T2> v2,
+          Value<? extends T3> v3, Value<? extends T4> v4, Value<? extends T5> v5,
+          Value<? extends T6> v6, JobSetting... settings) {
+    return futureCallUnchecked(settings, jobInstance, v1, v2, v3, v4, v5, v6);
+  }
+
+  /**
+   * Invoke this method from within the {@code run} method of a <b>generator
+   * job</b> in order to declare that some value will be provided asynchronously
+   * by some external agent.
+   *
+   * @param <F>   The type of the asynchronously provided value.
+   * @param klass A {@link Class} object used to specify the type of the
+   *              asynchronously provided value.
+   * @return A {@code PromisedValue} that represents an empty value slot that
+   * will be filled at a later time when the external agent invokes
+   * {@link PipelineService#submitPromisedValue(String, Object)}. This
+   * may be passed in to further invocations of {@code futureCall()} in
+   * order to specify a data dependency.
+   * @deprecate Use #newPromise() instead.
+   */
+  @Deprecated
+  public <F> PromisedValue<F> newPromise(Class<F> klass) {
+    PromisedValueImpl<F> promisedValue =
+            new PromisedValueImpl<>(getPipelineKey(), thisJobRecord.getKey(), currentRunGUID);
+    updateSpec.getNonTransactionalGroup().includeSlot(promisedValue.getSlot());
+    return promisedValue;
+  }
+
+  public <F> PromisedValue<F> newPromise() {
+    PromisedValueImpl<F> promisedValue =
+            new PromisedValueImpl<>(getPipelineKey(), thisJobRecord.getKey(), currentRunGUID);
+    updateSpec.getNonTransactionalGroup().includeSlot(promisedValue.getSlot());
+    return promisedValue;
+  }
+
+  /**
+   * Invoke this method from within the {@code run} method of a <b>generator
+   * job</b> in order to get a {@link PromisedValue} that becomes ready after
+   * a specified delay. The delay starts once this job's run method complete.
+   *
+   * @param delaySeconds Minimal delay after which the returned value becomes ready.
+   * @return A {@code PromisedValue} that represents an empty value slot that
+   * will be filled by the pipelines framework after the specified delay.
+   */
+  public Value<Void> newDelayedValue(long delaySeconds) {
+    PromisedValueImpl<Void> promisedValue = (PromisedValueImpl<Void>) newPromise(Void.class);
+    PipelineManager.registerDelayedValue(
+            updateSpec, thisJobRecord, delaySeconds, promisedValue.getSlot());
+    return promisedValue;
   }
 
   /**
@@ -525,24 +523,24 @@ public abstract class Job<E> implements Serializable {
    * of. This is the same as the Key of the root Job of the Pipeline.
    *
    * @return the Key uniquely identifying the Pipeline that this job is a member
-   *         of
+   * of
    */
   public UUID getPipelineKey() {
     return thisJobRecord.getRootJobKey();
   }
 
+  protected String getStatusConsoleUrl() {
+    return thisJobRecord.getStatusConsoleUrl();
+  }
+
   /**
    * Allows a job to set it's  status console URL.
    * The Pipeline UI displays the page at this URL in an iframe.
-   *
+   * <p>
    * To set this before the job runs use {@link JobSetting.StatusConsoleUrl}
    */
   protected void setStatusConsoleUrl(String url) {
     thisJobRecord.setStatusConsoleUrl(url);
-  }
-
-  protected String getStatusConsoleUrl() {
-    return thisJobRecord.getStatusConsoleUrl();
   }
 
   protected String getOnQueue() {

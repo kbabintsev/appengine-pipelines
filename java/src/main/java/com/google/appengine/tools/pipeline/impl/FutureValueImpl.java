@@ -19,34 +19,33 @@ import com.google.appengine.tools.pipeline.impl.model.Slot;
 
 /**
  * An implementation of {@link FutureValue} that wraps a {@link Slot}.
- * 
- * @author rudominer@google.com (Mitch Rudominer)
  *
  * @param <E> The type of the value represented by this {@code FutureValue}
+ * @author rudominer@google.com (Mitch Rudominer)
  */
 public class FutureValueImpl<E> implements FutureValue<E> {
-  protected Slot slot;
+    protected Slot slot;
 
-  public FutureValueImpl(Slot slt) {
-    this.slot = slt;
-  }
+    public FutureValueImpl(Slot slt) {
+        this.slot = slt;
+    }
 
-  public Slot getSlot() {
-    return slot;
-  }
+    public Slot getSlot() {
+        return slot;
+    }
 
-  @Override
-  public String getSourceJobHandle() {
-    return slot.getSourceJobKey().toString();
-  }
+    @Override
+    public String getSourceJobHandle() {
+        return slot.getSourceJobKey().toString();
+    }
 
-  @Override
-  public String getPipelineHandle() {
-    return slot.getRootJobKey().toString();
-  }
+    @Override
+    public String getPipelineHandle() {
+        return slot.getRootJobKey().toString();
+    }
 
-  @Override
-  public String toString() {
-    return "FutureValue[" + slot + "]";
-  }
+    @Override
+    public String toString() {
+        return "FutureValue[" + slot + "]";
+    }
 }

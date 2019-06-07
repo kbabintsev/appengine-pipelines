@@ -26,90 +26,89 @@ import com.google.appengine.tools.pipeline.util.Pair;
  */
 public class GCDExample {
 
-  /**
-   * Performs the Euclidean algorithm on a pair of non-negative integers (a,b).
-   * Returns GCD(a,b)
-   */
-  public static class GCDJob extends Job2<Integer, Integer, Integer> {
+    /**
+     * Performs the Euclidean algorithm on a pair of non-negative integers (a,b).
+     * Returns GCD(a,b)
+     */
+    public static class GCDJob extends Job2<Integer, Integer, Integer> {
 
-    private static final long serialVersionUID = -2829729586917167089L;
+        private static final long serialVersionUID = -2829729586917167089L;
 
-    @Override
-    public Value<Integer> run(Integer a, Integer b) {
-      checkPositive(a, "a");
-      checkPositive(b, "b");
-      FutureValue<Pair<Integer, Integer>> orderedPair =
-          futureCall(new OrderIntsJob(), immediate(a), immediate(b));
-      return futureCall(new EuclAlgJob(), orderedPair);
-    }
-
-    private void checkPositive(Integer x, String name) {
-      if (null == x) {
-        throw new IllegalArgumentException(name + " is null.");
-      }
-      if (x <= 0) {
-        throw new IllegalArgumentException(name + " is not positive: " + x);
-      }
-    }
-  }
-
-  /**
-   * Performs the Euclidean algorithm on a pair of non-negative integers (a,b)
-   * assuming the work has already been done to assure that a<=b Returns the GCD
-   * of (a,b)
-   */
-  public static class EuclAlgJob extends Job1<Integer, Pair<Integer, Integer>> {
-
-    private static final long serialVersionUID = 6304492080329641948L;
-
-    @Override
-    public Value<Integer> run(Pair<Integer, Integer> intPair) {
-      try {
-        int a = intPair.getFirst();
-        int b = intPair.getSecond();
-        // Assume a<=b
-        if (a == b) {
-          return immediate(a);
-        } else {
-          // Else a<b
-          FutureValue<Integer> difference = futureCall(new DiffJob(), immediate(b), immediate(a));
-          FutureValue<Integer> gcd = futureCall(new GCDJob(), immediate(a), difference);
-          return gcd;
+        @Override
+        public Value<Integer> run(Integer a, Integer b) {
+            checkPositive(a, "a");
+            checkPositive(b, "b");
+            FutureValue<Pair<Integer, Integer>> orderedPair =
+                    futureCall(new OrderIntsJob(), immediate(a), immediate(b));
+            return futureCall(new EuclAlgJob(), orderedPair);
         }
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
+
+        private void checkPositive(Integer x, String name) {
+            if (null == x) {
+                throw new IllegalArgumentException(name + " is null.");
+            }
+            if (x <= 0) {
+                throw new IllegalArgumentException(name + " is not positive: " + x);
+            }
+        }
     }
-  }
 
+    /**
+     * Performs the Euclidean algorithm on a pair of non-negative integers (a,b)
+     * assuming the work has already been done to assure that a<=b Returns the GCD
+     * of (a,b)
+     */
+    public static class EuclAlgJob extends Job1<Integer, Pair<Integer, Integer>> {
 
-  /**
-   * Given two integers a and b returns the pair (a,b) if a<=b else returns the
-   * pair (b,a).
-   */
-  public static class OrderIntsJob extends Job2<Pair<Integer, Integer>, Integer, Integer> {
+        private static final long serialVersionUID = 6304492080329641948L;
 
-    private static final long serialVersionUID = -3625544267076808177L;
-
-    @Override
-    public Value<Pair<Integer, Integer>> run(Integer a, Integer b) {
-      if (a < b) {
-        return immediate(Pair.of(a, b));
-      } else {
-        return immediate(Pair.of(b, a));
-      }
+        @Override
+        public Value<Integer> run(Pair<Integer, Integer> intPair) {
+            try {
+                int a = intPair.getFirst();
+                int b = intPair.getSecond();
+                // Assume a<=b
+                if (a == b) {
+                    return immediate(a);
+                } else {
+                    // Else a<b
+                    FutureValue<Integer> difference = futureCall(new DiffJob(), immediate(b), immediate(a));
+                    FutureValue<Integer> gcd = futureCall(new GCDJob(), immediate(a), difference);
+                    return gcd;
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
-  }
 
-  /**
-   * Given two integers b and a returns b - a.
-   */
-  public static class DiffJob extends Job2<Integer, Integer, Integer> {
-    private static final long serialVersionUID = -2102148459756486612L;
+    /**
+     * Given two integers a and b returns the pair (a,b) if a<=b else returns the
+     * pair (b,a).
+     */
+    public static class OrderIntsJob extends Job2<Pair<Integer, Integer>, Integer, Integer> {
 
-    @Override
-    public Value<Integer> run(Integer b, Integer a) {
-      return immediate(b - a);
+        private static final long serialVersionUID = -3625544267076808177L;
+
+        @Override
+        public Value<Pair<Integer, Integer>> run(Integer a, Integer b) {
+            if (a < b) {
+                return immediate(Pair.of(a, b));
+            } else {
+                return immediate(Pair.of(b, a));
+            }
+        }
     }
-  }
+
+    /**
+     * Given two integers b and a returns b - a.
+     */
+    public static class DiffJob extends Job2<Integer, Integer, Integer> {
+        private static final long serialVersionUID = -2102148459756486612L;
+
+        @Override
+        public Value<Integer> run(Integer b, Integer a) {
+            return immediate(b - a);
+        }
+    }
 }

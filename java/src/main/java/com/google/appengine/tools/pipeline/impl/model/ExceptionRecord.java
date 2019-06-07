@@ -31,53 +31,53 @@ import java.util.UUID;
  */
 public class ExceptionRecord extends PipelineModelObject {
 
-  public static final String DATA_STORE_KIND = "Exception";
-  private static final String EXCEPTION_PROPERTY = "exceptionBytes";
-  public static final List<String> PROPERTIES = ImmutableList.<String>builder()
-          .addAll(BASE_PROPERTIES)
-          .add(
-                  EXCEPTION_PROPERTY
-          )
-          .build();
+    public static final String DATA_STORE_KIND = "Exception";
+    private static final String EXCEPTION_PROPERTY = "exceptionBytes";
+    public static final List<String> PROPERTIES = ImmutableList.<String>builder()
+            .addAll(BASE_PROPERTIES)
+            .add(
+                    EXCEPTION_PROPERTY
+            )
+            .build();
 
-  private final Throwable exception;
+    private final Throwable exception;
 
-  public ExceptionRecord(
-      UUID rootJobKey, UUID generatorJobKey, String graphGUID, Throwable exception) {
-    super(DATA_STORE_KIND, rootJobKey, generatorJobKey, graphGUID);
-    this.exception = exception;
-  }
-
-  public ExceptionRecord(StructReader entity) {
-    super(DATA_STORE_KIND, entity);
-    ByteArray serializedExceptionBlob = entity.getBytes(EXCEPTION_PROPERTY);
-    byte[] serializedException = serializedExceptionBlob.toByteArray();
-    try {
-      exception = (Throwable) SerializationUtils.deserialize(serializedException);
-    } catch (IOException e) {
-      throw new RuntimeException("Failed to deserialize exception for " + getKey(), e);
+    public ExceptionRecord(
+            UUID rootJobKey, UUID generatorJobKey, String graphGUID, Throwable exception) {
+        super(DATA_STORE_KIND, rootJobKey, generatorJobKey, graphGUID);
+        this.exception = exception;
     }
-  }
 
-  public Throwable getException() {
-    return exception;
-  }
-
-  @Override
-  protected String getDatastoreKind() {
-    return DATA_STORE_KIND;
-  }
-
-  @Override
-  public PipelineMutation toEntity() {
-    try {
-      PipelineMutation mutation = toProtoEntity();
-      final Mutation.WriteBuilder entity = mutation.getDatabaseMutation();
-      byte[] serializedException = SerializationUtils.serialize(exception);
-      entity.set(EXCEPTION_PROPERTY).to(ByteArray.copyFrom(serializedException));
-      return mutation;
-    } catch (IOException e) {
-      throw new RuntimeException("Failed to serialize exception for " + getKey(), e);
+    public ExceptionRecord(StructReader entity) {
+        super(DATA_STORE_KIND, entity);
+        ByteArray serializedExceptionBlob = entity.getBytes(EXCEPTION_PROPERTY);
+        byte[] serializedException = serializedExceptionBlob.toByteArray();
+        try {
+            exception = (Throwable) SerializationUtils.deserialize(serializedException);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to deserialize exception for " + getKey(), e);
+        }
     }
-  }
+
+    public Throwable getException() {
+        return exception;
+    }
+
+    @Override
+    protected String getDatastoreKind() {
+        return DATA_STORE_KIND;
+    }
+
+    @Override
+    public PipelineMutation toEntity() {
+        try {
+            PipelineMutation mutation = toProtoEntity();
+            final Mutation.WriteBuilder entity = mutation.getDatabaseMutation();
+            byte[] serializedException = SerializationUtils.serialize(exception);
+            entity.set(EXCEPTION_PROPERTY).to(ByteArray.copyFrom(serializedException));
+            return mutation;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to serialize exception for " + getKey(), e);
+        }
+    }
 }

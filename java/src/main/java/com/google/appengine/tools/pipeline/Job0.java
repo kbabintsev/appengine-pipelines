@@ -18,19 +18,18 @@ package com.google.appengine.tools.pipeline;
  * A user's job class should subclass a specialization of this class if the job
  * does not take any input parameters.
  *
- * @author rudominer@google.com (Mitch Rudominer)
-
  * @param <T> The type of the job's output.
+ * @author rudominer@google.com (Mitch Rudominer)
  * @see Job
  */
 public abstract class Job0<T> extends Job<T> {
 
-  private static final long serialVersionUID = 951850681860721384L;
+    private static final long serialVersionUID = 951850681860721384L;
 
-  /**
-   * Users must define this method in their job class.
-   *
-   * @throws Exception in case of job failure.
-   */
-  public abstract Value<T> run() throws Exception;
+    /**
+     * Users must define this method in their job class.
+     *
+     * @throws Exception in case of job failure.
+     */
+    public abstract Value<T> run() throws Exception;
 }

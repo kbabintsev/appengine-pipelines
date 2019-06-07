@@ -37,7 +37,7 @@ import java.util.List;
  * futureCall(new MyCombinerJob(), futureList);
  * </code>
  * </pre>
- *
+ * <p>
  * The invocation of {@code futureCall(new MyCombinerJob(), futureList)} above
  * instructs the framework that after the value slots corresponding to each of
  * the {@code FutureValues} in {@code listOfFutures} have been filled, the
@@ -46,9 +46,8 @@ import java.util.List;
  * {@code futureList} and containing the values that filled the slots, in the
  * order corresponding to {@code listOfFutures}.
  *
- * @author rudominer@google.com (Mitch Rudominer)
- *
  * @param <E> The type of object stored in the list
+ * @author rudominer@google.com (Mitch Rudominer)
  */
 public final class FutureList<E> implements Value<List<E>> {
   private List<? extends Value<E>> listOfValues;
@@ -57,8 +56,8 @@ public final class FutureList<E> implements Value<List<E>> {
    * Constructs a {@code FutureList} from a {@code List} of {@code Values}.
    *
    * @param listOfValues a {@code List} of {@code Values}. This object takes
-   *        ownership of the list. The client should not continue to hold a
-   *        reference to it.
+   *                     ownership of the list. The client should not continue to hold a
+   *                     reference to it.
    */
   public FutureList(List<? extends Value<E>> listOfValues) {
     if (null == listOfValues) {

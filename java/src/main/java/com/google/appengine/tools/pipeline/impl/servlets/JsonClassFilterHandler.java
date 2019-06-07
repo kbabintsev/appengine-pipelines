@@ -14,27 +14,26 @@
 
 package com.google.appengine.tools.pipeline.impl.servlets;
 
-import static com.google.appengine.tools.pipeline.impl.util.JsonUtils.mapToJson;
-import static java.util.Collections.singletonMap;
-
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
-
-import java.io.IOException;
-import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Set;
+
+import static com.google.appengine.tools.pipeline.impl.util.JsonUtils.mapToJson;
+import static java.util.Collections.singletonMap;
 
 /**
  * @author rudominer@google.com (Mitch Rudominer)
  */
 public class JsonClassFilterHandler {
 
-  public static final String PATH_COMPONENT = "rpc/class_paths";
+    public static final String PATH_COMPONENT = "rpc/class_paths";
 
-  public static void doGet(@SuppressWarnings("unused") HttpServletRequest req,
-      HttpServletResponse resp) throws IOException {
-    Set<String> pipelines = PipelineManager.getRootPipelinesDisplayName();
-    resp.getWriter().write(mapToJson(singletonMap("classPaths", pipelines)));
-  }
+    public static void doGet(@SuppressWarnings("unused") HttpServletRequest req,
+                             HttpServletResponse resp) throws IOException {
+        Set<String> pipelines = PipelineManager.getRootPipelinesDisplayName();
+        resp.getWriter().write(mapToJson(singletonMap("classPaths", pipelines)));
+    }
 }

@@ -14,13 +14,13 @@ import java.util.UUID;
  * @author rudominer@google.com (Mitch Rudominer)
  */
 public class OrphanedObjectException extends Exception {
-  private static final long serialVersionUID = 149320669328554627L;
+    private static final long serialVersionUID = 149320669328554627L;
 
-  public OrphanedObjectException(UUID key) {
-    super(key.toString());
-  }
+    public OrphanedObjectException(UUID key) {
+        super(key.toString());
+    }
 
-  public OrphanedObjectException(UUID key, Throwable cause) {
-    super(key.toString(), cause);
-  }
+    public OrphanedObjectException(UUID key, Throwable cause) {
+        super(key.toString(), cause);
+    }
 }

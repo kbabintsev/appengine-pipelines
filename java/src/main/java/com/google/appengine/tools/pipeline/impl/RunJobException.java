@@ -14,21 +14,19 @@
 
 package com.google.appengine.tools.pipeline.impl;
 
-
 /**
  * An exception that indicates that a problem occurred during the running of a job.
- * 
- * @author rudominer@google.com (Mitch Rudominer)
  *
+ * @author rudominer@google.com (Mitch Rudominer)
  */
 @SuppressWarnings("serial")
 public class RunJobException extends Exception {
 
-  public RunJobException(String reason, Throwable cause) {
-    super(reason, cause);
-  }
+    public RunJobException(String reason, Throwable cause) {
+        super(reason, cause);
+    }
 
-  public RunJobException(Throwable cause) {
-    super(cause);
-  }
+    public RunJobException(Throwable cause) {
+        super(cause);
+    }
 }

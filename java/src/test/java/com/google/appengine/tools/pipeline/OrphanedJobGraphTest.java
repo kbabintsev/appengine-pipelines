@@ -21,8 +21,8 @@ import static com.google.appengine.tools.pipeline.impl.util.TestUtils.getFailure
  */
 public class OrphanedJobGraphTest extends PipelineTest {
 
-  private static final Logger logger = Logger.getLogger(PipelineManager.class.getName());
   public static final int SUPPLY_VALUE_DELAY = 7000;
+  private static final Logger logger = Logger.getLogger(PipelineManager.class.getName());
 
   @Override
   protected boolean isHrdSafe() {
@@ -50,7 +50,6 @@ public class OrphanedJobGraphTest extends PipelineTest {
    * time and it will succeed. Only the third child job graph is non-orphaned
    * and should be activated by tasks and run. The orphaned jobs will be cleaned
    * up when the Pipeline is deleted.
-   *
    */
   public void testOrphanedJobGraph() throws Exception {
     doOrphanedJobGraphTest(false);
@@ -77,8 +76,8 @@ public class OrphanedJobGraphTest extends PipelineTest {
    * {@link #testOrphanedJobGraphWithPromisedValue()}.
    *
    * @param usePromisedValue Should the child job be activated via a promised
-   *        value. If this is {@code false} then the child job is activated via
-   *        an immediate value.
+   *                         value. If this is {@code false} then the child job is activated via
+   *                         an immediate value.
    */
   private void doOrphanedJobGraphTest(boolean usePromisedValue) throws Exception {
 
@@ -140,9 +139,9 @@ public class OrphanedJobGraphTest extends PipelineTest {
       // If we are using promised-value activation then an
       // OrphanedObjectException should have been caught at least twice.
       int orphanedObjectExcetionCount =
-          SupplyPromisedValueRunnable.orphanedObjectExcetionCount.get();
+              SupplyPromisedValueRunnable.orphanedObjectExcetionCount.get();
       assertTrue("Was expecting orphanedObjectExcetionCount to be more than one, but it was "
-          + orphanedObjectExcetionCount, orphanedObjectExcetionCount  >= 2);
+              + orphanedObjectExcetionCount, orphanedObjectExcetionCount >= 2);
     }
 
     // Now delete the whole Pipeline
@@ -165,10 +164,9 @@ public class OrphanedJobGraphTest extends PipelineTest {
   @SuppressWarnings("serial")
   private static class GeneratorJob extends Job0<Void> {
 
-    public static AtomicInteger runCount = new AtomicInteger(0);
     private static final String SHOULD_FAIL_PROPERTY =
-        getFailureProperty("AppEngineBackeEnd.saveWithJobStateCheck.beforeFinalTransaction");
-
+            getFailureProperty("AppEngineBackeEnd.saveWithJobStateCheck.beforeFinalTransaction");
+    public static AtomicInteger runCount = new AtomicInteger(0);
     boolean usePromise;
 
     public GeneratorJob(boolean usePromise) {
@@ -213,14 +211,13 @@ public class OrphanedJobGraphTest extends PipelineTest {
   /**
    * A {@code Runnable} for invoking the method
    * {@link PipelineService#submitPromisedValue(UUID, Object)}.
-   *
    */
   private static class SupplyPromisedValueRunnable implements Runnable {
 
+    public static AtomicInteger orphanedObjectExcetionCount = new AtomicInteger(0);
     private UUID promiseHandle;
     private ApiProxy.Environment apiProxyEnvironment;
     private int runNum;
-    public static AtomicInteger orphanedObjectExcetionCount = new AtomicInteger(0);
 
     public SupplyPromisedValueRunnable(ApiProxy.Environment environment, UUID promiseHandle, int runNum) {
       this.promiseHandle = promiseHandle;
