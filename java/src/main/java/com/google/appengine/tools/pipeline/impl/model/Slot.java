@@ -59,8 +59,8 @@ public final class Slot extends PipelineModelObject {
     private List<Barrier> waitingOnMeInflated;
     private ValueProxy valueProxy;
 
-    public Slot(final UUID rootJobKey, final UUID generatorJobKey, final String graphGUID) {
-        super(DATA_STORE_KIND, rootJobKey, generatorJobKey, graphGUID);
+    public Slot(final UUID rootJobKey, final UUID generatorJobKey, final UUID graphKey) {
+        super(DATA_STORE_KIND, rootJobKey, generatorJobKey, graphKey);
         waitingOnMeKeys = new LinkedList<>();
         valueProxy = new ValueProxy(
                 null,
@@ -176,6 +176,6 @@ public final class Slot extends PipelineModelObject {
     public String toString() {
         return "Slot[" + getKeyName(getKey()) + ", valueProxy=" + valueProxy
                 + ", filled=" + filled + ", waitingOnMe=" + waitingOnMeKeys + ", parent="
-                + getKeyName(getGeneratorJobKey()) + ", guid=" + getGraphGuid() + "]";
+                + getKeyName(getGeneratorJobKey()) + ", graphKey=" + getGraphKey() + "]";
     }
 }

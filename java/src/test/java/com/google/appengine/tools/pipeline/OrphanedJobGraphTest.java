@@ -103,8 +103,8 @@ public class OrphanedJobGraphTest extends PipelineTest {
     UUID rootJobKey = pipelineHandle;
     JobRecord rootJob = allObjects.getJobs().get(rootJobKey);
     assertNotNull(rootJob);
-    String graphGuid = rootJob.getChildGraphGuid();
-    assertNotNull(graphGuid);
+    UUID graphKey = rootJob.getChildGraphKey();
+    assertNotNull(graphKey);
     int numJobs = allObjects.getJobs().size();
     assertEquals(2, numJobs);
     int numOrphanedJobs = 0;
@@ -116,7 +116,7 @@ public class OrphanedJobGraphTest extends PipelineTest {
       assertEquals(rootJobKey, record.getRootJobKey());
       if (record.getKey().equals(rootJobKey)) {
         // This one is the root job
-        assertNull(record.getGraphGuid());
+        assertNull(record.getGraphKey());
         assertNull(record.getGeneratorJobKey());
         continue;
       }
@@ -124,7 +124,7 @@ public class OrphanedJobGraphTest extends PipelineTest {
       assertEquals(rootJobKey, record.getGeneratorJobKey());
 
       // Count the generated jobs that are orphaned and not orphaned
-      if (graphGuid.equals(record.getGraphGuid())) {
+      if (graphKey.equals(record.getGraphKey())) {
         numNonOrphanedJobs++;
       } else {
         numOrphanedJobs++;

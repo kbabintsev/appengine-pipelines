@@ -15,8 +15,8 @@
 package com.google.appengine.tools.pipeline.impl.tasks;
 
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
-import com.google.appengine.tools.pipeline.impl.util.GUIDGenerator;
 import com.google.appengine.tools.pipeline.impl.util.StringUtils;
+import com.google.appengine.tools.pipeline.impl.util.UuidGenerator;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -95,7 +95,7 @@ public final class FanoutTask extends Task {
     }
 
     private static void encodeTask(final StringBuilder builder, final Task task) {
-        final String taskName = GUIDGenerator.nextGUID().toString();
+        final String taskName = UuidGenerator.nextUuid().toString();
         builder.append(taskName);
         builder.append(TASK_NAME_DELIMITTER);
         final Properties taskProps = task.toProperties();

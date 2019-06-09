@@ -74,8 +74,8 @@ public final class Barrier extends PipelineModelObject {
     // transient
     private List<SlotDescriptor> waitingOnInflated;
 
-    private Barrier(final Type type, final UUID rootJobKey, final UUID jobKey, final UUID generatorJobKey, final String graphGUID) {
-        super(DATA_STORE_KIND, rootJobKey, getEgParentKey(type, jobKey), null, generatorJobKey, graphGUID);
+    private Barrier(final Type type, final UUID rootJobKey, final UUID jobKey, final UUID generatorJobKey, final UUID graphKey) {
+        super(DATA_STORE_KIND, rootJobKey, getEgParentKey(type, jobKey), null, generatorJobKey, graphKey);
         this.jobKey = jobKey;
         this.type = type;
         waitingOnGroupSizes = new LinkedList<>();
@@ -85,7 +85,7 @@ public final class Barrier extends PipelineModelObject {
 
     public Barrier(final Type type, final JobRecord jobRecord) {
         this(type, jobRecord.getRootJobKey(), jobRecord.getKey(), jobRecord.getGeneratorJobKey(),
-                jobRecord.getGraphGuid());
+                jobRecord.getGraphKey());
     }
 
     public Barrier(final StructReader entity) {
@@ -121,7 +121,7 @@ public final class Barrier extends PipelineModelObject {
 
     public static Barrier dummyInstanceForTesting() {
         final UUID dummyKey = UUID.fromString("00000000-0000-0000-0000-000000000bad");
-        return new Barrier(Type.RUN, dummyKey, dummyKey, dummyKey, "abc");
+        return new Barrier(Type.RUN, dummyKey, dummyKey, dummyKey, dummyKey);
     }
 
     @Override
@@ -289,7 +289,7 @@ public final class Barrier extends PipelineModelObject {
                 + jobKey + ", waitingOn="
                 + StringUtils.toStringParallel(waitingOnKeys, waitingOnGroupSizes) + ", job="
                 + getKeyName(getJobKey()) + ", parent="
-                + getKeyName(getGeneratorJobKey()) + ", guid=" + getGraphGuid() + "]";
+                + getKeyName(getGeneratorJobKey()) + ", graphKey=" + getGraphKey() + "]";
     }
 
     /**

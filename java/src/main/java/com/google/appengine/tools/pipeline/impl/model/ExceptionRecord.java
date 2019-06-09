@@ -43,8 +43,8 @@ public final class ExceptionRecord extends PipelineModelObject {
     private final Throwable exception;
 
     public ExceptionRecord(
-            final UUID rootJobKey, final UUID generatorJobKey, final String graphGUID, final Throwable exception) {
-        super(DATA_STORE_KIND, rootJobKey, generatorJobKey, graphGUID);
+            final UUID rootJobKey, final UUID generatorJobKey, final UUID graphKey, final Throwable exception) {
+        super(DATA_STORE_KIND, rootJobKey, generatorJobKey, graphKey);
         this.exception = exception;
     }
 

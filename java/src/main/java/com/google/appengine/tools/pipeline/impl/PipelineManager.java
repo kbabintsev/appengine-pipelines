@@ -46,8 +46,8 @@ import com.google.appengine.tools.pipeline.impl.tasks.HandleChildExceptionTask;
 import com.google.appengine.tools.pipeline.impl.tasks.HandleSlotFilledTask;
 import com.google.appengine.tools.pipeline.impl.tasks.RunJobTask;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
-import com.google.appengine.tools.pipeline.impl.util.GUIDGenerator;
 import com.google.appengine.tools.pipeline.impl.util.StringUtils;
+import com.google.appengine.tools.pipeline.impl.util.UuidGenerator;
 import com.google.appengine.tools.pipeline.util.Pair;
 
 import java.lang.reflect.InvocationTargetException;
@@ -105,7 +105,7 @@ public final class PipelineManager {
             params = new Object[0];
         }
         // Create the root Job and its associated Barriers and Slots
-        // Passing null for parent JobRecord and graphGUID
+        // Passing null for parent JobRecord and graphKey
         // Create HandleSlotFilledTasks for the input parameters.
         final JobRecord jobRecord = registerNewJobRecord(
                 updateSpec, settings, null, null, rootJobInstance, params);
@@ -133,7 +133,7 @@ public final class PipelineManager {
      *                     JobRecord.
      * @param generatorJob The generator job or {@code null} if we are creating
      *                     the root job.
-     * @param graphGUID    The GUID of the child graph to which the new Job belongs
+     * @param graphKey     The key of the child graph to which the new Job belongs
      *                     or {@code null} if we are creating the root job.
      * @param jobInstance  The user-supplied instance of {@code Job} that
      *                     implements the Job that the newly created JobRecord represents.
@@ -148,16 +148,16 @@ public final class PipelineManager {
      * @return The newly constructed JobRecord.
      */
     public static JobRecord registerNewJobRecord(final UpdateSpec updateSpec, final JobSetting[] settings,
-                                                 final JobRecord generatorJob, final String graphGUID, final Job<?> jobInstance, final Object[] params) {
+                                                 final JobRecord generatorJob, final UUID graphKey, final Job<?> jobInstance, final Object[] params) {
         final JobRecord jobRecord;
         if (generatorJob == null) {
             // Root Job
-            if (graphGUID != null) {
-                throw new IllegalArgumentException("graphGUID must be null for root jobs");
+            if (graphKey != null) {
+                throw new IllegalArgumentException("graphKey must be null for root jobs");
             }
             jobRecord = JobRecord.createRootJobRecord(jobInstance, settings);
         } else {
-            jobRecord = new JobRecord(generatorJob, graphGUID, jobInstance, false, settings);
+            jobRecord = new JobRecord(generatorJob, graphKey, jobInstance, false, settings);
         }
         return registerNewJobRecord(updateSpec, jobRecord, params);
     }
@@ -171,7 +171,7 @@ public final class PipelineManager {
 
         final UUID generatorKey = jobRecord.getGeneratorJobKey();
         // Add slots to the RunBarrier corresponding to the input parameters
-        final String graphGuid = jobRecord.getGraphGuid();
+        final UUID graphKey = jobRecord.getGraphKey();
         for (final Object param : params) {
             final Value<?> value;
             if (null != param && param instanceof Value<?>) {
@@ -180,14 +180,14 @@ public final class PipelineManager {
                 value = new ImmediateValue<>(param);
             }
             registerSlotsWithBarrier(updateSpec, value, jobRecord.getRootJobKey(), generatorKey,
-                    jobRecord.getQueueSettings(), graphGuid, jobRecord.getRunBarrierInflated());
+                    jobRecord.getQueueSettings(), graphKey, jobRecord.getRunBarrierInflated());
         }
 
         if (0 == jobRecord.getRunBarrierInflated().getWaitingOnKeys().size()) {
             // If the run barrier is not waiting on anything, add a phantom filled
             // slot in order to trigger a HandleSlotFilledTask in order to trigger
             // a RunJobTask.
-            final Slot slot = new Slot(jobRecord.getRootJobKey(), generatorKey, graphGuid);
+            final Slot slot = new Slot(jobRecord.getRootJobKey(), generatorKey, graphKey);
             jobRecord.getRunBarrierInflated().addPhantomArgumentSlot(slot);
             registerSlotFilled(updateSpec, jobRecord.getQueueSettings(), slot, null);
         }
@@ -235,20 +235,26 @@ public final class PipelineManager {
      *                        which the given barrier lives, or {@code null} if the barrier lives
      *                        in the root Job graph.
      * @param queueSettings   The QueueSettings for tasks created by this method
-     * @param graphGUID       The GUID of the local graph in which the barrier lives, or
+     * @param graphKey        The key of the local graph in which the barrier lives, or
      *                        {@code null} if the barrier lives in the root Job graph.
      * @param barrier         The barrier to which we will add the slots
      */
-    private static void registerSlotsWithBarrier(final UpdateSpec updateSpec, final Value<?> value,
-                                                 final UUID rootJobKey, final UUID generatorJobKey, final QueueSettings queueSettings, final String graphGUID,
-                                                 final Barrier barrier) {
+    private static void registerSlotsWithBarrier(
+            final UpdateSpec updateSpec,
+            final Value<?> value,
+            final UUID rootJobKey,
+            final UUID generatorJobKey,
+            final QueueSettings queueSettings,
+            final UUID graphKey,
+            final Barrier barrier
+    ) {
         if (null == value || value instanceof ImmediateValue<?>) {
             Object concreteValue = null;
             if (null != value) {
                 final ImmediateValue<?> iv = (ImmediateValue<?>) value;
                 concreteValue = iv.getValue();
             }
-            final Slot slot = new Slot(rootJobKey, generatorJobKey, graphGUID);
+            final Slot slot = new Slot(rootJobKey, generatorJobKey, graphKey);
             registerSlotFilled(updateSpec, queueSettings, slot, concreteValue);
             barrier.addRegularArgumentSlot(slot);
         } else if (value instanceof FutureValueImpl<?>) {
@@ -261,13 +267,13 @@ public final class PipelineManager {
             final List<Slot> slotList = new ArrayList<>(futureList.getListOfValues().size());
             // The dummyListSlot is a marker slot that indicates that the
             // next group of slots forms a single list argument.
-            final Slot dummyListSlot = new Slot(rootJobKey, generatorJobKey, graphGUID);
+            final Slot dummyListSlot = new Slot(rootJobKey, generatorJobKey, graphKey);
             registerSlotFilled(updateSpec, queueSettings, dummyListSlot, null);
             for (final Value<?> valFromList : futureList.getListOfValues()) {
                 Slot slot = null;
                 if (valFromList instanceof ImmediateValue<?>) {
                     final ImmediateValue<?> ivFromList = (ImmediateValue<?>) valFromList;
-                    slot = new Slot(rootJobKey, generatorJobKey, graphGUID);
+                    slot = new Slot(rootJobKey, generatorJobKey, graphKey);
                     registerSlotFilled(updateSpec, queueSettings, slot, ivFromList.getValue());
                 } else if (valFromList instanceof FutureValueImpl<?>) {
                     final FutureValueImpl<?> futureValFromList = (FutureValueImpl<?>) valFromList;
@@ -452,16 +458,16 @@ public final class PipelineManager {
             throw new RuntimeException("Pipeline is fatally corrupted. "
                     + "The generator job for a promised value slot was not found: " + generatorJobKey);
         }
-        final String childGraphGuid = generatorJob.getChildGraphGuid();
-        if (null == childGraphGuid) {
-            // The generator job has not been saved with a childGraphGuid yet. This can happen if the
+        final UUID childGraphKey = generatorJob.getChildGraphKey();
+        if (null == childGraphKey) {
+            // The generator job has not been saved with a childGraphKey yet. This can happen if the
             // promise handle leaked out to an external thread before the job that generated it
             // had finished.
             throw new NoSuchObjectException(
                     "The framework is not ready to accept the promised value yet. "
                             + "Please try again after the job that generated the promis handle has completed.");
         }
-        if (!childGraphGuid.equals(slot.getGraphGuid())) {
+        if (!childGraphKey.equals(slot.getGraphKey())) {
             // The slot has been orphaned
             throw new OrphanedObjectException(promiseHandle);
         }
@@ -606,8 +612,8 @@ public final class PipelineManager {
         invokePrivateJobMethod("setJobRecord", job, jobRecord);
     }
 
-    private static void setCurrentRunGuid(final Job<?> job, final String guid) {
-        invokePrivateJobMethod("setCurrentRunGuid", job, guid);
+    private static void setCurrentRunKey(final Job<?> job, final UUID key) {
+        invokePrivateJobMethod("setCurrentRunKey", job, key);
     }
 
     private static void setUpdateSpec(final Job<?> job, final UpdateSpec updateSpec) {
@@ -694,8 +700,8 @@ public final class PipelineManager {
         final Job<?> job = record.getJobInstanceDeserialized();
         final UpdateSpec updateSpec = new UpdateSpec(rootJobKey);
         setJobRecord(job, jobRecord);
-        final UUID currentRunGUID = GUIDGenerator.nextGUID();
-        setCurrentRunGuid(job, currentRunGUID.toString());
+        final UUID currentRunKey = UuidGenerator.nextUuid();
+        setCurrentRunKey(job, currentRunKey);
         setUpdateSpec(job, updateSpec);
 
         // Get the run() method we will invoke and its arguments
@@ -706,7 +712,7 @@ public final class PipelineManager {
         if (callExceptionHandler && methodToExecute == null) {
             // No matching exceptionHandler found. Propagate to the parent.
             final Throwable exceptionToHandle = (Throwable) params[0];
-            handleExceptionDuringRun(jobRecord, rootJobRecord, currentRunGUID.toString(), exceptionToHandle);
+            handleExceptionDuringRun(jobRecord, rootJobRecord, currentRunKey, exceptionToHandle);
             return;
         }
         if (LOGGER.isLoggable(Level.FINEST)) {
@@ -751,7 +757,7 @@ public final class PipelineManager {
             //TODO(user): use the following condition to keep original exception trace
             //      if (!throwableParams.contains(caughtException)) {
             //      }
-            handleExceptionDuringRun(jobRecord, rootJobRecord, currentRunGUID.toString(), caughtException);
+            handleExceptionDuringRun(jobRecord, rootJobRecord, currentRunKey, caughtException);
             return;
         }
 
@@ -760,16 +766,16 @@ public final class PipelineManager {
         // (1) Check that the job is currently in the state WAITING_TO_RUN or RETRY
         // (2) Change the state of the job to WAITING_TO_FINALIZE
         // (3) Set the finalize slot to be the one generated by the run() method
-        // (4) Set the job's child graph GUID to be the currentRunGUID
+        // (4) Set the job's child graph key to be the currentRunKey
         // (5) Enqueue a FanoutTask that will fan-out to a set of
         // HandleSlotFilledTasks for each of the slots that were immediately filled
         // by the running of the job.
         // See "http://goto/java-pipeline-model".
         LOGGER.finest("Job returned: " + returnValue);
         registerSlotsWithBarrier(updateSpec, returnValue, rootJobKey, jobRecord.getKey(),
-                jobRecord.getQueueSettings(), currentRunGUID.toString(), finalizeBarrier);
+                jobRecord.getQueueSettings(), currentRunKey, finalizeBarrier);
         jobRecord.setState(State.WAITING_TO_FINALIZE);
-        jobRecord.setChildGraphGuid(currentRunGUID.toString());
+        jobRecord.setChildGraphKey(currentRunKey);
         updateSpec.getFinalTransaction().includeJob(jobRecord);
         updateSpec.getFinalTransaction().includeBarrier(finalizeBarrier);
         backEnd.saveWithJobStateCheck(
@@ -831,7 +837,7 @@ public final class PipelineManager {
     }
 
     private static void handleExceptionDuringRun(final JobRecord jobRecord, final JobRecord rootJobRecord,
-                                                 final String currentRunGUID, final Throwable caughtException) {
+                                                 final UUID currentRunKey, final Throwable caughtException) {
         final int attemptNumber = jobRecord.getAttemptNumber();
         final int maxAttempts = jobRecord.getMaxAttempts();
         if (jobRecord.isCallExceptionHandler()) {
@@ -848,7 +854,7 @@ public final class PipelineManager {
         }
         final UpdateSpec updateSpec = new UpdateSpec(jobRecord.getRootJobKey());
         final ExceptionRecord exceptionRecord = new ExceptionRecord(
-                jobRecord.getRootJobKey(), jobRecord.getKey(), currentRunGUID, caughtException);
+                jobRecord.getRootJobKey(), jobRecord.getKey(), currentRunKey, caughtException);
         updateSpec.getNonTransactionalGroup().includeException(exceptionRecord);
         final UUID exceptionKey = exceptionRecord.getKey();
         jobRecord.setExceptionKey(exceptionKey);
@@ -898,11 +904,11 @@ public final class PipelineManager {
     private static void executeExceptionHandler(final UpdateSpec updateSpec, final JobRecord jobRecord,
                                                 final Throwable caughtException, final boolean ignoreException) {
         updateSpec.getNonTransactionalGroup().includeJob(jobRecord);
-        final UUID errorHandlingGraphGuid = GUIDGenerator.nextGUID();
+        final UUID errorHandlingGraphKey = UuidGenerator.nextUuid();
         final Job<?> jobInstance = jobRecord.getJobInstanceInflated().getJobInstanceDeserialized();
 
         final JobRecord errorHandlingJobRecord =
-                new JobRecord(jobRecord, errorHandlingGraphGuid.toString(), jobInstance, true, new JobSetting[0]);
+                new JobRecord(jobRecord, errorHandlingGraphKey, jobInstance, true, new JobSetting[0]);
         errorHandlingJobRecord.setOutputSlotInflated(jobRecord.getOutputSlotInflated());
         errorHandlingJobRecord.setIgnoreException(ignoreException);
         registerNewJobRecord(updateSpec, errorHandlingJobRecord,

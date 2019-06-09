@@ -8,7 +8,7 @@ import com.google.appengine.tools.pipeline.Route;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 import com.google.appengine.tools.pipeline.impl.tasks.RunJobTask;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
-import com.google.appengine.tools.pipeline.impl.util.GUIDGenerator;
+import com.google.appengine.tools.pipeline.impl.util.UuidGenerator;
 import junit.framework.TestCase;
 
 import java.util.ArrayList;
@@ -114,7 +114,7 @@ public class AppEngineTaskQueueTest extends TestCase {
     }
 
     private Task createTask() {
-        UUID key = GUIDGenerator.nextGUID();
+        UUID key = UuidGenerator.nextUuid();
         Task task = new RunJobTask(key, new QueueSettings().setRoute(new Route().setVersion("m1")));
         return task;
     }

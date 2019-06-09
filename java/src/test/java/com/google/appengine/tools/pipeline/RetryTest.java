@@ -28,7 +28,7 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.appengine.tools.pipeline.impl.util.GUIDGenerator.USE_SIMPLE_GUIDS_FOR_DEBUGGING;
+import static com.google.appengine.tools.pipeline.impl.util.UuidGenerator.USE_SIMPLE_UUIDS_FOR_DEBUGGING;
 
 /**
  * @author rudominer@google.com (Mitch Rudominer)
@@ -52,7 +52,7 @@ public class RetryTest extends TestCase {
     public void setUp() throws Exception {
         super.setUp();
         helper.setUp();
-        System.setProperty(USE_SIMPLE_GUIDS_FOR_DEBUGGING, "true");
+        System.setProperty(USE_SIMPLE_UUIDS_FOR_DEBUGGING, "true");
     }
 
     @Override

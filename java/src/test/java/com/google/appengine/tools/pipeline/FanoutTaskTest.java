@@ -30,7 +30,7 @@ import junit.framework.TestCase;
 import java.util.List;
 import java.util.UUID;
 
-import static com.google.appengine.tools.pipeline.impl.util.GUIDGenerator.USE_SIMPLE_GUIDS_FOR_DEBUGGING;
+import static com.google.appengine.tools.pipeline.impl.util.UuidGenerator.USE_SIMPLE_UUIDS_FOR_DEBUGGING;
 
 /**
  * @author rudominer@google.com (Mitch Rudominer)
@@ -48,7 +48,7 @@ public class FanoutTaskTest extends TestCase {
     public void setUp() throws Exception {
         super.setUp();
         helper.setUp();
-        System.setProperty(USE_SIMPLE_GUIDS_FOR_DEBUGGING, "true");
+        System.setProperty(USE_SIMPLE_UUIDS_FOR_DEBUGGING, "true");
         UUID key = UUID.fromString("00000000-0000-0000-0001-000000000001");
         RunJobTask runJobTask = new RunJobTask(key, queueSettings1);
         key = UUID.fromString("00000000-0000-0000-0001-000000000002");

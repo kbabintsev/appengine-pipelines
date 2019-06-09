@@ -23,7 +23,7 @@ import junit.framework.TestCase;
 
 import java.util.UUID;
 
-import static com.google.appengine.tools.pipeline.impl.util.GUIDGenerator.USE_SIMPLE_GUIDS_FOR_DEBUGGING;
+import static com.google.appengine.tools.pipeline.impl.util.UuidGenerator.USE_SIMPLE_UUIDS_FOR_DEBUGGING;
 
 /**
  * Tests for the sample code in the User Guide
@@ -47,7 +47,7 @@ public class UserGuideTest extends TestCase {
     public void setUp() throws Exception {
         super.setUp();
         helper.setUp();
-        System.setProperty(USE_SIMPLE_GUIDS_FOR_DEBUGGING, "true");
+        System.setProperty(USE_SIMPLE_UUIDS_FOR_DEBUGGING, "true");
     }
 
     @Override

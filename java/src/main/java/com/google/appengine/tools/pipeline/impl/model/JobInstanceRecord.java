@@ -53,7 +53,7 @@ public final class JobInstanceRecord extends PipelineModelObject {
     private final ValueProxy valueProxy;
 
     public JobInstanceRecord(final JobRecord job, final Job<?> jobInstance) {
-        super(DATA_STORE_KIND, job.getRootJobKey(), job.getGeneratorJobKey(), job.getGraphGuid());
+        super(DATA_STORE_KIND, job.getRootJobKey(), job.getGeneratorJobKey(), job.getGraphKey());
         jobKey = job.getKey();
         jobClassName = jobInstance.getClass().getName();
         jobDisplayName = jobInstance.getJobDisplayName();

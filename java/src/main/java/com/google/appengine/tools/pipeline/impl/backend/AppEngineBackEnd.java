@@ -43,9 +43,8 @@ import com.google.appengine.tools.pipeline.impl.model.ValueStoragePath;
 import com.google.appengine.tools.pipeline.impl.tasks.DeletePipelineTask;
 import com.google.appengine.tools.pipeline.impl.tasks.FanoutTask;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
-import com.google.appengine.tools.pipeline.impl.util.GUIDGenerator;
-import com.google.appengine.tools.pipeline.impl.util.SerializationUtils;
 import com.google.appengine.tools.pipeline.impl.util.TestUtils;
+import com.google.appengine.tools.pipeline.impl.util.UuidGenerator;
 import com.google.appengine.tools.pipeline.util.Pair;
 import com.google.cloud.spanner.DatabaseClient;
 import com.google.cloud.spanner.DatabaseId;
@@ -469,18 +468,6 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
         return new ExceptionRecord(entity);
     }
 
-    @Override
-    public byte[] serializeValue(final PipelineModelObject model, final Object value) throws IOException {
-        final byte[] bytes = SerializationUtils.serialize(value);
-        return bytes;
-    }
-
-    @Override
-    public Object deserializeValue(final PipelineModelObject model, final byte[] serializedVersion)
-            throws IOException {
-        return SerializationUtils.deserialize(serializedVersion);
-    }
-
     private void getEntities(final String logString, final String tableName, final List<String> columns, final Collection<UUID> keys, final Consumer<StructReader> consumer) {
         //tryFiveTimes was here
         final KeySet.Builder keysBuilder = KeySet.newBuilder();
@@ -551,9 +538,9 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
             builder.append(JobRecord.ROOT_JOB_DISPLAY_NAME + " = @classFilter ")
                     .bind("classFilter").to(classFilter);
         }
-        if (GUIDGenerator.isTest()) {
+        if (UuidGenerator.isTest()) {
             builder.append("AND " + JobRecord.ROOT_JOB_KEY_PROPERTY + " LIKE @prefix ")
-                    .bind("prefix").to(GUIDGenerator.getTestPrefix() + "%");
+                    .bind("prefix").to(UuidGenerator.getTestPrefix() + "%");
         }
         builder.append("ORDER BY " + JobRecord.ROOT_JOB_DISPLAY_NAME + " ");
         // limit not set
@@ -580,9 +567,9 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
                         + "WHERE " + JobRecord.ROOT_JOB_DISPLAY_NAME + " IS NOT null "
 
         );
-        if (GUIDGenerator.isTest()) {
+        if (UuidGenerator.isTest()) {
             builder.append("AND " + JobRecord.ROOT_JOB_KEY_PROPERTY + " LIKE @prefix ")
-                    .bind("prefix").to(GUIDGenerator.getTestPrefix() + "%");
+                    .bind("prefix").to(UuidGenerator.getTestPrefix() + "%");
         }
         builder.append("ORDER BY " + JobRecord.ROOT_JOB_DISPLAY_NAME);
         try (ResultSet rs = databaseClient.singleUse().executeQuery(builder.build())) {
@@ -598,7 +585,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
     @Override
     public Set<UUID> getTestPipelines() {
         final Set<UUID> pipelines = new LinkedHashSet<>();
-        final String prefix = GUIDGenerator.getTestPrefix();
+        final String prefix = UuidGenerator.getTestPrefix();
         try (ResultSet rs = databaseClient.singleUse().executeQuery(
                 Statement.newBuilder(
                         "SELECT DISTINCT " + JobRecord.ROOT_JOB_KEY_PROPERTY + " "

@@ -28,16 +28,16 @@ import java.util.concurrent.atomic.AtomicInteger;
  * |          | - incremental part
  * 00000000-0000-0000-0000-000000000000
  */
-public final class GUIDGenerator {
+public final class UuidGenerator {
 
-    public static final String USE_SIMPLE_GUIDS_FOR_DEBUGGING =
-            "com.google.appengine.api.pipeline.use-simple-guids-for-debugging";
+    public static final String USE_SIMPLE_UUIDS_FOR_DEBUGGING =
+            "com.google.appengine.api.pipeline.use-simple-uuids-for-debugging";
     private static final String TEST_PREFIX = "00000000";
     private static final int PART_0000 = 10000;
     private static AtomicInteger counter = new AtomicInteger();
     private static int runId = (int) (Math.random() * PART_0000);
 
-    private GUIDGenerator() {
+    private UuidGenerator() {
     }
 
     public static String getTestPrefix() {
@@ -45,11 +45,11 @@ public final class GUIDGenerator {
     }
 
     public static boolean isTest() {
-        return Boolean.getBoolean(USE_SIMPLE_GUIDS_FOR_DEBUGGING);
+        return Boolean.getBoolean(USE_SIMPLE_UUIDS_FOR_DEBUGGING);
     }
 
-    public static synchronized UUID nextGUID() {
-        if (Boolean.getBoolean(USE_SIMPLE_GUIDS_FOR_DEBUGGING)) {
+    public static synchronized UUID nextUuid() {
+        if (Boolean.getBoolean(USE_SIMPLE_UUIDS_FOR_DEBUGGING)) {
             return UUID.fromString(getTestPrefix() + "0000-0000-" + String.format("%012d", counter.getAndIncrement()));
         }
         final UUID uuid = UUID.randomUUID();
@@ -58,7 +58,7 @@ public final class GUIDGenerator {
 
     public static void main(final String[] args) {
 //        for (int i = 0; i < 10; i++) {
-//            System.out.println(nextGUID());
+//            System.out.println(nextUuid());
 //        }
     }
 }

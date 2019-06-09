@@ -15,7 +15,7 @@
 package com.google.appengine.tools.pipeline.impl.model;
 
 import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.tools.pipeline.impl.util.GUIDGenerator;
+import com.google.appengine.tools.pipeline.impl.util.UuidGenerator;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.StructReader;
 import com.google.common.collect.ImmutableList;
@@ -40,12 +40,12 @@ public abstract class PipelineModelObject {
     public static final String ROOT_JOB_KEY_PROPERTY = "rootJobKey";
     public static final String ID_PROPERTY = "id";
     private static final String GENERATOR_JOB_PROPERTY = "generatorJobKey";
-    private static final String GRAPH_GUID_PROPERTY = "graphGuid";
+    private static final String GRAPH_KEY_PROPERTY = "graphKey";
     protected static final List<String> BASE_PROPERTIES = ImmutableList.of(
             ROOT_JOB_KEY_PROPERTY,
             ID_PROPERTY,
             GENERATOR_JOB_PROPERTY,
-            GRAPH_GUID_PROPERTY
+            GRAPH_KEY_PROPERTY
     );
 
     private final String tableName;
@@ -68,14 +68,14 @@ public abstract class PipelineModelObject {
     private final UUID generatorJobKey;
 
     /**
-     * A GUID generated during the execution of a run() method of a generator job.
-     * Each of the objects in a local job graph are marked with this GUID and the
-     * generator job records the graphGUID of each of it's child job graph. This
+     * A UUID generated during the execution of a run() method of a generator job.
+     * Each of the objects in a local job graph are marked with this UUID and the
+     * generator job records the graphKey of each of it's child job graph. This
      * enables us to distinguish between a valid child job graph and one that is
-     * orphaned. A child job graph is valid if its graphGUID is equal to the
-     * childGraphGUID of its generator job.
+     * orphaned. A child job graph is valid if its graphKey is equal to the
+     * childGraphKey of its generator job.
      */
-    private final String graphGUID;
+    private final UUID graphKey;
 
     /**
      * Construct a new PipelineModelObject from the provided data.
@@ -95,30 +95,30 @@ public abstract class PipelineModelObject {
      * @param generatorJobKey The key of the job whose run() method created this
      *                        object. This must be non-null unless this object is part of the root
      *                        job graph---i.e. the root job, or one of its barriers or slots.
-     * @param graphGUID       The unique GUID of the local graph of this object. This is
+     * @param graphKey       The unique key of the local graph of this object. This is
      *                        used to determine whether or not this object is orphaned. The object
-     *                        is defined to be non-orphaned if its graphGUID is equal to the
-     *                        childGraphGUID of its parent job. This must be non-null unless this
+     *                        is defined to be non-orphaned if its graphKey is equal to the
+     *                        childGraphKey of its parent job. This must be non-null unless this
      *                        object is part of the root job graph---i.e. the root job, or one of
      *                        its barriers or slots.
      */
     protected PipelineModelObject(
-            final String tableName, final UUID rootJobKey, final UUID egParentKey, final UUID thisKey, final UUID generatorJobKey, final String graphGUID) {
+            final String tableName, final UUID rootJobKey, final UUID egParentKey, final UUID thisKey, final UUID generatorJobKey, final UUID graphKey) {
         if (null == tableName) {
             throw new IllegalArgumentException("tableName is null");
         }
         if (null == rootJobKey) {
             throw new IllegalArgumentException("rootJobKey is null");
         }
-        if (generatorJobKey == null && graphGUID != null
-                || generatorJobKey != null && graphGUID == null) {
+        if (generatorJobKey == null && graphKey != null
+                || generatorJobKey != null && graphKey == null) {
             throw new IllegalArgumentException(
-                    "Either neither or both of generatorParentJobKey and graphGUID must be set.");
+                    "Either neither or both of generatorParentJobKey and graphKey must be set.");
         }
         this.tableName = tableName;
         this.rootJobKey = rootJobKey;
         this.generatorJobKey = generatorJobKey;
-        this.graphGUID = graphGUID;
+        this.graphKey = graphKey;
         if (null == thisKey) {
             key = generateKey(egParentKey, getDatastoreKind());
         } else {
@@ -131,7 +131,7 @@ public abstract class PipelineModelObject {
 
     /**
      * Construct a new PipelineModelObject with the given rootJobKey,
-     * generatorJobKey, and graphGUID, a newly generated key, and no entity group
+     * generatorJobKey, and graphKey, a newly generated key, and no entity group
      * parent.
      *
      * @param tableName
@@ -141,17 +141,17 @@ public abstract class PipelineModelObject {
      * @param generatorJobKey The key of the job whose run() method created this
      *                        object. This must be non-null unless this object is part of the root
      *                        job graph---i.e. the root job, or one of its barriers or slots.
-     * @param graphGUID       The unique GUID of the local graph of this object. This is
+     * @param graphKey       The unique key of the local graph of this object. This is
      *                        used to determine whether or not this object is orphaned. The object
-     *                        is defined to be non-orphaned if its graphGUID is equal to the
-     *                        childGraphGUID of its parent job. This must be non-null unless this
+     *                        is defined to be non-orphaned if its graphKey is equal to the
+     *                        childGraphKey of its parent job. This must be non-null unless this
      *                        object is part of the root job graph---i.e. the root job, or one of
      *                        its barriers or slots.
      */
     protected PipelineModelObject(
-            final String tableName, final UUID rootJobKey, final UUID generatorJobKey, final String graphGUID
+            final String tableName, final UUID rootJobKey, final UUID generatorJobKey, final UUID graphKey
     ) {
-        this(tableName, rootJobKey, null, null, generatorJobKey, graphGUID);
+        this(tableName, rootJobKey, null, null, generatorJobKey, graphKey);
     }
 
     /**
@@ -163,7 +163,7 @@ public abstract class PipelineModelObject {
      */
     protected PipelineModelObject(final String tableName, final StructReader entity) {
         this(tableName, extractRootJobKey(entity), null, extractKey(entity), extractGeneratorJobKey(entity),
-                extractGraphGUID(entity));
+                extractGraphKey(entity));
         final String expectedEntityType = getDatastoreKind();
         if (!expectedEntityType.equals(tableName)) {
             throw new IllegalArgumentException("The entity is not of kind " + expectedEntityType);
@@ -172,9 +172,9 @@ public abstract class PipelineModelObject {
 
     protected static UUID generateKey(final UUID parentKey, final String kind) {
         if (null == parentKey) {
-            return GUIDGenerator.nextGUID(); //key = KeyFactory.createKey(kind, name);
+            return UuidGenerator.nextUuid(); //key = KeyFactory.createKey(kind, name);
         } else {
-            return GUIDGenerator.nextGUID(); //key = parentKey.getChild(kind, name);
+            return UuidGenerator.nextUuid(); //key = parentKey.getChild(kind, name);
         }
     }
 
@@ -186,8 +186,8 @@ public abstract class PipelineModelObject {
         return entity.isNull(GENERATOR_JOB_PROPERTY) ? null : UUID.fromString(entity.getString(GENERATOR_JOB_PROPERTY));
     }
 
-    private static String extractGraphGUID(final StructReader entity) {
-        return entity.isNull(GRAPH_GUID_PROPERTY) ? null : entity.getString(GRAPH_GUID_PROPERTY);
+    private static UUID extractGraphKey(final StructReader entity) {
+        return entity.isNull(GRAPH_KEY_PROPERTY) ? null : UUID.fromString(entity.getString(GRAPH_KEY_PROPERTY));
     }
 
     private static UUID extractKey(final StructReader entity) {
@@ -239,8 +239,8 @@ public abstract class PipelineModelObject {
         if (generatorJobKey != null) {
             writeBuilder.set(GENERATOR_JOB_PROPERTY).to(generatorJobKey.toString());
         }
-        if (graphGUID != null) {
-            writeBuilder.set(GRAPH_GUID_PROPERTY).to(graphGUID);
+        if (graphKey != null) {
+            writeBuilder.set(GRAPH_KEY_PROPERTY).to(graphKey.toString());
         }
         return new PipelineMutation(writeBuilder);
     }
@@ -257,8 +257,8 @@ public abstract class PipelineModelObject {
         return generatorJobKey;
     }
 
-    public final String getGraphGuid() {
-        return graphGUID;
+    public final UUID getGraphKey() {
+        return graphKey;
     }
 
     protected abstract String getDatastoreKind();

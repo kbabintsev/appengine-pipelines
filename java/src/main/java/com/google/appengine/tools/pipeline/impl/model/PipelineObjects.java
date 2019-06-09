@@ -47,9 +47,9 @@ public final class PipelineObjects {
         this.barriers = barriers;
         this.jobs = jobs;
         this.slots = slots;
-        final Map<UUID, String> jobToChildGuid = new HashMap<>();
+        final Map<UUID, UUID> jobToChildKey = new HashMap<>();
         for (final JobRecord job : jobs.values()) {
-            jobToChildGuid.put(job.getKey(), job.getChildGraphGuid());
+            jobToChildKey.put(job.getKey(), job.getChildGraphKey());
             if (job.getKey().equals(rootJobKey)) {
                 this.rootJob = job;
             }
@@ -59,11 +59,11 @@ public final class PipelineObjects {
             final JobRecord job = jobIterator.next();
             if (job != rootJob) {
                 final UUID parentKey = job.getGeneratorJobKey();
-                final String graphGuid = job.getGraphGuid();
-                if (parentKey == null || graphGuid == null) {
-                    LOGGER.info("Ignoring a non root job with no parent or graphGuid -> " + job);
+                final UUID graphKey = job.getGraphKey();
+                if (parentKey == null || graphKey == null) {
+                    LOGGER.info("Ignoring a non root job with no parent or graphKey -> " + job);
                     jobIterator.remove();
-                } else if (!graphGuid.equals(jobToChildGuid.get(parentKey))) {
+                } else if (!graphKey.equals(jobToChildKey.get(parentKey))) {
                     LOGGER.info("Ignoring an orphand job " + job + ", parent: " + jobs.get(parentKey));
                     jobIterator.remove();
                 }
@@ -77,9 +77,9 @@ public final class PipelineObjects {
         while (slotIterator.hasNext()) {
             final Slot slot = slotIterator.next();
             final UUID parentKey = slot.getGeneratorJobKey();
-            final String parentGuid = slot.getGraphGuid();
-            if (parentKey == null && parentGuid == null
-                    || parentGuid != null && parentGuid.equals(jobToChildGuid.get(parentKey))) {
+            final UUID graphKey = slot.getGraphKey();
+            if (parentKey == null && graphKey == null
+                    || graphKey != null && graphKey.equals(jobToChildKey.get(parentKey))) {
                 slot.inflate(barriers);
             } else {
                 LOGGER.info("Ignoring an orphand slot " + slot + ", parent: " + jobs.get(parentKey));
@@ -90,9 +90,9 @@ public final class PipelineObjects {
         while (barriersIterator.hasNext()) {
             final Barrier barrier = barriersIterator.next();
             final UUID parentKey = barrier.getGeneratorJobKey();
-            final String parentGuid = barrier.getGraphGuid();
-            if (parentKey == null && parentGuid == null
-                    || parentGuid != null && parentGuid.equals(jobToChildGuid.get(parentKey))) {
+            final UUID graphKey = barrier.getGraphKey();
+            if (parentKey == null && graphKey == null
+                    || graphKey != null && graphKey.equals(jobToChildKey.get(parentKey))) {
                 barrier.inflate(slots);
             } else {
                 LOGGER.info("Ignoring an orphand Barrier " + barrier + ", parent: " + jobs.get(parentKey));

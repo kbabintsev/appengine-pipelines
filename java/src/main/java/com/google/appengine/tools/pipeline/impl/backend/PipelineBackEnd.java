@@ -18,7 +18,6 @@ import com.google.appengine.tools.pipeline.NoSuchObjectException;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 import com.google.appengine.tools.pipeline.impl.model.ExceptionRecord;
 import com.google.appengine.tools.pipeline.impl.model.JobRecord;
-import com.google.appengine.tools.pipeline.impl.model.PipelineModelObject;
 import com.google.appengine.tools.pipeline.impl.model.PipelineObjects;
 import com.google.appengine.tools.pipeline.impl.model.Slot;
 import com.google.appengine.tools.pipeline.impl.model.ValueStoragePath;
@@ -26,7 +25,6 @@ import com.google.appengine.tools.pipeline.impl.tasks.FanoutTask;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
 import com.google.appengine.tools.pipeline.util.Pair;
 
-import java.io.IOException;
 import java.util.Set;
 import java.util.UUID;
 
@@ -106,32 +104,6 @@ public interface PipelineBackEnd {
      * @throws NoSuchObjectException
      */
     ExceptionRecord queryFailure(UUID key) throws NoSuchObjectException;
-
-    /**
-     * Given an arbitrary Java Object, returns another object that encodes the
-     * given object but that is guaranteed to be of a type supported by the App
-     * Engine Data Store. Use
-     * {@link #deserializeValue(PipelineModelObject, byte[])} to reverse this
-     * operation.
-     *
-     * @param model The model that is associated with the value.
-     * @param value An arbitrary Java object to serialize.
-     * @return The serialized version of the object.
-     * @throws IOException if any problem occurs
-     */
-    byte[] serializeValue(PipelineModelObject model, Object value) throws IOException;
-
-    /**
-     * Reverses the operation performed by
-     * {@link #serializeValue(PipelineModelObject, Object)}.
-     *
-     * @param model             The model that is associated with the serialized version.
-     * @param serializedVersion The serialized version of an object.
-     * @return The deserialized version of the object.
-     * @throws IOException if any problem occurs
-     */
-    Object deserializeValue(PipelineModelObject model, byte[] serializedVersion)
-            throws IOException;
 
     /**
      * Enqueues to the App Engine task queue the tasks encoded by the given

@@ -20,7 +20,7 @@ import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestC
 import com.google.appengine.tools.development.testing.LocalModulesServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.appengine.tools.development.testing.LocalTaskQueueTestConfig;
-import com.google.appengine.tools.pipeline.impl.util.GUIDGenerator;
+import com.google.appengine.tools.pipeline.impl.util.UuidGenerator;
 import com.google.apphosting.api.ApiProxy;
 import junit.framework.TestCase;
 
@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.google.appengine.tools.pipeline.impl.util.GUIDGenerator.USE_SIMPLE_GUIDS_FOR_DEBUGGING;
+import static com.google.appengine.tools.pipeline.impl.util.UuidGenerator.USE_SIMPLE_UUIDS_FOR_DEBUGGING;
 
 /**
  * @author rudominer@google.com (Mitch Rudominer)
@@ -80,7 +80,7 @@ public class PipelineTest extends TestCase {
         traceBuffer = new StringBuffer();
         helper.setUp();
         apiProxyEnvironment = ApiProxy.getCurrentEnvironment();
-        System.setProperty(USE_SIMPLE_GUIDS_FOR_DEBUGGING, "true");
+        System.setProperty(USE_SIMPLE_UUIDS_FOR_DEBUGGING, "true");
         taskQueue = LocalTaskQueueTestConfig.getLocalTaskQueue();
         cleanUp();
     }
@@ -94,7 +94,7 @@ public class PipelineTest extends TestCase {
 
     private void cleanUp() throws NoSuchObjectException {
         PipelineService service = PipelineServiceFactory.newPipelineService();
-        service.cleanBobs(GUIDGenerator.getTestPrefix());
+        service.cleanBobs(UuidGenerator.getTestPrefix());
         final Set<UUID> testPipelines = service.getTestPipelines();
         for (UUID pipelineId : testPipelines) {
             service.deletePipelineRecords(pipelineId, true, false);
