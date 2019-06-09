@@ -14,14 +14,12 @@
 
 package com.google.appengine.tools.pipeline.impl.backend;
 
-import com.google.appengine.api.modules.ModulesException;
 import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.QueueConstants;
 import com.google.appengine.api.taskqueue.QueueFactory;
 import com.google.appengine.api.taskqueue.TaskAlreadyExistsException;
 import com.google.appengine.api.taskqueue.TaskHandle;
 import com.google.appengine.api.taskqueue.TaskOptions;
-import com.google.appengine.tools.cloudstorage.ExceptionHandler;
 import com.google.appengine.tools.pipeline.Route;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 import com.google.appengine.tools.pipeline.impl.servlets.TaskHandler;
@@ -49,8 +47,6 @@ public final class AppEngineTaskQueue implements PipelineTaskQueue {
 
     static final int MAX_TASKS_PER_ENQUEUE = QueueConstants.maxTasksPerAdd();
     private static final Logger LOGGER = Logger.getLogger(AppEngineTaskQueue.class.getName());
-    private static final ExceptionHandler MODULES_EXCEPTION_HANDLER =
-            new ExceptionHandler.Builder().retryOn(ModulesException.class).build();
 
     private static Queue getQueue(final String queueName) {
         String queue = queueName;

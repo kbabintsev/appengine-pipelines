@@ -19,14 +19,11 @@ import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.ByteArrayContent;
 import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.core.CurrentMillisClock;
+import com.google.api.gax.retrying.RetrySettings;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Objects;
 import com.google.api.services.storage.model.StorageObject;
-import com.google.appengine.tools.cloudstorage.ExceptionHandler;
-import com.google.appengine.tools.cloudstorage.NonRetriableException;
-import com.google.appengine.tools.cloudstorage.RetriesExhaustedException;
-import com.google.appengine.tools.cloudstorage.RetryHelper;
-import com.google.appengine.tools.cloudstorage.RetryParams;
 import com.google.appengine.tools.pipeline.Consts;
 import com.google.appengine.tools.pipeline.NoSuchObjectException;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
@@ -46,6 +43,8 @@ import com.google.appengine.tools.pipeline.impl.tasks.Task;
 import com.google.appengine.tools.pipeline.impl.util.TestUtils;
 import com.google.appengine.tools.pipeline.impl.util.UuidGenerator;
 import com.google.appengine.tools.pipeline.util.Pair;
+import com.google.cloud.ExceptionHandler;
+import com.google.cloud.RetryHelper;
 import com.google.cloud.spanner.DatabaseClient;
 import com.google.cloud.spanner.DatabaseId;
 import com.google.cloud.spanner.Key;
@@ -62,6 +61,7 @@ import com.google.cloud.spanner.TransactionRunner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
+import org.threeten.bp.Duration;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -95,14 +95,13 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
 //            ConcurrentModificationException.class, DatastoreTimeoutException.class,
 //            DatastoreFailureException.class)
 //            .abortOn(EntityNotFoundException.class, NoSuchObjectException.class).build();
-    private static final RetryParams RETRY_PARAMS = new RetryParams.Builder()
-            .retryDelayBackoffFactor(2)
-            .initialRetryDelayMillis(INITIAL_RETRY_DELAY_MILLIS)
-            .maxRetryDelayMillis(MAX_RETRY_DELAY_MILLIS)
-            .retryMinAttempts(5)
-            .retryMaxAttempts(5)
+    private static final RetrySettings RETRY_SETTINGS = RetrySettings.newBuilder()
+            .setRetryDelayMultiplier(2)
+            .setInitialRetryDelay(Duration.ofMillis(INITIAL_RETRY_DELAY_MILLIS))
+            .setMaxRetryDelay(Duration.ofMillis(MAX_RETRY_DELAY_MILLIS))
+            .setMaxAttempts(5)
             .build();
-    private static final ExceptionHandler STORAGE_EXCEPTION_HANDLER = new ExceptionHandler.Builder()
+    private static final ExceptionHandler STORAGE_EXCEPTION_HANDLER = ExceptionHandler.newBuilder()
             .retryOn(IOException.class)
             .abortOn(RuntimeException.class)
             .build();
@@ -238,8 +237,13 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
 
     private <R> R tryFiveTimes(final ExceptionHandler exceptionHandler, final Operation<R> operation) {
         try {
-            return RetryHelper.runWithRetries(operation, RETRY_PARAMS, exceptionHandler);
-        } catch (RetriesExhaustedException | NonRetriableException e) {
+            return RetryHelper.runWithRetries(
+                    operation,
+                    RETRY_SETTINGS,
+                    exceptionHandler,
+                    CurrentMillisClock.getDefaultClock()
+            );
+        } catch (RetryHelper.RetryHelperException e) {
             if (e.getCause() instanceof RuntimeException) {
                 LOGGER.info(e.getCause().getMessage() + " during " + operation.getName()
                         + " throwing after multiple attempts ");
