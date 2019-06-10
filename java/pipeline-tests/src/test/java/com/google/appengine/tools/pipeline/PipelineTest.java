@@ -21,7 +21,6 @@ import com.google.appengine.tools.development.testing.LocalModulesServiceTestCon
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.appengine.tools.development.testing.LocalTaskQueueTestConfig;
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
-import com.google.appengine.tools.pipeline.impl.backend.AppEngineTaskQueueModule;
 import com.google.appengine.tools.pipeline.impl.util.UuidGenerator;
 import com.google.apphosting.api.ApiProxy;
 import com.google.inject.Guice;
@@ -49,8 +48,6 @@ public class PipelineTest extends TestCase {
 
     public PipelineTest() {
         System.setProperty("java.util.logging.config.file", ClassLoader.getSystemResource("logging.properties").getPath());
-        final Injector injector = Guice.createInjector(new AppEngineTaskQueueModule(), new PipelineModule());
-        PipelineInjector.setInjector(injector);
         LocalTaskQueueTestConfig taskQueueConfig = new LocalTaskQueueTestConfig();
         taskQueueConfig.setCallbackClass(TestingTaskQueueCallback.class);
         taskQueueConfig.setDisableAutoTaskExecution(false);
