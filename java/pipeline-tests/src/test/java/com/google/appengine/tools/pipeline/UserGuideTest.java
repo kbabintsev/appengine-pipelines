@@ -14,47 +14,39 @@
 
 package com.google.appengine.tools.pipeline;
 
-import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
-import com.google.appengine.tools.development.testing.LocalModulesServiceTestConfig;
-import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.appengine.tools.development.testing.LocalTaskQueueTestConfig;
 import com.google.appengine.tools.pipeline.demo.UserGuideExamples.ComplexJob;
-import junit.framework.TestCase;
 
 import java.util.UUID;
-
-import static com.google.appengine.tools.pipeline.impl.util.UuidGenerator.USE_SIMPLE_UUIDS_FOR_DEBUGGING;
 
 /**
  * Tests for the sample code in the User Guide
  *
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class UserGuideTest extends TestCase {
-
-    private transient LocalServiceTestHelper helper;
+public class UserGuideTest extends PipelineTest {
 
     public UserGuideTest() {
         LocalTaskQueueTestConfig taskQueueConfig = new LocalTaskQueueTestConfig();
         taskQueueConfig.setCallbackClass(TestingTaskQueueCallback.class);
         taskQueueConfig.setDisableAutoTaskExecution(false);
         taskQueueConfig.setShouldCopyApiProxyEnvironment(true);
-        helper = new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig(), taskQueueConfig,
-                new LocalModulesServiceTestConfig());
+//        helper = new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig(), taskQueueConfig,
+//                new LocalModulesServiceTestConfig());
     }
 
-    @Override
-    public void setUp() throws Exception {
-        super.setUp();
-        helper.setUp();
-        System.setProperty(USE_SIMPLE_UUIDS_FOR_DEBUGGING, "true");
-    }
-
-    @Override
-    public void tearDown() throws Exception {
-        helper.tearDown();
-        super.tearDown();
-    }
+//    @Override
+//    public void setUp() throws Exception {
+//        super.setUp();
+//        helper.setUp();
+//        System.setProperty(USE_SIMPLE_UUIDS_FOR_DEBUGGING, "true");
+//    }
+//
+//    @Override
+//    public void tearDown() throws Exception {
+//        helper.tearDown();
+//        super.tearDown();
+//    }
 
     public void testComplexJob() throws Exception {
         doComplexJobTest(3, 7, 11);
@@ -62,7 +54,6 @@ public class UserGuideTest extends TestCase {
     }
 
     private void doComplexJobTest(int x, int y, int z) throws Exception {
-        PipelineService service = PipelineServiceFactory.newPipelineService();
         UUID pipelineId = service.startNewPipeline(new ComplexJob(), x, y, z);
         JobInfo jobInfo = service.getJobInfo(pipelineId);
         JobInfo.State state = jobInfo.getJobState();
@@ -73,28 +64,27 @@ public class UserGuideTest extends TestCase {
         assertEquals(((x - y) * (x - z)) - 2, output);
     }
 
-    @SuppressWarnings("unchecked")
-    private <E> E waitForJobToComplete(UUID pipelineId) throws Exception {
-        PipelineService service = PipelineServiceFactory.newPipelineService();
-        while (true) {
-            Thread.sleep(2000);
-            JobInfo jobInfo = service.getJobInfo(pipelineId);
-            switch (jobInfo.getJobState()) {
-                case COMPLETED_SUCCESSFULLY:
-                    return (E) jobInfo.getOutput();
-                case RUNNING:
-                    break;
-                case WAITING_TO_RETRY:
-                    break;
-                case STOPPED_BY_ERROR:
-                    throw new RuntimeException("Job stopped " + jobInfo.getError());
-                case STOPPED_BY_REQUEST:
-                    throw new RuntimeException("Job stopped by request.");
-                case CANCELED_BY_REQUEST:
-                    throw new RuntimeException("Job cancelled by request.");
-                default:
-                    throw new RuntimeException("Unknown Job state: " + jobInfo.getJobState());
-            }
-        }
-    }
+//    @SuppressWarnings("unchecked")
+//    private <E> E waitForJobToComplete(UUID pipelineId) throws Exception {
+//        while (true) {
+//            Thread.sleep(2000);
+//            JobInfo jobInfo = service.getJobInfo(pipelineId);
+//            switch (jobInfo.getJobState()) {
+//                case COMPLETED_SUCCESSFULLY:
+//                    return (E) jobInfo.getOutput();
+//                case RUNNING:
+//                    break;
+//                case WAITING_TO_RETRY:
+//                    break;
+//                case STOPPED_BY_ERROR:
+//                    throw new RuntimeException("Job stopped " + jobInfo.getError());
+//                case STOPPED_BY_REQUEST:
+//                    throw new RuntimeException("Job stopped by request.");
+//                case CANCELED_BY_REQUEST:
+//                    throw new RuntimeException("Job cancelled by request.");
+//                default:
+//                    throw new RuntimeException("Unknown Job state: " + jobInfo.getJobState());
+//            }
+//        }
+//    }
 }

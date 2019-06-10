@@ -50,13 +50,12 @@ public class JsonListHandlerTest extends PipelineTest {
     }
 
     public void testHandlerNoResults() throws Exception {
-        JsonListHandler.doGet(request, response);
+        injector.getInstance(JsonListHandler.class).doGet(request, response);
         assertEquals("{\"pipelines\": []}", output.toString());
     }
 
     @SuppressWarnings("unchecked")
     public void testHandlerWithResults() throws Exception {
-        PipelineService service = PipelineServiceFactory.newPipelineService();
         UUID pipelineId1 = service.startNewPipeline(new Main1Job());
         UUID pipelineId2 = service.startNewPipeline(new Main2Job(false));
         UUID pipelineId3 = service.startNewPipeline(new Main2Job(true),
@@ -67,7 +66,7 @@ public class JsonListHandlerTest extends PipelineTest {
         assertEquals("hi there", hiThere);
         String bla = (String) waitForJobToComplete(pipelineId3);
         assertEquals("bla", bla);
-        JsonListHandler.doGet(request, response);
+        injector.getInstance(JsonListHandler.class).doGet(request, response);
         Map<String, Object> results = (Map<String, Object>) JsonUtils.fromJson(output.toString());
         assertEquals(1, results.size());
         List<Map<String, Object>> pipelines = (List<Map<String, Object>>) results.get("pipelines");

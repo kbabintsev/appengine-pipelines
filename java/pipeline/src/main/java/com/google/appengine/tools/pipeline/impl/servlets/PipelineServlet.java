@@ -16,6 +16,7 @@ package com.google.appengine.tools.pipeline.impl.servlets;
 
 import com.google.appengine.tools.pipeline.util.Pair;
 
+import javax.inject.Inject;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -33,8 +34,33 @@ import java.util.UUID;
 @SuppressWarnings("serial")
 public final class PipelineServlet extends HttpServlet {
 
-    public static final String BASE_URL_PROPERTY = "com.google.appengine.tools.pipeline.BASE_URL";
-    public static final String BASE_URL = baseUrl();
+    static final String BASE_URL_PROPERTY = "com.google.appengine.tools.pipeline.BASE_URL";
+    private final TaskHandler taskHandler;
+    private final JsonTreeHandler jsonTreeHandler;
+    private final JsonListHandler jsonListHandler;
+    private final JsonClassFilterHandler jsonClassFilterHandler;
+    private final AbortJobHandler abortJobHandler;
+    private final DeleteJobHandler deleteJobHandler;
+    private final StaticContentHandler staticContentHandler;
+
+    @Inject
+    public PipelineServlet(
+            final TaskHandler taskHandler,
+            final JsonTreeHandler jsonTreeHandler,
+            final JsonListHandler jsonListHandler,
+            final JsonClassFilterHandler jsonClassFilterHandler,
+            final AbortJobHandler abortJobHandler,
+            final DeleteJobHandler deleteJobHandler,
+            final StaticContentHandler staticContentHandler
+    ) {
+        this.taskHandler = taskHandler;
+        this.jsonTreeHandler = jsonTreeHandler;
+        this.jsonListHandler = jsonListHandler;
+        this.jsonClassFilterHandler = jsonClassFilterHandler;
+        this.abortJobHandler = abortJobHandler;
+        this.deleteJobHandler = deleteJobHandler;
+        this.staticContentHandler = staticContentHandler;
+    }
 
     /**
      * Returns the Pipeline's BASE URL.
@@ -79,25 +105,25 @@ public final class PipelineServlet extends HttpServlet {
         final String path = pair.getFirst();
         switch (requestType) {
             case HANDLE_TASK:
-                TaskHandler.doPost(req);
+                taskHandler.doPost(req);
                 break;
             case GET_JSON:
-                JsonTreeHandler.doGet(req, resp);
+                jsonTreeHandler.doGet(req, resp);
                 break;
             case GET_JSON_LIST:
-                JsonListHandler.doGet(req, resp);
+                jsonListHandler.doGet(req, resp);
                 break;
             case GET_JSON_CLASS_FILTER:
-                JsonClassFilterHandler.doGet(req, resp);
+                jsonClassFilterHandler.doGet(req, resp);
                 break;
             case ABORT_JOB:
-                AbortJobHandler.doGet(req, resp);
+                abortJobHandler.doGet(req, resp);
                 break;
             case DELETE_JOB:
-                DeleteJobHandler.doGet(req, resp);
+                deleteJobHandler.doGet(req, resp);
                 break;
             case HANDLE_STATIC:
-                StaticContentHandler.doGet(resp, path);
+                staticContentHandler.doGet(resp, path);
                 break;
             default:
                 throw new ServletException("Unknown request type: " + requestType);

@@ -18,6 +18,7 @@ import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.appengine.tools.pipeline.impl.model.JobRecord;
 import com.google.appengine.tools.pipeline.util.Pair;
 
+import javax.inject.Inject;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -28,28 +29,16 @@ import java.io.IOException;
  */
 public final class JsonListHandler {
 
-    public static final String PATH_COMPONENT = "rpc/list";
+    static final String PATH_COMPONENT = "rpc/list";
     private static final String CLASS_FILTER_PARAMETER = "class_path";
     private static final String CURSOR_PARAMETER = "cursor";
     private static final String LIMIT_PARAMETER = "limit";
     private static final int DEFAULT_LIMIT = 100;
+    private final PipelineManager pipelineManager;
 
-    private JsonListHandler() {
-    }
-
-    public static void doGet(final HttpServletRequest req, final HttpServletResponse resp)
-            throws ServletException {
-        final String classFilter = getParam(req, CLASS_FILTER_PARAMETER);
-        final String cursor = getParam(req, CURSOR_PARAMETER);
-        final String limit = getParam(req, LIMIT_PARAMETER);
-        final Pair<? extends Iterable<JobRecord>, String> pipelineRoots = PipelineManager.queryRootPipelines(
-                classFilter, cursor, limit == null ? DEFAULT_LIMIT : Integer.parseInt(limit));
-        final String asJson = JsonGenerator.pipelineRootsToJson(pipelineRoots);
-        try {
-            resp.getWriter().write(asJson);
-        } catch (IOException e) {
-            throw new ServletException(e);
-        }
+    @Inject
+    public JsonListHandler(final PipelineManager pipelineManager) {
+        this.pipelineManager = pipelineManager;
     }
 
     private static String getParam(final HttpServletRequest req, final String name) {
@@ -61,5 +50,20 @@ public final class JsonListHandler {
             }
         }
         return value;
+    }
+
+    public void doGet(final HttpServletRequest req, final HttpServletResponse resp)
+            throws ServletException {
+        final String classFilter = getParam(req, CLASS_FILTER_PARAMETER);
+        final String cursor = getParam(req, CURSOR_PARAMETER);
+        final String limit = getParam(req, LIMIT_PARAMETER);
+        final Pair<? extends Iterable<JobRecord>, String> pipelineRoots = pipelineManager.queryRootPipelines(
+                classFilter, cursor, limit == null ? DEFAULT_LIMIT : Integer.parseInt(limit));
+        final String asJson = JsonGenerator.pipelineRootsToJson(pipelineRoots);
+        try {
+            resp.getWriter().write(asJson);
+        } catch (IOException e) {
+            throw new ServletException(e);
+        }
     }
 }

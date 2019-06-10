@@ -26,6 +26,7 @@ import com.google.api.services.storage.model.Objects;
 import com.google.api.services.storage.model.StorageObject;
 import com.google.appengine.tools.pipeline.Consts;
 import com.google.appengine.tools.pipeline.NoSuchObjectException;
+import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 import com.google.appengine.tools.pipeline.impl.model.Barrier;
 import com.google.appengine.tools.pipeline.impl.model.ExceptionRecord;
@@ -62,9 +63,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 import org.threeten.bp.Duration;
 
 import javax.annotation.Nullable;
+import javax.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
@@ -86,6 +89,7 @@ import java.util.logging.Logger;
 /**
  * @author rudominer@google.com (Mitch Rudominer)
  */
+@Singleton
 public final class AppEngineBackEnd implements PipelineBackEnd {
 
     private static final int INITIAL_RETRY_DELAY_MILLIS = 300;
@@ -111,9 +115,11 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
     private final DatabaseClient databaseClient;
     private final PipelineTaskQueue taskQueue;
     private final Storage storage;
+    private final Provider<PipelineManager> pipelineManager;
 
     @Inject
-    public AppEngineBackEnd(final PipelineTaskQueue pipelineTaskQueue) {
+    public AppEngineBackEnd(final Provider<PipelineManager> pipelineManager, final PipelineTaskQueue pipelineTaskQueue) {
+        this.pipelineManager = pipelineManager;
         spanner = SpannerOptions.newBuilder().build().getService();
         final DatabaseId logsId = DatabaseId.of(Consts.SPANNER_PROJECT, Consts.SPANNER_INSTANCE, Consts.SPANNER_DATABASE);
         databaseClient = spanner.getDatabaseClient(logsId);
@@ -377,7 +383,10 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
                 runBarrier = queryBarrier(jobRecord.getRunBarrierKey(), true);
                 finalizeBarrier = queryBarrier(jobRecord.getFinalizeBarrierKey(), false);
                 jobInstanceRecord =
-                        new JobInstanceRecord(getEntity("queryJob", JobInstanceRecord.DATA_STORE_KIND, JobInstanceRecord.PROPERTIES, jobRecord.getJobInstanceKey()));
+                        new JobInstanceRecord(
+                                pipelineManager.get(),
+                                getEntity("queryJob", JobInstanceRecord.DATA_STORE_KIND, JobInstanceRecord.PROPERTIES, jobRecord.getJobInstanceKey())
+                        );
                 outputSlot = querySlot(jobRecord.getOutputSlotKey(), false);
                 break;
             case FOR_FINALIZE:
@@ -434,7 +443,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
                 Slot.PROPERTIES,
                 keySet,
                 struct -> {
-                    slotMap.put(UUID.fromString(struct.getString(Slot.ID_PROPERTY)), new Slot(struct));
+                    slotMap.put(UUID.fromString(struct.getString(Slot.ID_PROPERTY)), new Slot(pipelineManager.get(), struct));
                 }
         );
 
@@ -447,7 +456,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
     @Override
     public Slot querySlot(final UUID slotKey, final boolean inflate) throws NoSuchObjectException {
         final Struct entity = getEntity("querySlot", Slot.DATA_STORE_KIND, Slot.PROPERTIES, slotKey);
-        final Slot slot = new Slot(entity);
+        final Slot slot = new Slot(pipelineManager.get(), entity);
         if (inflate) {
             final Map<UUID, Barrier> barriers = new HashMap<>();
             getEntities(
@@ -471,7 +480,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
             return null;
         }
         final Struct entity = getEntity("ReadExceptionRecord", ExceptionRecord.DATA_STORE_KIND, ExceptionRecord.PROPERTIES, failureKey);
-        return new ExceptionRecord(entity);
+        return new ExceptionRecord(pipelineManager.get(), entity);
     }
 
     private void getEntities(final String logString, final String tableName, final List<String> columns, final Collection<UUID> keys, final Consumer<StructReader> consumer) {
@@ -621,16 +630,16 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
             barriers.put(UUID.fromString(struct.getString(Barrier.ID_PROPERTY)), new Barrier(struct));
         });
         queryAll(Slot.DATA_STORE_KIND, Slot.PROPERTIES, rootJobKey, (struct) -> {
-            slots.put(UUID.fromString(struct.getString(Slot.ID_PROPERTY)), new Slot(struct, true));
+            slots.put(UUID.fromString(struct.getString(Slot.ID_PROPERTY)), new Slot(pipelineManager.get(), struct, true));
         });
         queryAll(JobRecord.DATA_STORE_KIND, JobRecord.PROPERTIES, rootJobKey, (struct) -> {
             jobs.put(UUID.fromString(struct.getString(JobRecord.ID_PROPERTY)), new JobRecord(struct));
         });
         queryAll(JobInstanceRecord.DATA_STORE_KIND, JobInstanceRecord.PROPERTIES, rootJobKey, (struct) -> {
-            jobInstanceRecords.put(UUID.fromString(struct.getString(JobInstanceRecord.ID_PROPERTY)), new JobInstanceRecord(struct));
+            jobInstanceRecords.put(UUID.fromString(struct.getString(JobInstanceRecord.ID_PROPERTY)), new JobInstanceRecord(pipelineManager.get(), struct));
         });
         queryAll(ExceptionRecord.DATA_STORE_KIND, ExceptionRecord.PROPERTIES, rootJobKey, (struct) -> {
-            failureRecords.put(UUID.fromString(struct.getString(ExceptionRecord.ID_PROPERTY)), new ExceptionRecord(struct));
+            failureRecords.put(UUID.fromString(struct.getString(ExceptionRecord.ID_PROPERTY)), new ExceptionRecord(pipelineManager.get(), struct));
         });
         return new PipelineObjects(
                 rootJobKey, jobs, slots, barriers, jobInstanceRecords, failureRecords);

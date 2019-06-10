@@ -94,6 +94,11 @@
                 <version>4.2.2</version>
             </dependency>
             <dependency>
+                <groupId>com.google.inject.extensions</groupId>
+                <artifactId>guice-servlet</artifactId>
+                <version>4.2.2</version>
+            </dependency>
+            <dependency>
                 <groupId>com.google.cloud</groupId>
                 <artifactId>google-cloud-spanner</artifactId>
                 <version>1.5.0</version>

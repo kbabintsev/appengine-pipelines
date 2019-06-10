@@ -28,8 +28,8 @@ import java.util.UUID;
  */
 public final class PromisedValueImpl<E> extends FutureValueImpl<E> implements PromisedValue<E> {
 
-    public PromisedValueImpl(final UUID rootJobKey, final UUID generatorJobKey, final UUID graphKey) {
-        super(new Slot(rootJobKey, generatorJobKey, graphKey));
+    public PromisedValueImpl(final PipelineManager pipelineManager, final UUID rootJobKey, final UUID generatorJobKey, final UUID graphKey) {
+        super(new Slot(pipelineManager, rootJobKey, generatorJobKey, graphKey));
     }
 
     @Override

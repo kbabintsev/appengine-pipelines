@@ -1,11 +1,13 @@
 package com.google.appengine.tools.pipeline.impl.backend;
 
-import com.google.inject.AbstractModule;
+import com.google.appengine.api.taskqueue.DeferredTaskContext;
+import com.google.inject.servlet.ServletModule;
 
-public class AppEngineTaskQueueModule extends AbstractModule {
+public class AppEngineTaskQueueModule extends ServletModule {
 
     @Override
-    protected void configure() {
+    protected void configureServlets() {
         bind(PipelineTaskQueue.class).to(AppEngineTaskQueue.class);
+        filter(DeferredTaskContext.DEFAULT_DEFERRED_URL).through(PipelineTaskQueueInjectFilter.class);
     }
 }

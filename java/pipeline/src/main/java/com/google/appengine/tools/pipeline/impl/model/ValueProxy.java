@@ -12,17 +12,20 @@ import java.util.function.Consumer;
 
 class ValueProxy {
     private static final int DATABASE_VALUE_LIMIT = 5000000;
+    private final PipelineManager pipelineManager;
     private final ValueStoragePath valueStoragePath;
     private ValueLocation valueLocation;
     private boolean valueLoaded;
     private Object value;
 
     ValueProxy(
+            final PipelineManager pipelineManager,
             final ValueLocation valueLocation,
             @Nullable final byte[] valueInDatabase,
             final boolean lazyLoading,
             final ValueStoragePath valueStoragePath
     ) {
+        this.pipelineManager = pipelineManager;
         this.valueStoragePath = valueStoragePath;
         this.valueLocation = valueLocation;
         if (lazyLoading && valueLocation == ValueLocation.STORAGE) {
@@ -31,7 +34,7 @@ class ValueProxy {
         } else {
             try {
                 if (valueLocation == ValueLocation.STORAGE) {
-                    value = SerializationUtils.deserialize(PipelineManager.getBackEnd().retrieveBlob(valueStoragePath));
+                    value = SerializationUtils.deserialize(pipelineManager.getBackEnd().retrieveBlob(valueStoragePath));
                 } else if (valueLocation == ValueLocation.DATABASE) {
                     value = SerializationUtils.deserialize(valueInDatabase);
                 } else {
@@ -45,9 +48,11 @@ class ValueProxy {
     }
 
     ValueProxy(
+            final PipelineManager pipelineManager,
             @Nullable final Object value,
             final ValueStoragePath valueStoragePath
     ) {
+        this.pipelineManager = pipelineManager;
         this.valueStoragePath = valueStoragePath;
         this.value = value;
         final byte[] serialized = serializeValue(value);
@@ -55,10 +60,10 @@ class ValueProxy {
         this.valueLoaded = true;
     }
 
-    private static byte[] serializeValue(final Object value) {
+    private byte[] serializeValue(final Object valueIn) {
         final byte[] serialized;
         try {
-            serialized = SerializationUtils.serialize(value);
+            serialized = SerializationUtils.serialize(valueIn);
         } catch (IOException e) {
             throw new RuntimeException("Can't serialize value", e);
         }
@@ -101,7 +106,7 @@ class ValueProxy {
                 throw new RuntimeException("Only " + ValueLocation.STORAGE + " supports lazy loading");
             }
             try {
-                value = SerializationUtils.deserialize(PipelineManager.getBackEnd().retrieveBlob(valueStoragePath));
+                value = SerializationUtils.deserialize(pipelineManager.getBackEnd().retrieveBlob(valueStoragePath));
             } catch (IOException e) {
                 throw new RuntimeException("Can't deserialize value", e);
             }

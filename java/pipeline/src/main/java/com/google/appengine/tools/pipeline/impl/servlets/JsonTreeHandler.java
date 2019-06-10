@@ -19,6 +19,7 @@ import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.appengine.tools.pipeline.impl.model.JobRecord;
 import com.google.appengine.tools.pipeline.impl.model.PipelineObjects;
 
+import javax.inject.Inject;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -30,14 +31,17 @@ import java.util.UUID;
  */
 public final class JsonTreeHandler {
 
-    public static final String PATH_COMPONENT = "rpc/tree";
+    static final String PATH_COMPONENT = "rpc/tree";
     private static final String ROOT_PIPELINE_ID = "root_pipeline_id";
     private static final int HTTP_449 = 449;
+    private final PipelineManager pipelineManager;
 
-    private JsonTreeHandler() {
+    @Inject
+    public JsonTreeHandler(final PipelineManager pipelineManager) {
+        this.pipelineManager = pipelineManager;
     }
 
-    public static void doGet(final HttpServletRequest req, final HttpServletResponse resp)
+    void doGet(final HttpServletRequest req, final HttpServletResponse resp)
             throws ServletException {
 
         final UUID rootJobHandle = UUID.fromString(req.getParameter(ROOT_PIPELINE_ID));
@@ -47,7 +51,7 @@ public final class JsonTreeHandler {
         try {
             final JobRecord jobInfo;
             try {
-                jobInfo = PipelineManager.getJob(rootJobHandle);
+                jobInfo = pipelineManager.getJob(rootJobHandle);
             } catch (NoSuchObjectException nsoe) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
@@ -58,7 +62,7 @@ public final class JsonTreeHandler {
                 resp.sendError(HTTP_449, rootJobKey.toString());
                 return;
             }
-            final PipelineObjects pipelineObjects = PipelineManager.queryFullPipeline(rootJobKey);
+            final PipelineObjects pipelineObjects = pipelineManager.queryFullPipeline(rootJobKey);
             final String asJson = JsonGenerator.pipelineObjectsToJson(pipelineObjects);
             // TODO(user): Temporary until we support abort/delete in Python
             resp.addHeader("Pipeline-Lang", "Java");

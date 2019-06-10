@@ -14,6 +14,7 @@
 
 package com.google.appengine.tools.pipeline.impl.model;
 
+import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.appengine.tools.pipeline.impl.util.SerializationUtils;
 import com.google.cloud.ByteArray;
 import com.google.cloud.spanner.Mutation;
@@ -40,16 +41,24 @@ public final class ExceptionRecord extends PipelineModelObject {
             )
             .build();
 
+    private final PipelineManager pipelineManager;
     private final Throwable exception;
 
     public ExceptionRecord(
-            final UUID rootJobKey, final UUID generatorJobKey, final UUID graphKey, final Throwable exception) {
+            final PipelineManager pipelineManager,
+            final UUID rootJobKey,
+            final UUID generatorJobKey,
+            final UUID graphKey,
+            final Throwable exception
+    ) {
         super(DATA_STORE_KIND, rootJobKey, generatorJobKey, graphKey);
+        this.pipelineManager = pipelineManager;
         this.exception = exception;
     }
 
-    public ExceptionRecord(final StructReader entity) {
+    public ExceptionRecord(final PipelineManager pipelineManager, final StructReader entity) {
         super(DATA_STORE_KIND, entity);
+        this.pipelineManager = pipelineManager;
         final ByteArray serializedExceptionBlob = entity.getBytes(EXCEPTION_PROPERTY);
         final byte[] serializedException = serializedExceptionBlob.toByteArray();
         try {

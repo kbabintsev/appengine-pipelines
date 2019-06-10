@@ -14,14 +14,17 @@
 
 package com.google.appengine.tools.pipeline;
 
+import com.google.appengine.api.taskqueue.DeferredTaskContext;
 import com.google.appengine.tools.pipeline.JobInfo.State;
 import com.google.appengine.tools.pipeline.JobSetting.StatusConsoleUrl;
-import com.google.appengine.tools.pipeline.impl.PipelineManager;
+import com.google.appengine.tools.pipeline.impl.backend.PipelineTaskQueueInjectFilter;
 import com.google.appengine.tools.pipeline.impl.model.JobRecord;
 import com.google.appengine.tools.pipeline.impl.model.PipelineObjects;
+import com.google.apphosting.api.ApiProxy;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,6 +34,9 @@ import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Misc tests including:
@@ -64,21 +70,18 @@ public class MiscPipelineTest extends PipelineTest {
     }
 
     public void testReturnFutureList() throws Exception {
-        PipelineService service = PipelineServiceFactory.newPipelineService();
         UUID pipelineId = service.startNewPipeline(new ReturnFutureListJob());
         List<String> value = waitForJobToComplete(pipelineId);
         assertEquals(ImmutableList.of("123", "456"), value);
     }
 
     public void testTransform() throws Exception {
-        PipelineService service = PipelineServiceFactory.newPipelineService();
         UUID pipelineId = service.startNewPipeline(new TestTransformJob());
         Long value = waitForJobToComplete(pipelineId);
         assertEquals(Long.valueOf(123), value);
     }
 
     public void testWaitForAll() throws Exception {
-        PipelineService service = PipelineServiceFactory.newPipelineService();
         UUID pipelineId = service.startNewPipeline(new RootJob(false));
         JobInfo jobInfo = waitUntilJobComplete(pipelineId);
         assertEquals(JobInfo.State.COMPLETED_SUCCESSFULLY, jobInfo.getJobState());
@@ -87,7 +90,12 @@ public class MiscPipelineTest extends PipelineTest {
     }
 
     public void testWaitForAllAndDelete() throws Exception {
-        PipelineService service = PipelineServiceFactory.newPipelineService();
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getAttribute(PipelineTaskQueueInjectFilter.PIPELINE_SERVICE_ATTRIBUTE)).thenReturn(service);
+        ApiProxy.getCurrentEnvironment()
+                .getAttributes()
+                .put(String.valueOf(DeferredTaskContext.class.getName()).concat(".httpServletRequest"), request);
+
         UUID pipelineId = service.startNewPipeline(new RootJob(true));
         JobInfo jobInfo = waitUntilJobComplete(pipelineId);
         assertEquals(JobInfo.State.COMPLETED_SUCCESSFULLY, jobInfo.getJobState());
@@ -102,7 +110,6 @@ public class MiscPipelineTest extends PipelineTest {
     }
 
     public void testWaitForUsedByNewPipeline() throws Exception {
-        PipelineService service = PipelineServiceFactory.newPipelineService();
         UUID pipelineId = service.startNewPipeline(new CallerJob());
         JobInfo jobInfo = waitUntilJobComplete(pipelineId);
         assertEquals(JobInfo.State.COMPLETED_SUCCESSFULLY, jobInfo.getJobState());
@@ -116,28 +123,25 @@ public class MiscPipelineTest extends PipelineTest {
     }
 
     public void testGetJobDisplayName() throws Exception {
-        PipelineService service = PipelineServiceFactory.newPipelineService();
         ConcreteJob job = new ConcreteJob();
         UUID pipelineId = service.startNewPipeline(job);
-        JobRecord jobRecord = PipelineManager.getJob(pipelineId);
+        JobRecord jobRecord = pipelineManager.getJob(pipelineId);
         assertEquals(job.getJobDisplayName(), jobRecord.getRootJobDisplayName());
         JobInfo jobInfo = waitUntilJobComplete(pipelineId);
         assertEquals("Shalom", jobInfo.getOutput());
-        jobRecord = PipelineManager.getJob(pipelineId);
+        jobRecord = pipelineManager.getJob(pipelineId);
         assertEquals(job.getJobDisplayName(), jobRecord.getRootJobDisplayName());
-        PipelineObjects pobjects = PipelineManager.queryFullPipeline(pipelineId);
+        PipelineObjects pobjects = pipelineManager.queryFullPipeline(pipelineId);
         assertEquals(job.getJobDisplayName(), pobjects.getRootJob().getRootJobDisplayName());
     }
 
     public void testJobInheritence() throws Exception {
-        PipelineService service = PipelineServiceFactory.newPipelineService();
         UUID pipelineId = service.startNewPipeline(new ConcreteJob());
         JobInfo jobInfo = waitUntilJobComplete(pipelineId);
         assertEquals("Shalom", jobInfo.getOutput());
     }
 
     public void testJobFailure() throws Exception {
-        PipelineService service = PipelineServiceFactory.newPipelineService();
         UUID pipelineId = service.startNewPipeline(new FailedJob());
         JobInfo jobInfo = waitUntilJobComplete(pipelineId);
         assertEquals(JobInfo.State.STOPPED_BY_ERROR, jobInfo.getJobState());
@@ -150,7 +154,6 @@ public class MiscPipelineTest extends PipelineTest {
         // which is not the case right now. This this *SHOULD* change after we fix
         // it, as fixing it should cause a dead-lock.
         // see b/12249138
-        PipelineService service = PipelineServiceFactory.newPipelineService();
         UUID pipelineId = service.startNewPipeline(new ReturnValueParentJob());
         String value = waitForJobToComplete(pipelineId);
         assertEquals("bla", value);
@@ -160,14 +163,12 @@ public class MiscPipelineTest extends PipelineTest {
     }
 
     public void testSubmittingPromisedValueMoreThanOnce() throws Exception {
-        PipelineService service = PipelineServiceFactory.newPipelineService();
         UUID pipelineId = service.startNewPipeline(new SubmitPromisedParentJob());
         String value = waitForJobToComplete(pipelineId);
         assertEquals("2", value);
     }
 
     public void testCancelPipeline() throws Exception {
-        PipelineService service = PipelineServiceFactory.newPipelineService();
         UUID pipelineId = service.startNewPipeline(new HandleExceptionParentJob(),
                 new JobSetting.BackoffSeconds(1), new JobSetting.BackoffFactor(1),
                 new JobSetting.MaxAttempts(2));
@@ -199,21 +200,18 @@ public class MiscPipelineTest extends PipelineTest {
 
     public void testImmediateChild() throws Exception {
         // This is also testing inheritance of statusConsoleUrl.
-        PipelineService service = PipelineServiceFactory.newPipelineService();
         UUID pipelineId = service.startNewPipeline(new Returns5FromChildJob(), largeValue);
         Integer five = waitForJobToComplete(pipelineId);
         assertEquals(5, five.intValue());
     }
 
     public void testPromisedValue() throws Exception {
-        PipelineService service = PipelineServiceFactory.newPipelineService();
         UUID pipelineId = service.startNewPipeline(new FillPromisedValueJob());
         String helloWorld = waitForJobToComplete(pipelineId);
         assertEquals("hello world", helloWorld);
     }
 
     public void testDelayedValueInSlowJob() throws Exception {
-        PipelineService service = PipelineServiceFactory.newPipelineService();
         UUID pipelineId = service.startNewPipeline(new UsingDelayedValueInSlowJob());
         String hello = waitForJobToComplete(pipelineId);
         assertEquals("I am delayed", hello);
@@ -280,7 +278,6 @@ public class MiscPipelineTest extends PipelineTest {
         public Value<String> run() throws Exception {
             FutureValue<Void> child1 = futureCall(new ChildJob());
             FutureValue<String> child2 = futureCall(new StrJob<>(), immediate(Long.valueOf(123)));
-            PipelineService service = PipelineServiceFactory.newPipelineService();
             UUID str1 = service.startNewPipeline(new EchoJob<>(), child2);
             UUID str2 = service.startNewPipeline(new CalledJob(), waitFor(child1));
             return immediate(str1 + "," + str2);
@@ -408,7 +405,7 @@ public class MiscPipelineTest extends PipelineTest {
 
         @Override
         public Value<Void> run(String value, UUID handle) throws Exception {
-            PipelineServiceFactory.newPipelineService().submitPromisedValue(handle, value);
+            service.submitPromisedValue(handle, value);
             return null;
         }
     }
@@ -562,7 +559,7 @@ public class MiscPipelineTest extends PipelineTest {
             list.add(new Temp<>("hello"));
             list.add(new Temp<>(" "));
             list.add(new Temp<>("world"));
-            PipelineManager.acceptPromisedValue(handle, list);
+            pipelineManager.acceptPromisedValue(handle, list);
             return null;
         }
     }

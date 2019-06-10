@@ -28,7 +28,6 @@ public class DelayedValueTest extends PipelineTest {
     private static final long DELAY_SECONDS = 10;
     private static AtomicLong duration1 = new AtomicLong();
     private static AtomicLong duration2 = new AtomicLong();
-    private PipelineService service = PipelineServiceFactory.newPipelineService();
 
     public void testDelayedValue() throws Exception {
         UUID pipelineId = service.startNewPipeline(new TestDelayedValueJob());

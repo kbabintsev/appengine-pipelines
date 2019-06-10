@@ -18,6 +18,7 @@ import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
 import com.google.appengine.tools.pipeline.impl.util.StringUtils;
 
+import javax.inject.Inject;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Enumeration;
@@ -31,33 +32,20 @@ import java.util.logging.Logger;
  */
 public final class TaskHandler {
 
-    public static final String PATH_COMPONENT = "handleTask";
     public static final String TASK_NAME_REQUEST_HEADER = "X-AppEngine-TaskName";
     public static final String TASK_RETRY_COUNT_HEADER = "X-AppEngine-TaskRetryCount";
     public static final String TASK_QUEUE_NAME_HEADER = "X-AppEngine-QueueName";
+    static final String PATH_COMPONENT = "handleTask";
     private static Logger logger = Logger.getLogger(TaskHandler.class.getName());
+    private final PipelineManager pipelineManager;
 
-    private TaskHandler() {
+    @Inject
+    public TaskHandler(final PipelineManager pipelineManager) {
+        this.pipelineManager = pipelineManager;
     }
 
     public static String handleTaskUrl() {
         return PipelineServlet.baseUrl() + PATH_COMPONENT;
-    }
-
-    public static void doPost(final HttpServletRequest req) throws ServletException {
-        final Task task = reconstructTask(req);
-        int retryCount;
-        try {
-            retryCount = req.getIntHeader(TASK_RETRY_COUNT_HEADER);
-        } catch (NumberFormatException e) {
-            retryCount = -1;
-        }
-        try {
-            PipelineManager.processTask(task);
-        } catch (RuntimeException e) {
-            StringUtils.logRetryMessage(logger, task, retryCount, e);
-            throw new ServletException(e);
-        }
     }
 
     private static Task reconstructTask(final HttpServletRequest request) {
@@ -81,5 +69,21 @@ public final class TaskHandler {
 //            attributes.put(TASK_QUEUE_NAME_HEADER, queueName);
         }
         return task;
+    }
+
+    void doPost(final HttpServletRequest req) throws ServletException {
+        final Task task = reconstructTask(req);
+        int retryCount;
+        try {
+            retryCount = req.getIntHeader(TASK_RETRY_COUNT_HEADER);
+        } catch (NumberFormatException e) {
+            retryCount = -1;
+        }
+        try {
+            pipelineManager.processTask(task);
+        } catch (RuntimeException e) {
+            StringUtils.logRetryMessage(logger, task, retryCount, e);
+            throw new ServletException(e);
+        }
     }
 }

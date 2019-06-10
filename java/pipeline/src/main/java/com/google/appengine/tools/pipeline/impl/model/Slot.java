@@ -14,6 +14,7 @@
 
 package com.google.appengine.tools.pipeline.impl.model;
 
+import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.cloud.Timestamp;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.StructReader;
@@ -59,20 +60,26 @@ public final class Slot extends PipelineModelObject {
     private List<Barrier> waitingOnMeInflated;
     private ValueProxy valueProxy;
 
-    public Slot(final UUID rootJobKey, final UUID generatorJobKey, final UUID graphKey) {
+    public Slot(
+            final PipelineManager pipelineManager,
+            final UUID rootJobKey,
+            final UUID generatorJobKey,
+            final UUID graphKey
+    ) {
         super(DATA_STORE_KIND, rootJobKey, generatorJobKey, graphKey);
         waitingOnMeKeys = new LinkedList<>();
         valueProxy = new ValueProxy(
+                pipelineManager,
                 null,
                 new ValueStoragePath(getRootJobKey(), DATA_STORE_KIND, getKey())
         );
     }
 
-    public Slot(final StructReader entity) {
-        this(entity, false);
+    public Slot(final PipelineManager pipelineManager, final StructReader entity) {
+        this(pipelineManager, entity, false);
     }
 
-    public Slot(final StructReader entity, final boolean lazy) {
+    public Slot(final PipelineManager pipelineManager, final StructReader entity, final boolean lazy) {
         super(DATA_STORE_KIND, entity);
         filled = !entity.isNull(FILL_TIME_PROPERTY)
                 && entity.getBoolean(FILLED_PROPERTY);
@@ -80,6 +87,7 @@ public final class Slot extends PipelineModelObject {
         sourceJobKey = entity.isNull(SOURCE_JOB_KEY_PROPERTY) ? null : UUID.fromString(entity.getString(SOURCE_JOB_KEY_PROPERTY));
         waitingOnMeKeys = getUuidListProperty(WAITING_ON_ME_PROPERTY, entity).orElse(null);
         valueProxy = new ValueProxy(
+                pipelineManager,
                 entity.isNull(VALUE_LOCATION_PROPERTY) ? ValueLocation.DATABASE : ValueLocation.valueOf(entity.getString(VALUE_LOCATION_PROPERTY)),
                 entity.isNull(DATABASE_VALUE_PROPERTY) ? null : entity.getBytes(DATABASE_VALUE_PROPERTY).toByteArray(),
                 lazy,

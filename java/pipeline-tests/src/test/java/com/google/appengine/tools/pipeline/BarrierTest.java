@@ -14,14 +14,10 @@
 
 package com.google.appengine.tools.pipeline;
 
-import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
-import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.appengine.tools.pipeline.impl.model.Barrier;
 import com.google.appengine.tools.pipeline.impl.model.Slot;
-import com.google.appengine.tools.pipeline.impl.util.UuidGenerator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import junit.framework.TestCase;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,28 +26,28 @@ import java.util.UUID;
 /**
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class BarrierTest extends TestCase {
+public class BarrierTest extends PipelineTest {
 
-    private LocalServiceTestHelper helper =
-            new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
+//    private LocalServiceTestHelper helper =
+//            new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
 
-    public static Slot createDummySlot() {
+    Slot createDummySlot() {
         UUID dummyKey = UUID.fromString("00000000-0000-0000-0000-000000000bad");
-        return new Slot(dummyKey, dummyKey, dummyKey);
+        return new Slot(pipelineManager, dummyKey, dummyKey, dummyKey);
     }
 
-    @Override
-    public void setUp() throws Exception {
-        super.setUp();
-        helper.setUp();
-        System.setProperty(UuidGenerator.USE_SIMPLE_UUIDS_FOR_DEBUGGING, "true");
-    }
-
-    @Override
-    public void tearDown() throws Exception {
-        helper.tearDown();
-        super.tearDown();
-    }
+//    @Override
+//    public void setUp() throws Exception {
+//        super.setUp();
+//        helper.setUp();
+//        System.setProperty(UuidGenerator.USE_SIMPLE_UUIDS_FOR_DEBUGGING, "true");
+//    }
+//
+//    @Override
+//    public void tearDown() throws Exception {
+//        helper.tearDown();
+//        super.tearDown();
+//    }
 
     public void testArgumentBuilding() throws Exception {
         doArgumentBuildingTest(new Integer[]{});

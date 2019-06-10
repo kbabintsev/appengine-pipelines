@@ -14,6 +14,7 @@
 
 package com.google.appengine.tools.pipeline.impl.servlets;
 
+import javax.inject.Inject;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.io.FileNotFoundException;
@@ -72,10 +73,25 @@ public final class StaticContentHandler {
         RESOURCE_MAP = Collections.unmodifiableMap(map);
     }
 
-    private StaticContentHandler() {
+    @Inject
+    public StaticContentHandler() {
     }
 
-    public static void doGet(final HttpServletResponse resp, final String path) throws ServletException {
+    // Visible for testing
+    public static InputStream getResourceAsStream(final String fileName) throws FileNotFoundException {
+        final String localPath = UI_DIR + fileName;
+        final String altLocalPath = INTERNAL_BUILD_UI_DIR + fileName;
+        InputStream in = StaticContentHandler.class.getResourceAsStream(localPath);
+        if (in == null) {
+            in = StaticContentHandler.class.getResourceAsStream(altLocalPath);
+        }
+        if (in == null) {
+            throw new FileNotFoundException(localPath + " <or> " + altLocalPath);
+        }
+        return in;
+    }
+
+    void doGet(final HttpServletResponse resp, final String path) throws ServletException {
         try {
             final NameContentTypePair pair = RESOURCE_MAP.get(path);
             if (pair == null) {
@@ -105,20 +121,6 @@ public final class StaticContentHandler {
         } catch (Exception e) {
             throw new ServletException(e);
         }
-    }
-
-    // Visible for testing
-    public static InputStream getResourceAsStream(final String fileName) throws FileNotFoundException {
-        final String localPath = UI_DIR + fileName;
-        final String altLocalPath = INTERNAL_BUILD_UI_DIR + fileName;
-        InputStream in = StaticContentHandler.class.getResourceAsStream(localPath);
-        if (in == null) {
-            in = StaticContentHandler.class.getResourceAsStream(altLocalPath);
-        }
-        if (in == null) {
-            throw new FileNotFoundException(localPath + " <or> " + altLocalPath);
-        }
-        return in;
     }
 
     private static class NameContentTypePair {

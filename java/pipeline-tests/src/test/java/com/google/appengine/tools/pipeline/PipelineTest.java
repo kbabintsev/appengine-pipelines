@@ -20,6 +20,7 @@ import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestC
 import com.google.appengine.tools.development.testing.LocalModulesServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.appengine.tools.development.testing.LocalTaskQueueTestConfig;
+import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.appengine.tools.pipeline.impl.backend.AppEngineTaskQueueModule;
 import com.google.appengine.tools.pipeline.impl.util.UuidGenerator;
 import com.google.apphosting.api.ApiProxy;
@@ -41,6 +42,9 @@ public class PipelineTest extends TestCase {
     private static StringBuffer traceBuffer;
     protected LocalServiceTestHelper helper;
     protected ApiProxy.Environment apiProxyEnvironment;
+    protected Injector injector;
+    protected PipelineService service;
+    protected PipelineManager pipelineManager;
     private LocalTaskQueue taskQueue;
 
     public PipelineTest() {
@@ -82,6 +86,9 @@ public class PipelineTest extends TestCase {
     @Override
     public void setUp() throws Exception {
         super.setUp();
+        injector = Guice.createInjector(new TestModule());
+        pipelineManager = injector.getInstance(PipelineManager.class);
+        service = injector.getInstance(PipelineService.class);
         traceBuffer = new StringBuffer();
         helper.setUp();
         apiProxyEnvironment = ApiProxy.getCurrentEnvironment();
@@ -98,7 +105,6 @@ public class PipelineTest extends TestCase {
     }
 
     private void cleanUp() throws NoSuchObjectException {
-        PipelineService service = PipelineServiceFactory.newPipelineService();
         service.cleanBobs(UuidGenerator.getTestPrefix());
         final Set<UUID> testPipelines = service.getTestPipelines();
         for (UUID pipelineId : testPipelines) {
@@ -124,7 +130,6 @@ public class PipelineTest extends TestCase {
     }
 
     protected JobInfo waitUntilJobComplete(UUID pipelineId) throws Exception {
-        PipelineService service = PipelineServiceFactory.newPipelineService();
         while (true) {
             Thread.sleep(2000);
             JobInfo jobInfo = service.getJobInfo(pipelineId);

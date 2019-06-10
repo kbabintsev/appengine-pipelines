@@ -20,6 +20,7 @@ import com.google.appengine.tools.pipeline.impl.PromisedValueImpl;
 import com.google.appengine.tools.pipeline.impl.backend.UpdateSpec;
 import com.google.appengine.tools.pipeline.impl.model.JobRecord;
 
+import javax.inject.Inject;
 import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
@@ -131,6 +132,9 @@ public abstract class Job<E> implements Serializable {
 
     private static final long serialVersionUID = 868736209042268959L;
 
+    protected transient PipelineManager pipelineManager;
+    protected transient PipelineService service;
+
     private transient JobRecord thisJobRecord;
     private transient UpdateSpec updateSpec;
     private transient UUID currentRunKey;
@@ -226,6 +230,16 @@ public abstract class Job<E> implements Serializable {
         return new FutureList<>(listOfValues);
     }
 
+    @Inject
+    public final void setPipelineManager(final PipelineManager pipelineManagerIn) {
+        this.pipelineManager = pipelineManagerIn;
+    }
+
+    @Inject
+    public final void setPipelineService(final PipelineService serviceIn) {
+        this.service = serviceIn;
+    }
+
     // This method will be invoked by reflection from PipelineManager
     @SuppressWarnings("unused")
     private void setJobRecord(final JobRecord jobRecord) {
@@ -267,7 +281,7 @@ public abstract class Job<E> implements Serializable {
      */
     public <T> FutureValue<T> futureCallUnchecked(final JobSetting[] settings, final Job<?> jobInstance,
                                                   final Object... params) {
-        final JobRecord childJobRecord = PipelineManager.registerNewJobRecord(
+        final JobRecord childJobRecord = pipelineManager.registerNewJobRecord(
                 updateSpec, settings, thisJobRecord, currentRunKey, jobInstance, params);
         thisJobRecord.appendChildKey(childJobRecord.getKey());
         return new FutureValueImpl<>(childJobRecord.getOutputSlotInflated());
@@ -463,14 +477,14 @@ public abstract class Job<E> implements Serializable {
     @Deprecated
     public final <F> PromisedValue<F> newPromise(final Class<F> klass) {
         final PromisedValueImpl<F> promisedValue =
-                new PromisedValueImpl<>(getPipelineKey(), thisJobRecord.getKey(), currentRunKey);
+                new PromisedValueImpl<>(pipelineManager, getPipelineKey(), thisJobRecord.getKey(), currentRunKey);
         updateSpec.getNonTransactionalGroup().includeSlot(promisedValue.getSlot());
         return promisedValue;
     }
 
     public final <F> PromisedValue<F> newPromise() {
         final PromisedValueImpl<F> promisedValue =
-                new PromisedValueImpl<>(getPipelineKey(), thisJobRecord.getKey(), currentRunKey);
+                new PromisedValueImpl<>(pipelineManager, getPipelineKey(), thisJobRecord.getKey(), currentRunKey);
         updateSpec.getNonTransactionalGroup().includeSlot(promisedValue.getSlot());
         return promisedValue;
     }
@@ -487,7 +501,7 @@ public abstract class Job<E> implements Serializable {
     public Value<Void> newDelayedValue(final long delaySeconds) {
         final PromisedValue<Void> promisedValue = newPromise();
         final PromisedValueImpl<Void> promisedValueImpl = (PromisedValueImpl<Void>) promisedValue;
-        PipelineManager.registerDelayedValue(
+        pipelineManager.registerDelayedValue(
                 updateSpec, thisJobRecord, delaySeconds, promisedValueImpl.getSlot());
         return promisedValue;
     }

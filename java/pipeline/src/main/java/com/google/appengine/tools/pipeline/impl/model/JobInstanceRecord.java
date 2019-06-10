@@ -15,6 +15,7 @@
 package com.google.appengine.tools.pipeline.impl.model;
 
 import com.google.appengine.tools.pipeline.Job;
+import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.StructReader;
 import com.google.common.collect.ImmutableList;
@@ -52,18 +53,19 @@ public final class JobInstanceRecord extends PipelineModelObject {
     private final String jobDisplayName;
     private final ValueProxy valueProxy;
 
-    public JobInstanceRecord(final JobRecord job, final Job<?> jobInstance) {
+    public JobInstanceRecord(final PipelineManager pipelineManager, final JobRecord job, final Job<?> jobInstance) {
         super(DATA_STORE_KIND, job.getRootJobKey(), job.getGeneratorJobKey(), job.getGraphKey());
         jobKey = job.getKey();
         jobClassName = jobInstance.getClass().getName();
         jobDisplayName = jobInstance.getJobDisplayName();
         valueProxy = new ValueProxy(
+                pipelineManager,
                 jobInstance,
                 new ValueStoragePath(getRootJobKey(), DATA_STORE_KIND, getKey())
         );
     }
 
-    public JobInstanceRecord(final StructReader entity) {
+    public JobInstanceRecord(final PipelineManager pipelineManager, final StructReader entity) {
         super(DATA_STORE_KIND, entity);
         jobKey = UUID.fromString(entity.getString(JOB_KEY_PROPERTY)); // probably not null?
         jobClassName = entity.getString(JOB_CLASS_NAME_PROPERTY); // probably not null?
@@ -73,6 +75,7 @@ public final class JobInstanceRecord extends PipelineModelObject {
             jobDisplayName = jobClassName;
         }
         valueProxy = new ValueProxy(
+                pipelineManager,
                 entity.isNull(VALUE_LOCATION_PROPERTY) ? ValueLocation.DATABASE : ValueLocation.valueOf(entity.getString(VALUE_LOCATION_PROPERTY)),
                 entity.isNull(DATABASE_VALUE_PROPERTY) ? null : entity.getBytes(DATABASE_VALUE_PROPERTY).toByteArray(),
                 true,

@@ -14,52 +14,45 @@
 
 package com.google.appengine.tools.pipeline;
 
-import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
-import com.google.appengine.tools.development.testing.LocalModulesServiceTestConfig;
-import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.appengine.tools.development.testing.LocalTaskQueueTestConfig;
 import com.google.appengine.tools.pipeline.JobSetting.BackoffFactor;
 import com.google.appengine.tools.pipeline.JobSetting.BackoffSeconds;
 import com.google.appengine.tools.pipeline.JobSetting.MaxAttempts;
 import junit.framework.AssertionFailedError;
-import junit.framework.TestCase;
 
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.appengine.tools.pipeline.impl.util.UuidGenerator.USE_SIMPLE_UUIDS_FOR_DEBUGGING;
-
 /**
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class RetryTest extends TestCase {
+public class RetryTest extends PipelineTest {
 
     public static final int ACCEPTABLE_LAG_SECONDS = 5;
     private static volatile CountDownLatch countdownLatch;
-    private LocalServiceTestHelper helper;
 
     public RetryTest() {
         LocalTaskQueueTestConfig taskQueueConfig = new LocalTaskQueueTestConfig();
         taskQueueConfig.setCallbackClass(TestingTaskQueueCallback.class);
         taskQueueConfig.setDisableAutoTaskExecution(false);
         taskQueueConfig.setShouldCopyApiProxyEnvironment(true);
-        helper = new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig(), taskQueueConfig,
-                new LocalModulesServiceTestConfig());
+//        helper = new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig(), taskQueueConfig,
+//                new LocalModulesServiceTestConfig());
     }
 
-    @Override
-    public void setUp() throws Exception {
-        super.setUp();
-        helper.setUp();
-        System.setProperty(USE_SIMPLE_UUIDS_FOR_DEBUGGING, "true");
-    }
-
-    @Override
-    public void tearDown() throws Exception {
-        helper.tearDown();
-        super.tearDown();
-    }
+//    @Override
+//    public void setUp() throws Exception {
+//        super.setUp();
+//        helper.setUp();
+//        System.setProperty(USE_SIMPLE_UUIDS_FOR_DEBUGGING, "true");
+//    }
+//
+//    @Override
+//    public void tearDown() throws Exception {
+//        helper.tearDown();
+//        super.tearDown();
+//    }
 
     public void testMaxAttempts() throws Exception {
         doMaxAttemptsTest(true);
@@ -87,7 +80,6 @@ public class RetryTest extends TestCase {
     }
 
     private void doMaxAttemptsTest(boolean succeedTheLastTime) throws Exception {
-        PipelineService service = PipelineServiceFactory.newPipelineService();
         UUID pipelineId = runJob(1, 4, 10, succeedTheLastTime);
         // Wait for framework to save Job information
         Thread.sleep(1000L + ACCEPTABLE_LAG_SECONDS * 1000);
@@ -100,7 +92,6 @@ public class RetryTest extends TestCase {
 
     private UUID runJob(int backoffFactor, int maxAttempts, int awaitSeconds,
                         boolean succeedTheLastTime) throws Exception {
-        PipelineService service = PipelineServiceFactory.newPipelineService();
         countdownLatch = new CountDownLatch(maxAttempts);
 
         UUID pipelineId = service.startNewPipeline(

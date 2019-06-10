@@ -26,6 +26,7 @@ import com.google.appengine.tools.pipeline.JobSetting.StatusConsoleUrl;
 import com.google.appengine.tools.pipeline.JobSetting.WaitForSetting;
 import com.google.appengine.tools.pipeline.Route;
 import com.google.appengine.tools.pipeline.impl.FutureValueImpl;
+import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 import com.google.appengine.tools.pipeline.impl.util.JsonUtils;
 import com.google.appengine.tools.pipeline.impl.util.ServiceUtils;
@@ -221,10 +222,25 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
      * @param settings             Array of {@code JobSetting} to apply to the newly created
      *                             JobRecord.
      */
-    public JobRecord(final JobRecord generatorJob, final UUID graphKeyParam, final Job<?> jobInstance,
-                     final boolean callExceptionHandler, final JobSetting[] settings) {
-        this(generatorJob.getRootJobKey(), null, generatorJob.getKey(), graphKeyParam, jobInstance,
-                callExceptionHandler, settings, generatorJob.getQueueSettings());
+    public JobRecord(
+            final PipelineManager pipelineManager,
+            final JobRecord generatorJob,
+            final UUID graphKeyParam,
+            final Job<?> jobInstance,
+            final boolean callExceptionHandler,
+            final JobSetting[] settings
+    ) {
+        this(
+                pipelineManager,
+                generatorJob.getRootJobKey(),
+                null,
+                generatorJob.getKey(),
+                graphKeyParam,
+                jobInstance,
+                callExceptionHandler,
+                settings,
+                generatorJob.getQueueSettings()
+        );
         // If generator job has exception handler then it should be called in case
         // of this job throwing to create an exception handling child job.
         // If callExceptionHandler is true then this job is an exception handling
@@ -246,6 +262,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
     }
 
     private JobRecord(
+            final PipelineManager pipelineManager,
             final UUID rootJobKey,
             final UUID thisKey,
             final UUID generatorJobKey,
@@ -256,7 +273,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
             final QueueSettings parentQueueSettings
     ) {
         super(DATA_STORE_KIND, rootJobKey, null, thisKey, generatorJobKey, graphKey);
-        jobInstanceRecordInflated = new JobInstanceRecord(this, jobInstance);
+        jobInstanceRecordInflated = new JobInstanceRecord(pipelineManager, this, jobInstance);
         jobInstanceKey = jobInstanceRecordInflated.getKey();
         exceptionHandlerSpecified = hasExceptionHandler(jobInstance);
         this.callExceptionHandler = callExceptionHandler;
@@ -264,7 +281,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
         runBarrierKey = runBarrierInflated.getKey();
         finalizeBarrierInflated = new Barrier(Barrier.Type.FINALIZE, this);
         finalizeBarrierKey = finalizeBarrierInflated.getKey();
-        outputSlotInflated = new Slot(getRootJobKey(), getGeneratorJobKey(), getGraphKey());
+        outputSlotInflated = new Slot(pipelineManager, getRootJobKey(), getGeneratorJobKey(), getGraphKey());
         // Initially we set the filler of the output slot to be this Job.
         // During finalize we may reset it to the filler of the finalize slot.
         outputSlotInflated.setSourceJobKey(getKey());
@@ -287,10 +304,15 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
     }
 
     // Constructor for Root Jobs (called by {@link #createRootJobRecord}).
-    private JobRecord(final UUID key, final Job<?> jobInstance, final JobSetting[] settings) {
+    private JobRecord(
+            final PipelineManager pipelineManager,
+            final UUID key,
+            final Job<?> jobInstance,
+            final JobSetting[] settings
+    ) {
         // Root Jobs have their rootJobKey the same as their keys and provide null for generatorKey
         // and graphKey. Also, callExceptionHandler is always false.
-        this(key, key, null, null, jobInstance, false, settings, null);
+        this(pipelineManager, key, key, null, null, jobInstance, false, settings, null);
         rootJobDisplayName = jobInstance.getJobDisplayName();
     }
 
@@ -302,9 +324,9 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
      * @param settings    Array of {@code JobSetting} to apply to the newly created
      *                    JobRecord.
      */
-    public static JobRecord createRootJobRecord(final Job<?> jobInstance, final JobSetting[] settings) {
+    public static JobRecord createRootJobRecord(final PipelineManager pipelineManager, final Job<?> jobInstance, final JobSetting[] settings) {
         final UUID key = generateKey(null, DATA_STORE_KIND);
-        return new JobRecord(key, jobInstance, settings);
+        return new JobRecord(pipelineManager, key, jobInstance, settings);
     }
 
     public static boolean hasExceptionHandler(final Job<?> jobInstance) {

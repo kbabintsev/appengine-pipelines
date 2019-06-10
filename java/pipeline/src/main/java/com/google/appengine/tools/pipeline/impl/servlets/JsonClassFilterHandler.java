@@ -17,6 +17,7 @@ package com.google.appengine.tools.pipeline.impl.servlets;
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.appengine.tools.pipeline.impl.util.JsonUtils;
 
+import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -28,14 +29,17 @@ import java.util.Set;
  */
 public final class JsonClassFilterHandler {
 
-    public static final String PATH_COMPONENT = "rpc/class_paths";
+    static final String PATH_COMPONENT = "rpc/class_paths";
+    private final PipelineManager pipelineManager;
 
-    private JsonClassFilterHandler() {
+    @Inject
+    public JsonClassFilterHandler(final PipelineManager pipelineManager) {
+        this.pipelineManager = pipelineManager;
     }
 
-    public static void doGet(@SuppressWarnings("unused") final HttpServletRequest req,
-                             final HttpServletResponse resp) throws IOException {
-        final Set<String> pipelines = PipelineManager.getRootPipelinesDisplayName();
+    public void doGet(@SuppressWarnings("unused") final HttpServletRequest req,
+                      final HttpServletResponse resp) throws IOException {
+        final Set<String> pipelines = pipelineManager.getRootPipelinesDisplayName();
         resp.getWriter().write(JsonUtils.mapToJson(Collections.singletonMap("classPaths", pipelines)));
     }
 }

@@ -42,7 +42,6 @@ public class GCDTest extends PipelineTest {
     }
 
     private void doGcdTest(int x, int y, int expectedGcd) throws Exception {
-        PipelineService service = PipelineServiceFactory.newPipelineService();
         UUID pipelineId = service.startNewPipeline(new GCDJob(), x, y);
         int calculatedGcd = waitForJobToComplete(pipelineId);
         logger.info("The GCD of " + x + " and " + y + " is " + calculatedGcd);
@@ -81,7 +80,6 @@ public class GCDTest extends PipelineTest {
                 latch.countDown();
             }
         };
-        PipelineService service = PipelineServiceFactory.newPipelineService();
         UUID pipelineId = service.startNewPipeline(new PrintGCDJob());
         assertTrue(latch.await(6, TimeUnit.MINUTES));
         assertEquals(expectedMessage, builder.toString());

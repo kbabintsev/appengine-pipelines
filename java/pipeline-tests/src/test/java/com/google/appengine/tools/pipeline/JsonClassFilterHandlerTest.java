@@ -46,12 +46,11 @@ public class JsonClassFilterHandlerTest extends PipelineTest {
     }
 
     public void testHandlerNoResults() throws Exception {
-        JsonClassFilterHandler.doGet(request, response);
+        injector.getInstance(JsonClassFilterHandler.class).doGet(request, response);
         assertEquals("{\"classPaths\": []}", output.toString());
     }
 
     public void testHandlerWithResults() throws Exception {
-        PipelineService service = PipelineServiceFactory.newPipelineService();
         UUID pipelineId1 = service.startNewPipeline(new Main1Job());
         UUID pipelineId2 = service.startNewPipeline(new Main2Job(false));
         UUID pipelineId3 = service.startNewPipeline(new Main2Job(true),
@@ -62,7 +61,7 @@ public class JsonClassFilterHandlerTest extends PipelineTest {
         assertEquals("hi there", hiThere);
         String bla = (String) waitForJobToComplete(pipelineId3);
         assertEquals("bla", bla);
-        JsonClassFilterHandler.doGet(request, response);
+        injector.getInstance(JsonClassFilterHandler.class).doGet(request, response);
         System.out.println(output.toString());
         String expected = "{\"classPaths\": [\n"
                 + "  \"" + Main1Job.class.getName() + "\",\n"

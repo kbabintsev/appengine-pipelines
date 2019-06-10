@@ -14,8 +14,8 @@
 
 package com.google.appengine.tools.pipeline;
 
-import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.appengine.tools.pipeline.impl.backend.PipelineTaskQueue;
+import com.google.appengine.tools.pipeline.impl.backend.PipelineTaskQueueInjectFilter;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 
@@ -58,13 +58,20 @@ public final class Jobs {
     public static <T> Value<T> waitForAllAndDelete(
             final Job<?> caller, final Value<T> value, final Value<?>... values) {
         return caller.futureCall(
-                new DeletePipelineJob<T>(caller.getPipelineKey()),
-                value, createWaitForSettingArray(values));
+                new DeletePipelineJob<T>(
+                        caller.getPipelineKey()),
+                value,
+                createWaitForSettingArray(values)
+        );
     }
 
     public static <T> Value<T> waitForAllAndDelete(final Job<?> caller, final T value, final Value<?>... values) {
-        return caller.futureCall(new DeletePipelineJob<T>(caller.getPipelineKey()),
-                Job.immediate(value), createWaitForSettingArray(values));
+        return caller.futureCall(
+                new DeletePipelineJob<T>(
+                        caller.getPipelineKey()),
+                Job.immediate(value),
+                createWaitForSettingArray(values)
+        );
     }
 
     /**
@@ -111,16 +118,16 @@ public final class Jobs {
 
         @Override
         public Value<T> run(final T value) {
-            PipelineManager.getTaskQueue().enqueueDeferred(
+            pipelineManager.getTaskQueue().enqueueDeferred(
                     Optional.ofNullable(getOnQueue()).orElse("default"),
                     new PipelineTaskQueue.Deferred() {
                         private static final long serialVersionUID = 8305076092067917841L;
 
                         @Override
                         public void run(final HttpServletRequest request, final PipelineTaskQueue.DeferredContext context) {
-                            final PipelineService service = PipelineServiceFactory.newPipelineService();
+                            final PipelineService pipelineService = (PipelineService) request.getAttribute(PipelineTaskQueueInjectFilter.PIPELINE_SERVICE_ATTRIBUTE);
                             try {
-                                service.deletePipelineRecords(key);
+                                pipelineService.deletePipelineRecords(key);
                                 LOGGER.info("Deleted pipeline: " + key);
                             } catch (IllegalStateException e) {
                                 LOGGER.info("Failed to delete pipeline: " + key);
@@ -133,7 +140,7 @@ public final class Jobs {
                                     }
                                 }
                                 try {
-                                    service.deletePipelineRecords(key, true, false);
+                                    pipelineService.deletePipelineRecords(key, true, false);
                                     LOGGER.info("Force deleted pipeline: " + key);
                                 } catch (Exception ex) {
                                     LOGGER.log(Level.WARNING, "Failed to force delete pipeline: " + key, ex);
