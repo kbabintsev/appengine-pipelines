@@ -1,0 +1,83 @@
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>appengine-pipeline-taskqueue</artifactId>
+    <name>App Engine Pipeline - AppEngeine TaskQueue</name>
+    <description>Google App Engine API for connecting together complex workflows</description>
+    <url>https://github.com/GoogleCloudPlatform/appengine-pipelines/</url>
+    <organization>
+        <name>Google</name>
+    </organization>
+    <version>2.0.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <parent>
+        <groupId>com.google.appengine.tools</groupId>
+        <artifactId>appengine-pipeline-parent</artifactId>
+        <version>2.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
+    <build>
+        <plugins>
+        </plugins>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <targetPath>com/google/appengine/tools/pipeline/impl/servlets</targetPath>
+            </resource>
+        </resources>
+    </build>
+    <dependencies>
+        <!-- Compile/Runtime Dependencies -->
+        <dependency>
+            <groupId>com.google.appengine.tools</groupId>
+            <artifactId>appengine-pipeline</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.appengine</groupId>
+            <artifactId>appengine-api-1.0-sdk</artifactId>
+            <version>${appengine.target.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+            <version>2.5</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+        <!-- test dependencies -->
+        <dependency>
+            <groupId>com.google.appengine</groupId>
+            <artifactId>appengine-testing</artifactId>
+            <version>${appengine.target.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.appengine</groupId>
+            <artifactId>appengine-api-stubs</artifactId>
+            <version>${appengine.target.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>checkstyle-backport-jre6-maven</id>
+            <name>checkstyle-backport-jre6-maven</name>
+            <url>http://rnveach.github.io/checkstyle-backport-jre6/maven2</url>
+        </pluginRepository>
+    </pluginRepositories>
+</project>

@@ -2,15 +2,15 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.google.appengine.tools</groupId>
-    <artifactId>appengine-pipeline</artifactId>
-    <name>App Engine Pipeline Framework</name>
+    <artifactId>appengine-pipeline-parent</artifactId>
+    <name>App Engine Pipeline - Parent POM</name>
     <description>Google App Engine API for connecting together complex workflows</description>
     <url>https://github.com/GoogleCloudPlatform/appengine-pipelines/</url>
     <organization>
         <name>Google</name>
     </organization>
-    <version>0.3-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    <version>2.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
     <licenses>
         <license>
             <name>The Apache Software License, Version 2.0</name>
@@ -20,6 +20,12 @@
     <properties>
         <appengine.target.version>[1.9.1,2.0)</appengine.target.version>
     </properties>
+    <modules>
+        <module>pipeline</module>
+        <module>pipeline-taskqueue</module>
+        <module>pipeline-cloudtasks</module>
+        <module>pipeline-tests</module>
+    </modules>
     <build>
         <plugins>
             <plugin>
@@ -44,36 +50,10 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>add-test-source</id>
-                        <phase>generate-test-sources</phase>
-                        <goals>
-                            <goal>add-test-source</goal>
-                        </goals>
-                        <configuration>
-                            <sources>
-                                <source>example/src</source>
-                            </sources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>com/google/appengine/tools/pipeline/PipelineTest.java</exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>2.17</version>
+                <inherited>true</inherited>
                 <configuration>
                     <configLocation>https://raw.githubusercontent.com/cloudaware/checkstyle-config/master/checkstyle.xml</configLocation>
                     <suppressionsLocation>${session.executionRootDirectory}/suppressions.xml</suppressionsLocation>
@@ -98,74 +78,56 @@
                 </executions>
             </plugin>
         </plugins>
-        <resources>
-            <resource>
-                <directory>${basedir}/src/main/resources</directory>
-                <targetPath>com/google/appengine/tools/pipeline/impl/servlets</targetPath>
-            </resource>
-        </resources>
     </build>
-    <dependencies>
-        <!-- Compile/Runtime Dependencies -->
-        <dependency>
-            <groupId>org.json</groupId>
-            <artifactId>json</artifactId>
-            <version>20090211</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.appengine</groupId>
-            <artifactId>appengine-api-1.0-sdk</artifactId>
-            <version>${appengine.target.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <!-- version number of release candidates come before the ##.0 in maven,
-                 use .99 to get latest release within the specified major version -->
-            <version>[15.0,20.99]</version>
-        </dependency>
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>servlet-api</artifactId>
-            <version>2.5</version>
-            <scope>provided</scope>
-        </dependency>
-        <!-- Test Dependencies -->
-        <dependency>
-            <groupId>com.google.appengine</groupId>
-            <artifactId>appengine-testing</artifactId>
-            <version>${appengine.target.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.appengine</groupId>
-            <artifactId>appengine-api-stubs</artifactId>
-            <version>${appengine.target.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.10</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
-            <version>1.8.4</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.cloud</groupId>
-            <artifactId>google-cloud-spanner</artifactId>
-            <version>1.5.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.apis</groupId>
-            <artifactId>google-api-services-storage</artifactId>
-            <version>v1-rev139-1.25.0</version>
-        </dependency>
-    </dependencies>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <!-- version number of release candidates come before the ##.0 in maven,
+                     use .99 to get latest release within the specified major version -->
+                <version>[15.0,20.99]</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.inject</groupId>
+                <artifactId>guice</artifactId>
+                <version>4.2.2</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.cloud</groupId>
+                <artifactId>google-cloud-spanner</artifactId>
+                <version>1.5.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.apis</groupId>
+                <artifactId>google-api-services-storage</artifactId>
+                <version>v1-rev139-1.25.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.apis</groupId>
+                <artifactId>google-api-services-cloudtasks</artifactId>
+                <version>v2beta3-rev5-1.23.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.cloudaware</groupId>
+                <artifactId>deferred</artifactId>
+                <version>1.0.7</version>
+            </dependency>
+            <!-- test dependencies -->
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.10</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-all</artifactId>
+                <version>1.8.4</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <pluginRepositories>
         <pluginRepository>
             <id>checkstyle-backport-jre6-maven</id>
