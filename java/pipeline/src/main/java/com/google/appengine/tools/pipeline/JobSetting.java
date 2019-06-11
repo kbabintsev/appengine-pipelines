@@ -139,7 +139,20 @@ public interface JobSetting extends Serializable {
     }
 
     /**
-     * An abstract parent object for integer settings.
+     * A setting for specifying which queue to run a job on.
+     */
+    final class OnQueue extends StringValuedSetting {
+
+        public static final String DEFAULT = null;
+        private static final long serialVersionUID = -5010485721032395432L;
+
+        public OnQueue(final String queue) {
+            super(queue);
+        }
+    }
+
+    /**
+     * A setting for specifying what routing (service, version, instance) to use
      */
     final class Routing implements JobSetting {
 

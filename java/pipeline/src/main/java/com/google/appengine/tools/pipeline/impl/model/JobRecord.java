@@ -21,6 +21,7 @@ import com.google.appengine.tools.pipeline.JobSetting.BackoffFactor;
 import com.google.appengine.tools.pipeline.JobSetting.BackoffSeconds;
 import com.google.appengine.tools.pipeline.JobSetting.IntValuedSetting;
 import com.google.appengine.tools.pipeline.JobSetting.MaxAttempts;
+import com.google.appengine.tools.pipeline.JobSetting.OnQueue;
 import com.google.appengine.tools.pipeline.JobSetting.Routing;
 import com.google.appengine.tools.pipeline.JobSetting.StatusConsoleUrl;
 import com.google.appengine.tools.pipeline.JobSetting.WaitForSetting;
@@ -446,6 +447,8 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
             } else {
                 throw new RuntimeException("Unrecognized JobOption class " + setting.getClass().getName());
             }
+        } else if (setting instanceof OnQueue) {
+            queueSettings.setOnQueue(((OnQueue) setting).getValue());
         } else if (setting instanceof Routing) {
             queueSettings.setRoute(((Routing) setting).getRoute());
         } else if (setting instanceof StatusConsoleUrl) {

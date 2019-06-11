@@ -29,7 +29,6 @@ import com.google.api.services.cloudtasks.v2.model.CreateTaskRequest;
 import com.google.appengine.tools.pipeline.Route;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 import com.google.appengine.tools.pipeline.impl.servlets.TaskHandler;
-import com.google.appengine.tools.pipeline.impl.tasks.ObjRefTask;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
 
 import java.io.IOException;
@@ -40,6 +39,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Encapsulates access to the App Engine Task Queue API
@@ -188,18 +188,10 @@ public final class CloudTasksQueue implements PipelineTaskQueue {
 
     private com.google.api.services.cloudtasks.v2.model.Task toTaskOptions(final Task task) {
         final QueueSettings queueSettings = task.getQueueSettings();
-
-        final StringBuilder relativeUrl = new StringBuilder(TaskHandler.handleTaskUrl());
-
-        relativeUrl.append("/taskClass:").append(task.getClass().getSimpleName());
-        if (task instanceof ObjRefTask) {
-            relativeUrl.append("/objRefTaskKey:").append(((ObjRefTask) task).getKey().toString());
-        }
-        relativeUrl.append("/taskName:").append(task.getName());
-        relativeUrl.append("?");
         final Properties props = task.toProperties();
-        for (final String paramName : props.stringPropertyNames()) {
-            relativeUrl.append("&").append(paramName).append("=").append(props.getProperty(paramName));
+        String relativeUrl = TaskHandler.handleTaskUrl();
+        if (!props.stringPropertyNames().isEmpty()) {
+            relativeUrl += "?" + props.stringPropertyNames().stream().map(o -> o + "=" + props.getProperty(o)).collect(Collectors.joining("&"));
         }
 
         final Route route = queueSettings.getRoute();
@@ -207,7 +199,7 @@ public final class CloudTasksQueue implements PipelineTaskQueue {
         taskOptions.setAppEngineHttpRequest(
                 new AppEngineHttpRequest()
                         .setHeaders(route.getHeaders())
-                        .setRelativeUri(relativeUrl.toString())
+                        .setRelativeUri(relativeUrl)
         );
 
         AppEngineRouting appEngineRouting = taskOptions.getAppEngineHttpRequest().getAppEngineRouting();

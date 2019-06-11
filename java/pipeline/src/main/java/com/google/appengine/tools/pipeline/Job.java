@@ -200,6 +200,15 @@ public abstract class Job<E> implements Serializable {
     }
 
     /**
+     * Constructs a new {@code JobSetting.OnQueue}. This method is only
+     * syntactic sugar. {@code onQueue(x)} is equivalent to
+     * {@code new JobSetting.OnQueue(x)}.
+     */
+    public static JobSetting.OnQueue onQueue(final String queue) {
+        return new JobSetting.OnQueue(queue);
+    }
+
+    /**
      * Constructs a new {@code JobSetting.Routing}. This method is only
      * syntactic sugar. {@code routing(x)} is equivalent to
      * {@code new JobSetting.routing(x)}.
