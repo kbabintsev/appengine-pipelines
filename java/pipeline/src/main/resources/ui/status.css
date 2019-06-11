@@ -112,7 +112,8 @@ abbr {
 .run-after-pipeline-id,
 .child-pipeline-id,
 .child-link,
-.run-after-link {
+.run-after-link,
+.messages-box {
     display: block;
     padding-left: 1em;
     font-size: 0.85em;
@@ -126,6 +127,7 @@ abbr {
 #detail .param-container,
 #detail .child-container,
 #detail .run-after-container,
+#detail .messages-container,
 #detail .status-retry-params {
     margin-top: 1em;
 }

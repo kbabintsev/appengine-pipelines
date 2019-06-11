@@ -15,6 +15,7 @@
 package com.google.appengine.tools.pipeline.impl.servlets;
 
 import com.google.appengine.tools.pipeline.util.Pair;
+import com.google.inject.Singleton;
 
 import javax.inject.Inject;
 import javax.servlet.ServletException;
@@ -32,6 +33,7 @@ import java.util.UUID;
  * @author rudominer@google.com (Mitch Rudominer)
  */
 @SuppressWarnings("serial")
+@Singleton
 public final class PipelineServlet extends HttpServlet {
 
     static final String BASE_URL_PROPERTY = "com.google.appengine.tools.pipeline.BASE_URL";

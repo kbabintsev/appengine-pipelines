@@ -22,16 +22,6 @@
             <url>http://www.apache.org/licenses/LICENSE-2.0</url>
         </license>
     </licenses>
-    <build>
-        <plugins>
-        </plugins>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <targetPath>com/google/appengine/tools/pipeline/impl/servlets</targetPath>
-            </resource>
-        </resources>
-    </build>
     <dependencies>
         <!-- Compile/Runtime Dependencies -->
         <dependency>

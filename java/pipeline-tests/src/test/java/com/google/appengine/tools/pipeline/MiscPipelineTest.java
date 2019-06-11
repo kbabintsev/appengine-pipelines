@@ -22,6 +22,7 @@ import com.google.appengine.tools.pipeline.impl.model.JobRecord;
 import com.google.appengine.tools.pipeline.impl.model.PipelineObjects;
 import com.google.apphosting.api.ApiProxy;
 import com.google.common.base.Function;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 
 import javax.servlet.http.HttpServletRequest;
@@ -215,6 +216,27 @@ public class MiscPipelineTest extends PipelineTest {
         UUID pipelineId = service.startNewPipeline(new UsingDelayedValueInSlowJob());
         String hello = waitForJobToComplete(pipelineId);
         assertEquals("I am delayed", hello);
+    }
+
+    public void testStatusMessagesLimits() throws Exception {
+        UUID pipelineId = service.startNewPipeline(new StatusLinesMoreThanLimitJob());
+        final JobRecord jobInfo = (JobRecord) waitUntilJobComplete(pipelineId);
+        final List<String> statusMessages = jobInfo.getStatusMessages();
+        assertEquals(JobRecord.STATUS_MESSAGES_MAX_COUNT, statusMessages.size());
+        assertEquals(statusMessages.get(0), "[Truncated]");
+        for (String message : statusMessages) {
+            assertTrue(message.length() <= JobRecord.STATUS_MESSAGES_MAX_LENGTH);
+        }
+    }
+
+    public void testStatusMessagesAttempts() throws Exception {
+        UUID pipelineId = service.startNewPipeline(new StatusLinesAttemptsJob(), Job.maxAttempts(10), Job.backOffFactor(1), Job.backOffSeconds(1));
+        final JobRecord jobInfo = (JobRecord) waitUntilJobComplete(pipelineId);
+        final List<String> statusMessages = jobInfo.getStatusMessages();
+        assertEquals(10, statusMessages.size());
+        for (int i = 0; i < 10; i++) {
+            assertTrue(statusMessages.get(i).indexOf("[" + (i + 1) + "]") == 0);
+        }
     }
 
     @SuppressWarnings("serial")
@@ -638,6 +660,26 @@ public class MiscPipelineTest extends PipelineTest {
             assertEquals("my-console-url", getStatusConsoleUrl());
             assertTrue(Arrays.equals(largeValue, bytes));
             return immediate(bytes.length);
+        }
+    }
+
+    @SuppressWarnings("serial")
+    private static class StatusLinesMoreThanLimitJob extends Job0<Void> {
+        @Override
+        public Value<Void> run() {
+            for (int i = 0; i < JobRecord.STATUS_MESSAGES_MAX_COUNT * 10; i++) {
+                addStatusMessage(Strings.repeat("#", (int) (i * JobRecord.STATUS_MESSAGES_MAX_LENGTH / (double) JobRecord.STATUS_MESSAGES_MAX_COUNT)));
+            }
+            return immediate(null);
+        }
+    }
+
+    @SuppressWarnings("serial")
+    private static class StatusLinesAttemptsJob extends Job0<Void> {
+        @Override
+        public Value<Void> run() {
+            addStatusMessage("test");
+            throw new IllegalStateException("simulated");
         }
     }
 }

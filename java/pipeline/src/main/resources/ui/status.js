@@ -574,6 +574,21 @@ function constructStageNode(pipelineId, infoMap, sidebar) {
             renderRelated(infoMap.children, 'Children', 'child'));
     }
 
+    // Spawned children
+    if (!sidebar && infoMap.statusMessages && infoMap.statusMessages.length > 0) {
+        var messagesDiv = $('<div>');
+        messagesDiv.addClass('messages-container');
+        var messagesTitleDiv = $('<div>');
+        messagesTitleDiv.addClass('messages-container-title');
+        messagesTitleDiv.text("Messages");
+        messagesDiv.append(messagesTitleDiv);
+        var messagesBox = $('<pre>');
+        messagesBox.addClass('messages-box');
+        messagesBox.text(infoMap.statusMessages.join('\n'));
+        messagesDiv.append(messagesBox);
+        containerDiv.append(messagesDiv);
+    }
+
     return containerDiv;
 }
 

@@ -11,6 +11,7 @@
 // WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 // License for the specific language governing permissions and limitations under
 // the License.
+
 package com.google.appengine.tools.pipeline.demo;
 
 import com.google.appengine.tools.pipeline.FutureValue;
@@ -35,15 +36,16 @@ public class GCDExample {
         private static final long serialVersionUID = -2829729586917167089L;
 
         @Override
-        public Value<Integer> run(Integer a, Integer b) {
+        public Value<Integer> run(final Integer a, final Integer b) {
             checkPositive(a, "a");
             checkPositive(b, "b");
-            FutureValue<Pair<Integer, Integer>> orderedPair =
+            addStatusMessage("Starting calculation for " + a + " and " + b);
+            final FutureValue<Pair<Integer, Integer>> orderedPair =
                     futureCall(new OrderIntsJob(), immediate(a), immediate(b));
             return futureCall(new EuclAlgJob(), orderedPair);
         }
 
-        private void checkPositive(Integer x, String name) {
+        private void checkPositive(final Integer x, final String name) {
             if (null == x) {
                 throw new IllegalArgumentException(name + " is null.");
             }
@@ -63,17 +65,17 @@ public class GCDExample {
         private static final long serialVersionUID = 6304492080329641948L;
 
         @Override
-        public Value<Integer> run(Pair<Integer, Integer> intPair) {
+        public Value<Integer> run(final Pair<Integer, Integer> intPair) {
             try {
-                int a = intPair.getFirst();
-                int b = intPair.getSecond();
+                final int a = intPair.getFirst();
+                final int b = intPair.getSecond();
                 // Assume a<=b
                 if (a == b) {
                     return immediate(a);
                 } else {
                     // Else a<b
-                    FutureValue<Integer> difference = futureCall(new DiffJob(), immediate(b), immediate(a));
-                    FutureValue<Integer> gcd = futureCall(new GCDJob(), immediate(a), difference);
+                    final FutureValue<Integer> difference = futureCall(new DiffJob(), immediate(b), immediate(a));
+                    final FutureValue<Integer> gcd = futureCall(new GCDJob(), immediate(a), difference);
                     return gcd;
                 }
             } catch (Exception e) {
@@ -91,7 +93,7 @@ public class GCDExample {
         private static final long serialVersionUID = -3625544267076808177L;
 
         @Override
-        public Value<Pair<Integer, Integer>> run(Integer a, Integer b) {
+        public Value<Pair<Integer, Integer>> run(final Integer a, final Integer b) {
             if (a < b) {
                 return immediate(Pair.of(a, b));
             } else {
@@ -107,7 +109,7 @@ public class GCDExample {
         private static final long serialVersionUID = -2102148459756486612L;
 
         @Override
-        public Value<Integer> run(Integer b, Integer a) {
+        public Value<Integer> run(final Integer b, final Integer a) {
             return immediate(b - a);
         }
     }

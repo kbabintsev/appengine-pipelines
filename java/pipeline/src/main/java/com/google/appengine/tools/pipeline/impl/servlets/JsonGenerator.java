@@ -85,6 +85,7 @@ public final class JsonGenerator {
     private static final String JOB_ABORT_MESSAGE = "abortMessage"; // For root
     private static final String DEFAULT_OUTPUT_NAME = "default";
     private static final String JOB_STATUS_CONSOLE_URL = "statusConsoleUrl";
+    private static final String JOB_STATUS_MESSAGES = "statusMessages";
 
     private JsonGenerator() {
     }
@@ -237,6 +238,9 @@ public final class JsonGenerator {
         }
         if (jobRecord.getStatusConsoleUrl() != null) {
             map.put(JOB_STATUS_CONSOLE_URL, jobRecord.getStatusConsoleUrl());
+        }
+        if (jobRecord.getStatusMessages() != null) {
+            map.put(JOB_STATUS_MESSAGES, jobRecord.getStatusMessages());
         }
         return map;
     }

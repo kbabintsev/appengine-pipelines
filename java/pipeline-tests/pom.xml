@@ -9,7 +9,7 @@
         <name>Google</name>
     </organization>
     <version>2.0.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    <packaging>war</packaging>
     <parent>
         <groupId>com.google.appengine.tools</groupId>
         <artifactId>appengine-pipeline-parent</artifactId>
@@ -22,29 +22,23 @@
             <url>http://www.apache.org/licenses/LICENSE-2.0</url>
         </license>
     </licenses>
-    <properties>
-        <appengine.target.version>[1.9.1,2.0)</appengine.target.version>
-    </properties>
     <build>
+        <outputDirectory>${project.build.directory}/${project.build.finalName}/WEB-INF/classes</outputDirectory>
         <plugins>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>add-test-source</id>
-                        <phase>generate-test-sources</phase>
-                        <goals>
-                            <goal>add-test-source</goal>
-                        </goals>
-                        <configuration>
-                            <sources>
-                                <source>example/src</source>
-                                <source>src/test/java</source>
-                            </sources>
-                        </configuration>
-                    </execution>
-                </executions>
+                <groupId>com.google.appengine</groupId>
+                <artifactId>appengine-maven-plugin</artifactId>
+                <version>${appengine.target.version}</version>
+                <configuration>
+                    <appId>pipeline-test</appId>
+                    <version>v1</version>
+                    <enableJarClasses>false</enableJarClasses>
+                    <!--<port>9090</port>-->
+                    <jvmFlags>
+                        <jvmFlag>-Xdebug</jvmFlag>
+                        <jvmFlag>-agentlib:jdwp=transport=dt_socket,address=8000,server=y,suspend=n</jvmFlag>
+                    </jvmFlags>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -59,6 +53,11 @@
     </build>
     <dependencies>
         <!-- Compile/Runtime Dependencies -->
+        <dependency>
+            <groupId>com.google.appengine</groupId>
+            <artifactId>appengine-api-1.0-sdk</artifactId>
+            <version>${appengine.target.version}</version>
+        </dependency>
         <dependency>
             <groupId>com.google.appengine.tools</groupId>
             <artifactId>appengine-pipeline</artifactId>
@@ -99,11 +98,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    <pluginRepositories>
-        <pluginRepository>
-            <id>checkstyle-backport-jre6-maven</id>
-            <name>checkstyle-backport-jre6-maven</name>
-            <url>http://rnveach.github.io/checkstyle-backport-jre6/maven2</url>
-        </pluginRepository>
-    </pluginRepositories>
 </project>

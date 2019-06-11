@@ -30,27 +30,30 @@ import java.util.TreeMap;
  *
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class LetterCountExample {
+public final class LetterCountExample {
 
-    public static SortedMap<Character, Integer> countLetters(String text) {
-        SortedMap<Character, Integer> charMap = new TreeMap<>();
-        for (char c : text.toCharArray()) {
+    private LetterCountExample() {
+    }
+
+    public static SortedMap<Character, Integer> countLetters(final String text) {
+        final SortedMap<Character, Integer> charMap = new TreeMap<>();
+        for (final char c : text.toCharArray()) {
             incrementCount(c, 1, charMap);
         }
         return charMap;
     }
 
-    private static void incrementCount(char c, int increment, Map<Character, Integer> charMap) {
-        Integer countInteger = charMap.get(c);
-        int count = (null == countInteger ? 0 : countInteger) + increment;
+    private static void incrementCount(final char c, final int increment, final Map<Character, Integer> charMap) {
+        final Integer countInteger = charMap.get(c);
+        final int count = (null == countInteger ? 0 : countInteger) + increment;
         charMap.put(c, count);
     }
 
-    public static void main(String[] args) {
-        String text = "ab cd";
-        String regex = "[^a-z,A-Z]";
-        String[] words = text.split(regex);
-        for (String word : words) {
+    public static void main(final String[] args) {
+        final String text = "ab cd";
+        final String regex = "[^a-z,A-Z]";
+        final String[] words = text.split(regex);
+        for (final String word : words) {
             System.out.println("[" + word + "]");
         }
     }
@@ -63,10 +66,12 @@ public class LetterCountExample {
         private static final long serialVersionUID = -42446767578960124L;
 
         @Override
-        public Value<SortedMap<Character, Integer>> run(String text) {
-            String[] words = text.split("[^a-zA-Z]");
-            List<FutureValue<SortedMap<Character, Integer>>> countsForEachWord = new LinkedList<>();
-            for (String word : words) {
+        public Value<SortedMap<Character, Integer>> run(final String text) {
+            addStatusMessage("Received text: " + text);
+            final String[] words = text.split("[^a-zA-Z]");
+            addStatusMessage("Split into " + words.length + " words");
+            final List<FutureValue<SortedMap<Character, Integer>>> countsForEachWord = new LinkedList<>();
+            for (final String word : words) {
                 countsForEachWord.add(futureCall(new SingleWordCounterJob(), immediate(word)));
             }
             return futureCall(new CountCombinerJob(), futureList(countsForEachWord));
@@ -81,8 +86,11 @@ public class LetterCountExample {
         private static final long serialVersionUID = 3257449383642363412L;
 
         @Override
-        public Value<SortedMap<Character, Integer>> run(String word) {
-            return immediate(countLetters(word));
+        public Value<SortedMap<Character, Integer>> run(final String word) {
+            addStatusMessage("Received word: " + word);
+            final SortedMap<Character, Integer> value = countLetters(word);
+            addStatusMessage("Count result: " + value);
+            return immediate(value);
         }
     }
 
@@ -96,13 +104,15 @@ public class LetterCountExample {
 
         @Override
         public Value<SortedMap<Character, Integer>> run(
-                List<SortedMap<Character, Integer>> listOfMaps) {
-            SortedMap<Character, Integer> totalMap = new TreeMap<>();
-            for (SortedMap<Character, Integer> charMap : listOfMaps) {
-                for (Entry<Character, Integer> pair : charMap.entrySet()) {
+                final List<SortedMap<Character, Integer>> listOfMaps) {
+            addStatusMessage("Received " + listOfMaps.size() + " results");
+            final SortedMap<Character, Integer> totalMap = new TreeMap<>();
+            for (final SortedMap<Character, Integer> charMap : listOfMaps) {
+                for (final Entry<Character, Integer> pair : charMap.entrySet()) {
                     incrementCount(pair.getKey(), pair.getValue(), totalMap);
                 }
             }
+            addStatusMessage("Total count: " + totalMap);
             return immediate(totalMap);
         }
     }

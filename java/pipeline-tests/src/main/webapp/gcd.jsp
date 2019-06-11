@@ -1,7 +1,8 @@
 <%@ page import="com.google.appengine.tools.pipeline.JobInfo" %>
 <%@ page import="com.google.appengine.tools.pipeline.PipelineService" %>
-<%@ page import="com.google.appengine.tools.pipeline.PipelineServiceFactory" %>
 <%@ page import="com.google.appengine.tools.pipeline.demo.GCDExample.GCDJob" %>
+<%@ page import="com.google.inject.Injector" %>
+<%@ page import="java.util.UUID" %>
 <%@taglib uri="http://github.com/GoogleCloudPlatform/appengine-pipelines/functions" prefix="f" %>
 
 <%!
@@ -40,9 +41,12 @@
 <%
     Integer x = getInteger(X_PARAM_NAME, request);
     Integer y = getInteger(Y_PARAM_NAME, request);
-    String pipelineId = request.getParameter(PIPELINE_ID_PARAM_NAME);
-    String cleanupId = request.getParameter(CLEANUP_PIPELINE_ID_PARAM_NAME);
-    PipelineService service = PipelineServiceFactory.newPipelineService();
+    String pipelineIdStr = request.getParameter(PIPELINE_ID_PARAM_NAME);
+    UUID pipelineId = pipelineIdStr == null ? null : UUID.fromString(pipelineIdStr);
+    String cleanupIdStr = request.getParameter(CLEANUP_PIPELINE_ID_PARAM_NAME);
+    UUID cleanupId = cleanupIdStr == null ? null : UUID.fromString(cleanupIdStr);
+    Injector inj = (Injector) pageContext.getServletContext().getAttribute(Injector.class.getName());
+    PipelineService service = inj.getInstance(PipelineService.class);
     if (null != cleanupId) {
         service.deletePipelineRecords(cleanupId);
     }

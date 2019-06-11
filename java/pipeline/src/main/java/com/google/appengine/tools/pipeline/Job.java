@@ -540,6 +540,14 @@ public abstract class Job<E> implements Serializable {
         thisJobRecord.setStatusConsoleUrl(url);
     }
 
+    /**
+     * Allows a job to add status lines.
+     * The Pipeline UI displays all the lines accumulated by the job.
+     */
+    protected final void addStatusMessage(final String url) {
+        thisJobRecord.addStatusMessage(url);
+    }
+
     protected final String getOnQueue() {
         return thisJobRecord.getQueueSettings().getOnQueue();
     }

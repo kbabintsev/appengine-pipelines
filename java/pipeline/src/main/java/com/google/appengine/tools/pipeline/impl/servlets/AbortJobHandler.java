@@ -16,6 +16,7 @@ package com.google.appengine.tools.pipeline.impl.servlets;
 
 import com.google.appengine.tools.pipeline.NoSuchObjectException;
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
+import com.google.inject.Inject;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -32,6 +33,7 @@ public final class AbortJobHandler {
     private static final String ROOT_PIPELINE_ID = "root_pipeline_id";
     private final PipelineManager pipelineManager;
 
+    @Inject
     public AbortJobHandler(final PipelineManager pipelineManager) {
         this.pipelineManager = pipelineManager;
     }

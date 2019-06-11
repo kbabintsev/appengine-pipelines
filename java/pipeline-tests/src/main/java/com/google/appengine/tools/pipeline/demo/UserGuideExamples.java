@@ -27,13 +27,13 @@ public class UserGuideExamples {
         private static final long serialVersionUID = -3659971121199420049L;
 
         @Override
-        public Value<Integer> run(Integer x, Integer y, Integer z) {
-            DiffJob diffJob = new DiffJob();
-            MultJob multJob = new MultJob();
-            FutureValue<Integer> r = futureCall(diffJob, immediate(x), immediate(y));
-            FutureValue<Integer> s = futureCall(diffJob, immediate(x), immediate(z));
-            FutureValue<Integer> t = futureCall(multJob, r, s);
-            FutureValue<Integer> u = futureCall(diffJob, t, immediate(2));
+        public Value<Integer> run(final Integer x, final Integer y, final Integer z) {
+            final DiffJob diffJob = new DiffJob();
+            final MultJob multJob = new MultJob();
+            final FutureValue<Integer> r = futureCall(diffJob, immediate(x), immediate(y));
+            final FutureValue<Integer> s = futureCall(diffJob, immediate(x), immediate(z));
+            final FutureValue<Integer> t = futureCall(multJob, r, s);
+            final FutureValue<Integer> u = futureCall(diffJob, t, immediate(2));
             return u;
         }
     }
@@ -46,7 +46,7 @@ public class UserGuideExamples {
         private static final long serialVersionUID = -623601952335794286L;
 
         @Override
-        public Value<Integer> run(Integer a, Integer b) {
+        public Value<Integer> run(final Integer a, final Integer b) {
             return immediate(a - b);
         }
     }
@@ -59,7 +59,7 @@ public class UserGuideExamples {
         private static final long serialVersionUID = -3272045240539122024L;
 
         @Override
-        public Value<Integer> run(Integer a, Integer b) {
+        public Value<Integer> run(final Integer a, final Integer b) {
             return immediate(a * b);
         }
     }
@@ -73,7 +73,7 @@ public class UserGuideExamples {
 
         @SuppressWarnings("unused")
         public static void getIntFromUser(
-                String prompt, String userEmail, UUID promiseHandle) {
+                final String prompt, final String userEmail, final UUID promiseHandle) {
             // 1. Send the user an e-mail containing the prompt.
             // 2. Ask user to submit one more integer on some web page.
             // 3. promiseHandle is a query string argument
@@ -81,12 +81,12 @@ public class UserGuideExamples {
         }
 
         @Override
-        public Value<Integer> run(String userEmail) {
+        public Value<Integer> run(final String userEmail) {
             // Invoke ComplexJob on three promised values
-            PromisedValue<Integer> x = newPromise();
-            PromisedValue<Integer> y = newPromise();
-            PromisedValue<Integer> z = newPromise();
-            FutureValue<Integer> intermediate = futureCall(new ComplexJob(), x, y, z);
+            final PromisedValue<Integer> x = newPromise();
+            final PromisedValue<Integer> y = newPromise();
+            final PromisedValue<Integer> z = newPromise();
+            final FutureValue<Integer> intermediate = futureCall(new ComplexJob(), x, y, z);
 
             // Kick off the process of retrieving the data from the external agent
             getIntFromUser("Please give 1st int", userEmail, x.getHandle());
@@ -94,7 +94,7 @@ public class UserGuideExamples {
             getIntFromUser("Please give 3rd int", userEmail, z.getHandle());
 
             // Send the user the intermediate result and ask for one more integer
-            FutureValue<Integer> oneMoreInt =
+            final FutureValue<Integer> oneMoreInt =
                     futureCall(new PromptJob(), intermediate, immediate(userEmail));
 
             // Invoke MultJob on intermediate and oneMoreInt
@@ -110,11 +110,11 @@ public class UserGuideExamples {
         private static final long serialVersionUID = -1556508205879799996L;
 
         @Override
-        public Value<Integer> run(Integer intermediate, String userEmail) {
-            String prompt =
+        public Value<Integer> run(final Integer intermediate, final String userEmail) {
+            final String prompt =
                     "The intermediate result is " + intermediate + "."
                             + " Please give one more int";
-            PromisedValue<Integer> oneMoreInt = newPromise();
+            final PromisedValue<Integer> oneMoreInt = newPromise();
             ExternalAgentJob.getIntFromUser(prompt, userEmail, oneMoreInt.getHandle());
             return oneMoreInt;
         }
@@ -128,7 +128,7 @@ public class UserGuideExamples {
 
         @Override
         public Value<Void> run() {
-            FutureValue<Void> a = futureCall(new JobA());
+            final FutureValue<Void> a = futureCall(new JobA());
             futureCall(new JobB(), waitFor(a));
             return null;
         }

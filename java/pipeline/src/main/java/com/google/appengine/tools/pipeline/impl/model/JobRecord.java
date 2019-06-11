@@ -35,6 +35,8 @@ import com.google.cloud.Timestamp;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.StructReader;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import org.joda.time.DateTime;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -54,6 +56,8 @@ import java.util.stream.Collectors;
 public final class JobRecord extends PipelineModelObject implements JobInfo {
 
     public static final String EXCEPTION_HANDLER_METHOD_NAME = "handleException";
+    public static final int STATUS_MESSAGES_MAX_COUNT = 1000;
+    public static final int STATUS_MESSAGES_MAX_LENGTH = 1000;
     public static final String DATA_STORE_KIND = "Job";
     public static final String STATE_PROPERTY = "state";
     public static final String ROOT_JOB_DISPLAY_NAME = "rootJobDisplayName";
@@ -82,6 +86,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
     private static final String ROUTE_PROPERY = "route";
     private static final String CHILD_GRAPH_KEY_PROPERTY = "childGraphKey";
     private static final String STATUS_CONSOLE_URL = "statusConsoleUrl";
+    private static final String STATUS_MESSAGES = "statusMessages";
     public static final List<String> PROPERTIES = ImmutableList.<String>builder()
             .addAll(BASE_PROPERTIES)
             .add(
@@ -108,6 +113,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
                     ROUTE_PROPERY,
                     CHILD_GRAPH_KEY_PROPERTY,
                     STATUS_CONSOLE_URL,
+                    STATUS_MESSAGES,
                     ROOT_JOB_DISPLAY_NAME
             )
             .build();
@@ -134,6 +140,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
     private long backoffSeconds = JobSetting.BackoffSeconds.DEFAULT;
     private long backoffFactor = JobSetting.BackoffFactor.DEFAULT;
     private String statusConsoleUrl;
+    private List<String> statusMessages;
     private String rootJobDisplayName;
     // transient fields
     private Barrier runBarrierInflated;
@@ -199,6 +206,9 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
         statusConsoleUrl = entity.isNull(STATUS_CONSOLE_URL)
                 ? null
                 : entity.getString(STATUS_CONSOLE_URL);
+        statusMessages = entity.isNull(STATUS_MESSAGES)
+                ? Lists.newArrayList()
+                : Lists.newArrayList(entity.getStringList(STATUS_MESSAGES));
         rootJobDisplayName = entity.isNull(ROOT_JOB_DISPLAY_NAME)
                 ? null
                 : entity.getString(ROOT_JOB_DISPLAY_NAME);
@@ -407,6 +417,12 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
         }
         entity.set(ON_QUEUE_PROPERTY).to(queueSettings.getOnQueue());
         entity.set(STATUS_CONSOLE_URL).to(statusConsoleUrl);
+        List<String> messages = statusMessages;
+        if (messages != null && messages.size() > STATUS_MESSAGES_MAX_COUNT) {
+            messages = messages.subList(messages.size() - STATUS_MESSAGES_MAX_COUNT, messages.size());
+            messages.set(0, "[Truncated]");
+        }
+        entity.set(STATUS_MESSAGES).toStringArray(messages);
         if (rootJobDisplayName != null) {
             entity.set(ROOT_JOB_DISPLAY_NAME).to(rootJobDisplayName);
         }
@@ -608,6 +624,18 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
 
     public void setStatusConsoleUrl(final String statusConsoleUrl) {
         this.statusConsoleUrl = statusConsoleUrl;
+    }
+
+    public void addStatusMessage(final String text) {
+        if (statusMessages == null) {
+            statusMessages = Lists.newArrayList();
+        }
+        final String line = "[" + attemptNumber + "] " + DateTime.now().toString() + ": " + text;
+        statusMessages.add(line.length() > STATUS_MESSAGES_MAX_LENGTH ? line.substring(0, STATUS_MESSAGES_MAX_LENGTH - 3) + "..." : line);
+    }
+
+    public List<String> getStatusMessages() {
+        return statusMessages;
     }
 
     public void appendChildKey(final UUID key) {
