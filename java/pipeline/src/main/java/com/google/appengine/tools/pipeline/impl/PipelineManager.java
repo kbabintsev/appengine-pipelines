@@ -221,7 +221,7 @@ public final class PipelineManager {
         return jobRecord;
     }
 
-    void injectJobMembers(final Job<?> jobInstance) {
+    private void injectJobMembers(final Job<?> jobInstance) {
         injector.injectMembers(jobInstance);
     }
 

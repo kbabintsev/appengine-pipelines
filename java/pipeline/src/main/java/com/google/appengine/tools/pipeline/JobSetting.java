@@ -160,7 +160,7 @@ public interface JobSetting extends Serializable {
         private static final long serialVersionUID = -5609527860840931319L;
         private final Route route;
 
-        protected Routing(final Route route) {
+        public Routing(final Route route) {
             this.route = route;
         }
 

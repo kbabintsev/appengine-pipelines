@@ -36,7 +36,7 @@ import java.util.UUID;
 @Singleton
 public final class PipelineServlet extends HttpServlet {
 
-    static final String BASE_URL_PROPERTY = "com.google.appengine.tools.pipeline.BASE_URL";
+    private static final String BASE_URL_PROPERTY = "com.google.appengine.tools.pipeline.BASE_URL";
     private final TaskHandler taskHandler;
     private final JsonTreeHandler jsonTreeHandler;
     private final JsonListHandler jsonListHandler;
