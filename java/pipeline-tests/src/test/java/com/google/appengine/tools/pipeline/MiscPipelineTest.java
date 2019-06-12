@@ -24,6 +24,8 @@ import com.google.apphosting.api.ApiProxy;
 import com.google.common.base.Function;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import org.mockito.stubbing.Answer;
+import org.slf4j.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
@@ -237,6 +239,19 @@ public class MiscPipelineTest extends PipelineTest {
         for (int i = 0; i < 10; i++) {
             assertTrue(statusMessages.get(i).indexOf("[" + (i + 1) + "]") == 0);
         }
+    }
+
+    public void testStatusMessagesLogger() throws Exception {
+        UUID pipelineId = service.startNewPipeline(new StatusLinesLoggerJob());
+        final JobRecord jobInfo = (JobRecord) waitUntilJobComplete(pipelineId);
+        final List<String> statusMessages = jobInfo.getStatusMessages();
+        assertEquals(6, statusMessages.size());
+        assertTrue(statusMessages.get(0).endsWith("INFO test END"));
+        assertTrue(statusMessages.get(1).endsWith("INFO test a END"));
+        assertTrue(statusMessages.get(2).endsWith("INFO test a b END"));
+        assertTrue(statusMessages.get(3).endsWith("INFO test a b c END"));
+        assertTrue(statusMessages.get(4).replace("\r", "").replace("\n", "").endsWith("INFO test END MockException"));
+        assertTrue(statusMessages.get(5).replace("\r", "").replace("\n", "").endsWith("INFO test a END MockException"));
     }
 
     @SuppressWarnings("serial")
@@ -680,6 +695,26 @@ public class MiscPipelineTest extends PipelineTest {
         public Value<Void> run() {
             addStatusMessage("test");
             throw new IllegalStateException("simulated");
+        }
+    }
+    @SuppressWarnings("serial")
+    private static class StatusLinesLoggerJob extends Job0<Void> {
+        @Override
+        public Value<Void> run() {
+            final Logger logger = getStatusLogger();
+            final RuntimeException exception = mock(RuntimeException.class, (Answer) invocation -> {
+                if (invocation.getMethod().getName().equals("toString")) {
+                    return "MockException";
+                }
+                return invocation.callRealMethod();
+            });
+            logger.info("test END");
+            logger.info("test {} END", "a");
+            logger.info("test {} {} END", "a", "b");
+            logger.info("test {} {} {} END", "a", "b", "c");
+            logger.info("test END", exception);
+            logger.info("test {} END", "a", exception);
+            return null;
         }
     }
 }

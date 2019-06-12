@@ -19,6 +19,7 @@ import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.appengine.tools.pipeline.impl.PromisedValueImpl;
 import com.google.appengine.tools.pipeline.impl.backend.UpdateSpec;
 import com.google.appengine.tools.pipeline.impl.model.JobRecord;
+import org.slf4j.Logger;
 
 import javax.inject.Inject;
 import java.io.Serializable;
@@ -553,8 +554,18 @@ public abstract class Job<E> implements Serializable {
      * Allows a job to add status lines.
      * The Pipeline UI displays all the lines accumulated by the job.
      */
-    protected final void addStatusMessage(final String url) {
-        thisJobRecord.addStatusMessage(url);
+    protected final void addStatusMessage(final String line) {
+        thisJobRecord.addStatusMessage(line);
+    }
+
+    /**
+     * Allows a job to add status using SLF4J Logger interface.
+     * The Pipeline UI displays all the lines accumulated by the job.
+     *
+     * @return logger
+     */
+    protected final Logger getStatusLogger() {
+        return thisJobRecord.getStatusLogger();
     }
 
     protected final String getOnQueue() {

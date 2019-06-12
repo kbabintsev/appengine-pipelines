@@ -29,6 +29,7 @@ import com.google.appengine.tools.pipeline.Route;
 import com.google.appengine.tools.pipeline.impl.FutureValueImpl;
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
+import com.google.appengine.tools.pipeline.impl.util.CallingBackLogger;
 import com.google.appengine.tools.pipeline.impl.util.JsonUtils;
 import com.google.appengine.tools.pipeline.impl.util.ServiceUtils;
 import com.google.appengine.tools.pipeline.impl.util.StringUtils;
@@ -38,6 +39,7 @@ import com.google.cloud.spanner.StructReader;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -149,6 +151,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
     private Slot outputSlotInflated;
     private JobInstanceRecord jobInstanceRecordInflated;
     private Throwable exceptionInflated;
+    private CallingBackLogger statusLogger = new CallingBackLogger(this::addStatusMessage);
 
     /**
      * Re-constitutes an instance of this class from a Data Store entity.
@@ -635,6 +638,10 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
         }
         final String line = "[" + attemptNumber + "] " + DateTime.now().toString() + ": " + text;
         statusMessages.add(line.length() > STATUS_MESSAGES_MAX_LENGTH ? line.substring(0, STATUS_MESSAGES_MAX_LENGTH - 3) + "..." : line);
+    }
+
+    public Logger getStatusLogger() {
+        return statusLogger;
     }
 
     public List<String> getStatusMessages() {
