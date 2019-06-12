@@ -1,5 +1,6 @@
 package com.google.appengine.tools.pipeline;
 
+import com.google.api.client.util.Key;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Maps;
 
@@ -10,9 +11,13 @@ public final class Route implements Serializable {
 
     private static final long serialVersionUID = -8983675245350589029L;
 
+    @Key
     private String service;
+    @Key
     private String version;
+    @Key
     private String instance;
+    @Key
     private Map<String, String> headers;
 
     public String getService() {

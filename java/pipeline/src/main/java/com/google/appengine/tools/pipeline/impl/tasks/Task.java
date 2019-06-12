@@ -139,7 +139,7 @@ public abstract class Task {
             @Override
             void setProperty(final Task task, final String value) {
                 try {
-                    task.getQueueSettings().setRoute(JsonUtils.desertialize(value, Route.class));
+                    task.getQueueSettings().setRoute(JsonUtils.deserialize(value, Route.class));
                 } catch (IOException e) {
                     throw new RuntimeException("Can't deserialize Route", e);
                 }

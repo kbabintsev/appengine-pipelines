@@ -199,7 +199,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
         backoffSeconds = entity.getLong(BACKOFF_SECONDS_PROPERTY);
         backoffFactor = entity.getLong(BACKOFF_FACTOR_PROPERTY);
         try {
-            queueSettings.setRoute(entity.isNull(ROUTE_PROPERY) ? null : JsonUtils.desertialize(entity.getString(ROUTE_PROPERY), Route.class));
+            queueSettings.setRoute(entity.isNull(ROUTE_PROPERY) ? null : JsonUtils.deserialize(entity.getString(ROUTE_PROPERY), Route.class));
         } catch (IOException e) {
             throw new RuntimeException("Can't parse '" + ROUTE_PROPERY + "'", e);
         }

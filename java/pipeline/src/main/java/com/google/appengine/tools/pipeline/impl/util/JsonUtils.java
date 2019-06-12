@@ -171,7 +171,7 @@ public final class JsonUtils {
     }
 
     @Nullable
-    public static <T> T desertialize(@Nullable final String value, final Class<T> destinationClass) throws IOException {
+    public static <T> T deserialize(@Nullable final String value, final Class<T> destinationClass) throws IOException {
         if (value == null) {
             return null;
         }
