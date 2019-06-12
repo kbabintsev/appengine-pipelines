@@ -25,6 +25,7 @@ import com.google.appengine.tools.pipeline.impl.tasks.FanoutTask;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
 import com.google.appengine.tools.pipeline.util.Pair;
 
+import javax.annotation.Nullable;
 import java.util.Set;
 import java.util.UUID;
 
@@ -171,12 +172,17 @@ public interface PipelineBackEnd {
      * Queries the data store for all root Pipeline.
      *
      * @param classFilter An optional filter by class display name.
-     * @param cursor      An optional cursor (used for paging).
+     * @param inStates    An optional filter by states of job.
      * @param limit       Results limit (zero or negative will be treated as no limit).
+     * @param offset      Results offset (zero or negative will be treated as no offset).
      * @return a Pair of job records and a next cursor (or null, if no more results).
      */
     Pair<? extends Iterable<JobRecord>, String> queryRootPipelines(
-            String classFilter, String cursor, int limit);
+            @Nullable String classFilter,
+            @Nullable Set<JobRecord.State> inStates,
+            int limit,
+            int offset
+    );
 
     /**
      * Returns the set of all root pipelines display name.

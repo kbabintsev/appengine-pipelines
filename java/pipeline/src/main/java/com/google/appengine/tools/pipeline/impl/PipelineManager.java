@@ -50,6 +50,7 @@ import com.google.appengine.tools.pipeline.impl.util.UuidGenerator;
 import com.google.appengine.tools.pipeline.util.Pair;
 import com.google.inject.Injector;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.lang.reflect.InvocationTargetException;
@@ -351,8 +352,12 @@ public final class PipelineManager {
     }
 
     public Pair<? extends Iterable<JobRecord>, String> queryRootPipelines(
-            final String classFilter, final String cursor, final int limit) {
-        return backEnd.queryRootPipelines(classFilter, cursor, limit);
+            @Nullable final String classFilter,
+            @Nullable final Set<JobRecord.State> inStates,
+            final int limit,
+            final int offset
+    ) {
+        return backEnd.queryRootPipelines(classFilter, inStates, limit, offset);
     }
 
     public Set<String> getRootPipelinesDisplayName() {

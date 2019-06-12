@@ -85,6 +85,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * @author rudominer@google.com (Mitch Rudominer)
@@ -540,8 +541,12 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
     }
 
     @Override
-    public Pair<? extends Iterable<JobRecord>, String> queryRootPipelines(final String classFilter,
-                                                                          final String cursor, final int limit) {
+    public Pair<? extends Iterable<JobRecord>, String> queryRootPipelines(
+            @Nullable final String classFilter,
+            @Nullable final Set<JobRecord.State> inStates,
+            final int limit,
+            final int offset
+    ) {
         final Statement.Builder builder = Statement.newBuilder(
                 "SELECT " + String.join(", ", JobRecord.PROPERTIES) + " "
                         + "FROM " + JobRecord.DATA_STORE_KIND + " "
@@ -553,13 +558,23 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
             builder.append(JobRecord.ROOT_JOB_DISPLAY_NAME + " = @classFilter ")
                     .bind("classFilter").to(classFilter);
         }
+        if (inStates != null && !inStates.isEmpty()) {
+            builder.append("AND " + JobRecord.STATE_PROPERTY + " IN UNNEST(@states)")
+                    .bind("states").toStringArray(inStates.stream().map(JobRecord.State::toString).collect(Collectors.toList()));
+        }
         if (UuidGenerator.isTest()) {
             builder.append("AND " + JobRecord.ROOT_JOB_KEY_PROPERTY + " LIKE @prefix ")
                     .bind("prefix").to(UuidGenerator.getTestPrefix() + "%");
         }
         builder.append("ORDER BY " + JobRecord.ROOT_JOB_DISPLAY_NAME + " ");
-        // limit not set
-        // cursor not used
+        if (limit > 0) {
+            builder.append("LIMIT @limit ")
+                    .bind("limit").to(limit);
+        }
+        if (offset > 0) {
+            builder.append("OFFSET @offset ")
+                    .bind("offset").to(offset);
+        }
         final List<JobRecord> roots = new LinkedList<>();
         try (ResultSet rs = databaseClient.singleUse().executeQuery(
                 builder.build()

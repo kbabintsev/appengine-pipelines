@@ -31,8 +31,8 @@ public final class JsonListHandler {
 
     static final String PATH_COMPONENT = "rpc/list";
     private static final String CLASS_FILTER_PARAMETER = "class_path";
-    private static final String CURSOR_PARAMETER = "cursor";
     private static final String LIMIT_PARAMETER = "limit";
+    private static final String OFFSET_PARAMETER = "offset";
     private static final int DEFAULT_LIMIT = 100;
     private final PipelineManager pipelineManager;
 
@@ -55,10 +55,14 @@ public final class JsonListHandler {
     public void doGet(final HttpServletRequest req, final HttpServletResponse resp)
             throws ServletException {
         final String classFilter = getParam(req, CLASS_FILTER_PARAMETER);
-        final String cursor = getParam(req, CURSOR_PARAMETER);
         final String limit = getParam(req, LIMIT_PARAMETER);
+        final String offset = getParam(req, OFFSET_PARAMETER);
         final Pair<? extends Iterable<JobRecord>, String> pipelineRoots = pipelineManager.queryRootPipelines(
-                classFilter, cursor, limit == null ? DEFAULT_LIMIT : Integer.parseInt(limit));
+                classFilter,
+                null,
+                limit == null ? DEFAULT_LIMIT : Integer.parseInt(limit),
+                offset == null ? 0 : Integer.parseInt(offset)
+        );
         final String asJson = JsonGenerator.pipelineRootsToJson(pipelineRoots);
         try {
             resp.getWriter().write(asJson);
