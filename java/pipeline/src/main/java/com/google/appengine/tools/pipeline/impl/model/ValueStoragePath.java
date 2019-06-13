@@ -16,4 +16,9 @@ public final class ValueStoragePath {
     public String getPath() {
         return rootJobKey + "/" + ownerType + "-" + ownerKey + ".dat";
     }
+
+    @Override
+    public String toString() {
+        return getPath();
+    }
 }

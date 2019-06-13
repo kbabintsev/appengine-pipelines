@@ -501,7 +501,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
         }
 
         if (keys.size() != count) {
-            throw new RuntimeException("Missing " + (keys.size() - count) + "entities");
+            throw new RuntimeException("Missing " + (keys.size() - count) + " entities");
         }
     }
 

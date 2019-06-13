@@ -286,7 +286,7 @@ public final class Barrier extends PipelineModelObject {
     @Override
     public String toString() {
         return "Barrier[" + getKeyName(getKey()) + ", " + type + ", released=" + released + ", "
-                + jobKey + ", waitingOn="
+                + "jobKey=" + jobKey + ", waitingOn="
                 + StringUtils.toStringParallel(waitingOnKeys, waitingOnGroupSizes) + ", job="
                 + getKeyName(getJobKey()) + ", parent="
                 + getKeyName(getGeneratorJobKey()) + ", graphKey=" + getGraphKey() + "]";
@@ -296,6 +296,7 @@ public final class Barrier extends PipelineModelObject {
      * The type of Barrier
      */
     public enum Type {
-        RUN, FINALIZE
+        RUN,
+        FINALIZE,
     }
 }
