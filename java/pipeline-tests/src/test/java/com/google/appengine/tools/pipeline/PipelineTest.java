@@ -36,7 +36,7 @@ import static com.google.appengine.tools.pipeline.impl.util.UuidGenerator.USE_SI
 /**
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class PipelineTest extends TestCase {
+public abstract class PipelineTest extends TestCase {
 
     private static StringBuffer traceBuffer;
     protected LocalServiceTestHelper helper;
@@ -145,6 +145,8 @@ public class PipelineTest extends TestCase {
         JobInfo jobInfo = waitUntilJobComplete(pipelineId);
         switch (jobInfo.getJobState()) {
             case COMPLETED_SUCCESSFULLY:
+                Thread.sleep(3000); // apparently after status change, something might not be propagated correctly and you need to wait some time.
+                jobInfo = service.getJobInfo(pipelineId); // re-getting the job
                 return (T) jobInfo.getOutput();
             case STOPPED_BY_ERROR:
                 throw new RuntimeException("Job stopped " + jobInfo.getError());

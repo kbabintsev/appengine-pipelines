@@ -239,6 +239,11 @@ public final class Barrier extends PipelineModelObject {
         if (null == waitingOnInflated) {
             waitingOnInflated = new LinkedList<>();
         }
+        // if user set waitFor result of a job and framework set it automatically - it would be a problem.
+        // That's why we're skipping slot if we already have it
+        if (waitingOnKeys.contains(slotDescr.getSlot().getKey())) {
+            return;
+        }
         waitingOnInflated.add(slotDescr);
         waitingOnGroupSizes.add((long) slotDescr.getGroupSize());
         final Slot slot = slotDescr.getSlot();
@@ -257,7 +262,8 @@ public final class Barrier extends PipelineModelObject {
     }
 
     private void verifyStateBeforAdd(final Slot slot) {
-        if (getType() == Type.FINALIZE && waitingOnInflated != null && !waitingOnInflated.isEmpty()) {
+        // now we can add slots to finalize barrier until it's not released
+        if (getType() == Type.FINALIZE && isReleased() && waitingOnInflated != null && !waitingOnInflated.isEmpty()) {
             throw new IllegalStateException("Trying to add a slot, " + slot
                     + ", to an already populated finalized barrier: " + this);
         }

@@ -15,6 +15,7 @@
 package com.google.appengine.tools.pipeline.impl;
 
 import com.google.appengine.tools.pipeline.FutureList;
+import com.google.appengine.tools.pipeline.FutureValue;
 import com.google.appengine.tools.pipeline.ImmediateValue;
 import com.google.appengine.tools.pipeline.Job;
 import com.google.appengine.tools.pipeline.Job0;
@@ -48,6 +49,7 @@ import com.google.appengine.tools.pipeline.impl.tasks.Task;
 import com.google.appengine.tools.pipeline.impl.util.StringUtils;
 import com.google.appengine.tools.pipeline.impl.util.UuidGenerator;
 import com.google.appengine.tools.pipeline.util.Pair;
+import com.google.common.collect.Lists;
 import com.google.inject.Injector;
 
 import javax.annotation.Nullable;
@@ -648,6 +650,10 @@ public final class PipelineManager {
         invokePrivateJobMethod("setUpdateSpec", job, updateSpec);
     }
 
+    private void setChildValues(final Job<?> job, final List<FutureValue<?>> childValues) {
+        invokePrivateJobMethod("setChildValues", job, childValues);
+    }
+
     /**
      * Run the job with the given key.
      * <p>
@@ -731,6 +737,8 @@ public final class PipelineManager {
         final UUID currentRunKey = UuidGenerator.nextUuid();
         setCurrentRunKey(job, currentRunKey);
         setUpdateSpec(job, updateSpec);
+        final List<FutureValue<?>> childValues = Lists.newArrayList();
+        setChildValues(job, childValues);
 
         injectJobMembers(job);
 
@@ -802,8 +810,13 @@ public final class PipelineManager {
         // by the running of the job.
         // See "http://goto/java-pipeline-model".
         LOGGER.finest("Job returned: " + returnValue);
-        registerSlotsWithBarrier(updateSpec, returnValue, rootJobKey, jobRecord.getKey(),
-                jobRecord.getQueueSettings(), currentRunKey, finalizeBarrier);
+        registerSlotsWithBarrier(updateSpec, returnValue, rootJobKey, jobRecord.getKey(), jobRecord.getQueueSettings(), currentRunKey, finalizeBarrier);
+        // adding all the children FutureValues to finalize barrier to automatically wait util all of them are finished
+        if (!childValues.isEmpty()) {
+            for (final FutureValue<?> childValue : childValues) {
+                registerSlotsWithBarrier(updateSpec, childValue, rootJobKey, jobRecord.getKey(), jobRecord.getQueueSettings(), currentRunKey, finalizeBarrier);
+            }
+        }
         jobRecord.setState(State.WAITING_TO_FINALIZE);
         jobRecord.setChildGraphKey(currentRunKey);
         updateSpec.getFinalTransaction().includeJob(jobRecord);
@@ -1050,7 +1063,9 @@ public final class PipelineManager {
         // Copy the finalize value to the output slot
         final List<Object> finalizeArguments = finalizeBarrier.buildArgumentList();
         final int numFinalizeArguments = finalizeArguments.size();
-        if (1 != numFinalizeArguments) {
+        if (numFinalizeArguments > 0) {
+            // 0-th argument is the actual value that job returned.
+            // 1-st and following are results of child jobs that were used to block finalize until they all are finished
             throw new RuntimeException(
                     "Internal logic error: numFinalizeArguments=" + numFinalizeArguments);
         }

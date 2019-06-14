@@ -36,6 +36,9 @@ public class AllTests {
         suite.addTestSuite(RetryTest.class);
         suite.addTestSuite(PipelinesErrorHandlingTest.class);
         suite.addTestSuite(DelayedValueTest.class);
+        suite.addTestSuite(ConcurrencyTest.class);
+        suite.addTestSuite(JsonClassFilterHandlerTest.class);
+        suite.addTestSuite(JsonListHandlerTest.class);
         return suite;
     }
 

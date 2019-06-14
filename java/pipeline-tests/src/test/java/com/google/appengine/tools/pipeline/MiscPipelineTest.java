@@ -157,12 +157,17 @@ public class MiscPipelineTest extends PipelineTest {
         // which is not the case right now. This this *SHOULD* change after we fix
         // it, as fixing it should cause a dead-lock.
         // see b/12249138
-        UUID pipelineId = service.startNewPipeline(new ReturnValueParentJob());
-        String value = waitForJobToComplete(pipelineId);
-        assertEquals("bla", value);
-        ReturnValueParentJob.latch1.countDown();
-        waitUntilTaskQueueIsEmpty();
-        ReturnValueParentJob.latch2.await();
+
+//        UUID pipelineId = service.startNewPipeline(new ReturnValueParentJob());
+//        String value = waitForJobToComplete(pipelineId);
+//        assertEquals("bla", value);
+//        ReturnValueParentJob.latch1.countDown();
+//        waitUntilTaskQueueIsEmpty();
+//        ReturnValueParentJob.latch2.await();
+
+        // ^ Original test from Google developers.
+        // Looks like we fixed the problem and it indeed produces a deadlock now
+        // Therefore this test is completely commented
     }
 
     public void testSubmittingPromisedValueMoreThanOnce() throws Exception {

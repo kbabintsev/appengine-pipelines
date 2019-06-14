@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 
 import javax.inject.Inject;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -139,6 +140,7 @@ public abstract class Job<E> implements Serializable {
     private transient JobRecord thisJobRecord;
     private transient UpdateSpec updateSpec;
     private transient UUID currentRunKey;
+    private transient List<FutureValue<?>> childValues;
 
     /**
      * Constructs a new {@code ImmediateValue}. This method is only syntactic
@@ -268,6 +270,12 @@ public abstract class Job<E> implements Serializable {
         this.currentRunKey = key;
     }
 
+    // This method will be invoked by reflection from PipelineManager
+    @SuppressWarnings("unused")
+    private void setChildValues(final ArrayList<FutureValue<?>> childValues) {
+        this.childValues = childValues;
+    }
+
     /**
      * This is the non-type-safe version of the {@code futureCall()} family of
      * methods. Normally a user will not need to invoke this method directly.
@@ -294,7 +302,10 @@ public abstract class Job<E> implements Serializable {
         final JobRecord childJobRecord = pipelineManager.registerNewJobRecord(
                 updateSpec, settings, thisJobRecord, currentRunKey, jobInstance, params);
         thisJobRecord.appendChildKey(childJobRecord.getKey());
-        return new FutureValueImpl<>(childJobRecord.getOutputSlotInflated());
+        // adding the FutureValue of a child job to internal list to block the parent job until all children are finished
+        final FutureValueImpl<T> out = new FutureValueImpl<>(childJobRecord.getOutputSlotInflated());
+        childValues.add(out);
+        return out;
     }
 
     /**
