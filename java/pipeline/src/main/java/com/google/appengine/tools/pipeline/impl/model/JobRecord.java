@@ -33,6 +33,7 @@ import com.google.appengine.tools.pipeline.impl.util.CallingBackLogger;
 import com.google.appengine.tools.pipeline.impl.util.JsonUtils;
 import com.google.appengine.tools.pipeline.impl.util.ServiceUtils;
 import com.google.appengine.tools.pipeline.impl.util.StringUtils;
+import com.google.appengine.tools.pipeline.impl.util.UuidGenerator;
 import com.google.cloud.Timestamp;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.StructReader;
@@ -286,7 +287,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
             final JobSetting[] settings,
             final QueueSettings parentQueueSettings
     ) {
-        super(DATA_STORE_KIND, rootJobKey, null, thisKey, generatorJobKey, graphKey);
+        super(DATA_STORE_KIND, rootJobKey, thisKey, generatorJobKey, graphKey);
         jobInstanceRecordInflated = new JobInstanceRecord(pipelineManager, this, jobInstance);
         jobInstanceKey = jobInstanceRecordInflated.getKey();
         exceptionHandlerSpecified = hasExceptionHandler(jobInstance);
@@ -339,7 +340,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
      *                    JobRecord.
      */
     public static JobRecord createRootJobRecord(final PipelineManager pipelineManager, final Job<?> jobInstance, final JobSetting[] settings) {
-        final UUID key = generateKey(null, DATA_STORE_KIND);
+        final UUID key = UuidGenerator.nextUuid();
         return new JobRecord(pipelineManager, key, jobInstance, settings);
     }
 

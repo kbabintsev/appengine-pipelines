@@ -83,11 +83,6 @@ public abstract class PipelineModelObject {
      *                        non-null, except in the case that we are currently constructing the
      *                        root job. In that case {@code thisKey} and {@code egParentKey} must
      *                        both be null and this must be a {@link JobRecord}.
-     * @param egParentKey     The entity group parent key. This must be null unless
-     *                        {@code thisKey} is null. If {@code thisKey} is null then
-     *                        {@code parentKey} will be used to construct {@code thisKey}.
-     *                        {@code parentKey} and {@code thisKey} are both allowed to be null,
-     *                        in which case {@code thisKey} will be constructed without a parent.
      * @param thisKey         The key for the object being constructed. If this is null
      *                        then a new key will be constructed.
      * @param generatorJobKey The key of the job whose run() method created this
@@ -101,7 +96,7 @@ public abstract class PipelineModelObject {
      *                        its barriers or slots.
      */
     protected PipelineModelObject(
-            final String tableName, final UUID rootJobKey, final UUID egParentKey, final UUID thisKey, final UUID generatorJobKey, final UUID graphKey) {
+            final String tableName, final UUID rootJobKey, final UUID thisKey, final UUID generatorJobKey, final UUID graphKey) {
         if (null == tableName) {
             throw new IllegalArgumentException("tableName is null");
         }
@@ -118,11 +113,8 @@ public abstract class PipelineModelObject {
         this.generatorJobKey = generatorJobKey;
         this.graphKey = graphKey;
         if (null == thisKey) {
-            key = generateKey(egParentKey, getDatastoreKind());
+            key = UuidGenerator.nextUuid();
         } else {
-            if (egParentKey != null) {
-                throw new IllegalArgumentException("You may not specify both thisKey and parentKey");
-            }
             key = thisKey;
         }
     }
@@ -149,7 +141,7 @@ public abstract class PipelineModelObject {
     protected PipelineModelObject(
             final String tableName, final UUID rootJobKey, final UUID generatorJobKey, final UUID graphKey
     ) {
-        this(tableName, rootJobKey, null, null, generatorJobKey, graphKey);
+        this(tableName, rootJobKey, null, generatorJobKey, graphKey);
     }
 
     /**
@@ -160,19 +152,11 @@ public abstract class PipelineModelObject {
      *                  {@link #toEntity()}.
      */
     protected PipelineModelObject(final String tableName, final StructReader entity) {
-        this(tableName, extractRootJobKey(entity), null, extractKey(entity), extractGeneratorJobKey(entity),
+        this(tableName, extractRootJobKey(entity), extractKey(entity), extractGeneratorJobKey(entity),
                 extractGraphKey(entity));
         final String expectedEntityType = getDatastoreKind();
         if (!expectedEntityType.equals(tableName)) {
             throw new IllegalArgumentException("The entity is not of kind " + expectedEntityType);
-        }
-    }
-
-    protected static UUID generateKey(final UUID parentKey, final String kind) {
-        if (null == parentKey) {
-            return UuidGenerator.nextUuid(); //key = KeyFactory.createKey(kind, name);
-        } else {
-            return UuidGenerator.nextUuid(); //key = parentKey.getChild(kind, name);
         }
     }
 

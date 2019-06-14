@@ -75,7 +75,7 @@ public final class Barrier extends PipelineModelObject {
     private List<SlotDescriptor> waitingOnInflated;
 
     private Barrier(final Type type, final UUID rootJobKey, final UUID jobKey, final UUID generatorJobKey, final UUID graphKey) {
-        super(DATA_STORE_KIND, rootJobKey, getEgParentKey(type, jobKey), null, generatorJobKey, graphKey);
+        super(DATA_STORE_KIND, rootJobKey, null, generatorJobKey, graphKey);
         this.jobKey = jobKey;
         this.type = type;
         waitingOnGroupSizes = new LinkedList<>();
@@ -95,28 +95,6 @@ public final class Barrier extends PipelineModelObject {
         released = entity.getBoolean(RELEASED_PROPERTY); // probably not null?
         waitingOnKeys = getUuidListProperty(WAITING_ON_KEYS_PROPERTY, entity).orElse(null);
         waitingOnGroupSizes = getLongListProperty(WAITING_ON_GROUP_SIZES_PROPERTY, entity).orElse(null);
-    }
-
-    /**
-     * Returns the entity group parent of a Barrier of the specified type.
-     * <p>
-     * According to our <a href="http://goto/java-pipeline-model">transactional
-     * model</a>: If B is the finalize barrier of a Job J, then the entity group
-     * parent of B is J. Run barriers do not have an entity group parent.
-     */
-    private static UUID getEgParentKey(final Type type, final UUID jobKey) {
-        switch (type) {
-            case RUN:
-                return null;
-            case FINALIZE:
-                if (null == jobKey) {
-                    throw new IllegalArgumentException("jobKey is null");
-                }
-                break;
-            default:
-                break;
-        }
-        return jobKey;
     }
 
     public static Barrier dummyInstanceForTesting() {

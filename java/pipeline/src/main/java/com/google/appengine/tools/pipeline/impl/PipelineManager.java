@@ -1063,7 +1063,7 @@ public final class PipelineManager {
         // Copy the finalize value to the output slot
         final List<Object> finalizeArguments = finalizeBarrier.buildArgumentList();
         final int numFinalizeArguments = finalizeArguments.size();
-        if (numFinalizeArguments > 0) {
+        if (numFinalizeArguments == 0) {
             // 0-th argument is the actual value that job returned.
             // 1-st and following are results of child jobs that were used to block finalize until they all are finished
             throw new RuntimeException(
