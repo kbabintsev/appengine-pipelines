@@ -48,7 +48,7 @@ package com.google.appengine.tools.pipeline;
  * of the child Jobs.
  * </ul>
  *
- * @param <E> The underlying type represented by this <code>Value</code>
+ * @param <E> The underlying type represented by this {@code Value}
  * @author rudominer@google.com (Mitch Rudominer)
  */
 public interface Value<E> {

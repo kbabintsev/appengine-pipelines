@@ -29,8 +29,8 @@ import java.util.UUID;
 
 /**
  * The abstract ancestor class of all user job classes. A <b>job</b> is by
- * definition a subclass of this class that implements a method named <code>run
- * </code>.
+ * definition a subclass of this class that implements a method named {@code run
+ * }.
  * <p>
  * In order to fully take advantage of the framework's compile-time
  * type-checking, a user's job class should subclass one of {@link Job0},
@@ -76,11 +76,11 @@ import java.util.UUID;
  * method one might write
  *
  * <pre>
- * <code>
- * FutureValue&lt;Integer&gt; x = futureCall(new MyJob(), immediate(4));
- * FutureValue&lt;String&gt; s = futureCall(new MySecondJob(), x, immediate("hello");
+ * {@code
+ * FutureValue<Integer> x = futureCall(new MyJob(), immediate(4));
+ * FutureValue<String> s = futureCall(new MySecondJob(), x, immediate("hello");
  * futureCall(new MyThirdJob(), waitFor(s), waitFor(x), maxAttempts(5), backoffSeconds(5));
- * </code>
+ * }
  * </pre>
  * <p>
  * A Job can provide an optional {@code handleException} method that is called
@@ -117,9 +117,9 @@ import java.util.UUID;
  * {@code handleException} methods must have a single argument of type
  * {@link Throwable} or any of its descendants. If more than one method is
  * specified than the method that has most specific exception parameter that is
- * parent of the thrown exception is called. If called the <code>Value</code>
+ * parent of the thrown exception is called. If called the {@code Value}
  * returned by {@code handleException(e)} method is used by the framework
- * instead of the <code>Value</code> returned by <code>run</code>. {@code handleException}
+ * instead of the {@code Value} returned by {@code run}. {@code handleException}
  * method is allowed to throw any exception.
  * <p>
  *
@@ -288,7 +288,7 @@ public abstract class Job<E> implements Serializable {
      * that the framework offers a {@code Jobn} class.
      *
      * @param <T>         The return type of the child job being specified
-     * @param settings
+     * @param settings    The array of JobSettings
      * @param jobInstance The user-written job object
      * @param params      The parameters to be passed to the {@code run} method of the
      *                    job
@@ -499,14 +499,14 @@ public abstract class Job<E> implements Serializable {
     public final <F> PromisedValue<F> newPromise(final Class<F> klass) {
         final PromisedValueImpl<F> promisedValue =
                 new PromisedValueImpl<>(pipelineManager, getPipelineKey(), thisJobRecord.getKey(), currentRunKey);
-        updateSpec.getNonTransactionalGroup().includeSlot(promisedValue.getSlot());
+        updateSpec.newTransaction("newPromise:" + promisedValue.getSlot().getKey()).includeSlot(promisedValue.getSlot());
         return promisedValue;
     }
 
     public final <F> PromisedValue<F> newPromise() {
         final PromisedValueImpl<F> promisedValue =
                 new PromisedValueImpl<>(pipelineManager, getPipelineKey(), thisJobRecord.getKey(), currentRunKey);
-        updateSpec.getNonTransactionalGroup().includeSlot(promisedValue.getSlot());
+        updateSpec.newTransaction("newPromise:" + promisedValue.getSlot().getKey()).includeSlot(promisedValue.getSlot());
         return promisedValue;
     }
 

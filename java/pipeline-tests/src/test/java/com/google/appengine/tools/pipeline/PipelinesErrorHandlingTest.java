@@ -185,9 +185,9 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
         // Current order: (we think that change in order does not matter. All 8 traces are still present)
         assertEquals("TestCancellationOfHandleExceptionJob.run "
                 + "JobToGetCancellationInHandleException.run AngryJob.run "
-                + "JobToGetCancellationInHandleException.handleException "
+                + "JobToGetCancellationInHandleException.handleException CleanupJob.run "
                 + "TestCancellationOfHandleExceptionJob.handleException "
-                + "CleanupJob.run PassThroughJob1.run PassThroughJob2.run", trace());
+                + "PassThroughJob1.run PassThroughJob2.run", trace());
         assertEquals(EXPECTED_RESULT1, result.intValue());
     }
 

@@ -22,10 +22,12 @@ import com.google.appengine.tools.pipeline.impl.model.PipelineModelObject;
 import com.google.appengine.tools.pipeline.impl.model.Slot;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -37,24 +39,19 @@ import java.util.UUID;
  * <p>
  * An {@code UpdateSpec} is organized into the following sub-groups:
  * <ol>
- * <li>A {@link #getNonTransactionalGroup() non-transactional group}
- * <li>A set of {@link #getOrCreateTransaction(String) named transactional groups}
+ * <li>A {@link #newTransaction(String)} named transactions}
  * <li>A {@link #getFinalTransaction() final transactional group}.
- * <ol>
+ * </ol>
  * <p>
  * When an {@code UpdateSpec} is {@link PipelineBackEnd#save saved},
  * the groups will be saved in the following order using the following
  * transactions:
  * <ol>
- * <li>Each element of the {@link #getNonTransactionalGroup() non-transactional
- * group} will be saved non-transactionally. Then,
- * <li>for each of the {@link #getOrCreateTransaction(String) named transactional
- * groups}, all of the objects in the group will be saved in a single
- * transaction. The named transactional groups will be saved in random order.
- * Finally,
+ * <li>Each element of the {@link #newTransaction(String)} named transactions}
+ * will be saved transactionally in the order they been added. Then,
  * <li>each element of the {@link #getFinalTransaction() final transactional
  * group} will be saved in a transaction.
- * <ol>
+ * </ol>
  * <p>
  * The {@link #getFinalTransaction() final transactional group} is a
  * {@link TransactionWithTasks} and so may contain {@link Task tasks}. The tasks
@@ -68,9 +65,8 @@ import java.util.UUID;
 public final class UpdateSpec {
 
     private static final int INITIAL_MAP_CAPACITY = 10;
-    private Group nonTransactionalGroup = new Group();
-    private Map<String, Transaction> transactions = new HashMap<>(INITIAL_MAP_CAPACITY);
-    private TransactionWithTasks finalTransaction = new TransactionWithTasks();
+    private List<Transaction> transactions = new ArrayList<>();
+    private TransactionWithTasks finalTransaction = new TransactionWithTasks("final");
     private UUID rootJobKey;
 
     public UpdateSpec(final UUID rootJobKey) {
@@ -85,27 +81,18 @@ public final class UpdateSpec {
         this.rootJobKey = rootJobKey;
     }
 
-    public Transaction getOrCreateTransaction(final String transactionName) {
-        Transaction transaction = transactions.get(transactionName);
-        if (null == transaction) {
-            transaction = new Transaction();
-            transactions.put(transactionName, transaction);
-        }
-        return transaction;
-    }
-
-    // TODO(user): could be removed, current code only have 1 entity per
-    // transaction (Barrier) and for that we don't need the transaction.
-    public Collection<Transaction> getTransactions() {
-        return transactions.values();
-    }
-
     public TransactionWithTasks getFinalTransaction() {
         return finalTransaction;
     }
 
-    public Group getNonTransactionalGroup() {
-        return nonTransactionalGroup;
+    public Transaction newTransaction(final String name) {
+        final Transaction out = new Transaction(name);
+        transactions.add(out);
+        return out;
+    }
+
+    public List<Transaction> getTransactions() {
+        return transactions;
     }
 
     /**
@@ -122,14 +109,23 @@ public final class UpdateSpec {
      *
      * @author rudominer@google.com (Mitch Rudominer)
      */
-    public static class Group {
+    public static class Transaction {
         private static final int INITIAL_SIZE = 20;
 
+        private final String name;
         private Map<UUID, JobRecord> jobMap = new HashMap<>(INITIAL_SIZE);
         private Map<UUID, Barrier> barrierMap = new HashMap<>(INITIAL_SIZE);
         private Map<UUID, Slot> slotMap = new HashMap<>(INITIAL_SIZE);
         private Map<UUID, JobInstanceRecord> jobInstanceMap = new HashMap<>(INITIAL_SIZE);
         private Map<UUID, ExceptionRecord> failureMap = new HashMap<>(INITIAL_SIZE);
+
+        public Transaction(final String name) {
+            this.name = name;
+        }
+
+        public final String getName() {
+            return name;
+        }
 
         private static <E extends PipelineModelObject> void put(final Map<UUID, E> map, final E object) {
             map.put(object.getKey(), object);
@@ -189,15 +185,6 @@ public final class UpdateSpec {
     }
 
     /**
-     * An extension of {@link Group} with the added implication that all objects
-     * added to the group must be saved in a single data store transaction.
-     *
-     * @author rudominer@google.com (Mitch Rudominer)
-     */
-    public static class Transaction extends Group {
-    }
-
-    /**
      * An extension of {@link Transaction} that also accepts
      * {@link Task Tasks}. Each task included in the group will
      * be enqueued to the task queue as part of the same transaction
@@ -211,6 +198,10 @@ public final class UpdateSpec {
     public class TransactionWithTasks extends Transaction {
         private static final int INITIAL_SIZE = 20;
         private final Set<Task> taskSet = new HashSet<>(INITIAL_SIZE);
+
+        public TransactionWithTasks(final String name) {
+            super(name);
+        }
 
         public final void registerTask(final Task task) {
             taskSet.add(task);

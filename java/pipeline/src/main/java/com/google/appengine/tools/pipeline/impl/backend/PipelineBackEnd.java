@@ -93,7 +93,7 @@ public interface PipelineBackEnd {
      *                will not return {@code null}.
      * @return A {@code Slot}, possibly with a partially-inflated associated graph
      * of objects.
-     * @throws NoSuchObjectException
+     * @throws NoSuchObjectException if unable to find an entity
      */
     Slot querySlot(UUID key, boolean inflate) throws NoSuchObjectException;
 
@@ -102,7 +102,7 @@ public interface PipelineBackEnd {
      *
      * @param key The Key of the failure to fetch.
      * @return A {@code FailureRecord}
-     * @throws NoSuchObjectException
+     * @throws NoSuchObjectException if unable to find an entity
      */
     ExceptionRecord queryFailure(UUID key) throws NoSuchObjectException;
 

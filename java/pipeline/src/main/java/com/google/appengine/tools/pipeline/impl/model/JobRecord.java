@@ -157,7 +157,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
     /**
      * Re-constitutes an instance of this class from a Data Store entity.
      *
-     * @param entity
+     * @param entity structure to read JobRecord from
      */
     public JobRecord(final StructReader entity) {
         super(DATA_STORE_KIND, entity);
@@ -377,7 +377,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
      * Constructs and returns a Data Store Entity that represents this model
      * object
      *
-     * @return
+     * @return the mutation for the database
      */
     @Override
     public PipelineMutation toEntity() {
@@ -558,7 +558,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
 
     /**
      * Returns key of the nearest ancestor that has exceptionHandler method
-     * overridden or <code>null</code> if none of them has it.
+     * overridden or {@code null} if none of them has it.
      */
     public UUID getExceptionHandlingAncestorKey() {
         return exceptionHandlingAncestorKey;
@@ -578,16 +578,16 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
 
     /**
      * If true then this job is exception handler and
-     * {@code Job#handleException(Throwable)} should be called instead of <code>run
-     * </code>.
+     * {@code Job#handleException(Throwable)} should be called instead of {@code run
+     * }.
      */
     public boolean isCallExceptionHandler() {
         return callExceptionHandler;
     }
 
     /**
-     * If <code>true</code> then an exception during a job execution is ignored. It is
-     * expected to be set to <code>true</code> for jobs that execute error handler due
+     * If {@code true} then an exception during a job execution is ignored. It is
+     * expected to be set to {@code true} for jobs that execute error handler due
      * to cancellation.
      */
     public boolean isIgnoreException() {

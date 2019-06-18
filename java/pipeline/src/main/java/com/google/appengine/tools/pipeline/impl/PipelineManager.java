@@ -26,7 +26,6 @@ import com.google.appengine.tools.pipeline.Value;
 import com.google.appengine.tools.pipeline.impl.backend.PipelineBackEnd;
 import com.google.appengine.tools.pipeline.impl.backend.PipelineTaskQueue;
 import com.google.appengine.tools.pipeline.impl.backend.UpdateSpec;
-import com.google.appengine.tools.pipeline.impl.backend.UpdateSpec.Group;
 import com.google.appengine.tools.pipeline.impl.model.Barrier;
 import com.google.appengine.tools.pipeline.impl.model.ExceptionRecord;
 import com.google.appengine.tools.pipeline.impl.model.JobInstanceRecord;
@@ -142,7 +141,7 @@ public final class PipelineManager {
      *
      * @param updateSpec   The {@code UpdateSpec} with which to register all newly
      *                     created objects. All objects will be added to the
-     *                     {@link UpdateSpec#getNonTransactionalGroup() non-transaction group}
+     *                     {@link UpdateSpec#newTransaction(String) new transaction}
      *                     of the {@code UpdateSpec}.
      * @param settings     Array of {@code JobSetting} to apply to the newly created
      *                     JobRecord.
@@ -187,6 +186,7 @@ public final class PipelineManager {
         }
         updateSpec.setRootJobKey(jobRecord.getRootJobKey());
 
+        final UpdateSpec.Transaction transaction = updateSpec.newTransaction("registerNewJob:" + jobRecord.getKey());
         final UUID generatorKey = jobRecord.getGeneratorJobKey();
         // Add slots to the RunBarrier corresponding to the input parameters
         final UUID graphKey = jobRecord.getGraphKey();
@@ -197,8 +197,16 @@ public final class PipelineManager {
             } else {
                 value = new ImmediateValue<>(param);
             }
-            registerSlotsWithBarrier(updateSpec, value, jobRecord.getRootJobKey(), generatorKey,
-                    jobRecord.getQueueSettings(), graphKey, jobRecord.getRunBarrierInflated());
+            registerSlotsWithBarrier(
+                    transaction,
+                    updateSpec.getFinalTransaction(),
+                    value,
+                    jobRecord.getRootJobKey(),
+                    generatorKey,
+                    jobRecord.getQueueSettings(),
+                    graphKey,
+                    jobRecord.getRunBarrierInflated()
+            );
         }
 
         if (0 == jobRecord.getRunBarrierInflated().getWaitingOnKeys().size()) {
@@ -207,19 +215,18 @@ public final class PipelineManager {
             // a RunJobTask.
             final Slot slot = new Slot(this, jobRecord.getRootJobKey(), generatorKey, graphKey);
             jobRecord.getRunBarrierInflated().addPhantomArgumentSlot(slot);
-            registerSlotFilled(updateSpec, jobRecord.getQueueSettings(), slot, null);
+            registerSlotFilled(transaction, updateSpec.getFinalTransaction(), jobRecord.getQueueSettings(), slot, null);
         }
 
         // Register the newly created objects with the UpdateSpec.
         // The slots in the run Barrier have already been registered
         // and the finalize Barrier doesn't have any slots yet.
         // Any HandleSlotFilledTasks have also been registered already.
-        final Group updateGroup = updateSpec.getNonTransactionalGroup();
-        updateGroup.includeBarrier(jobRecord.getRunBarrierInflated());
-        updateGroup.includeBarrier(jobRecord.getFinalizeBarrierInflated());
-        updateGroup.includeSlot(jobRecord.getOutputSlotInflated());
-        updateGroup.includeJob(jobRecord);
-        updateGroup.includeJobInstanceRecord(jobRecord.getJobInstanceInflated());
+        transaction.includeBarrier(jobRecord.getRunBarrierInflated());
+        transaction.includeBarrier(jobRecord.getFinalizeBarrierInflated());
+        transaction.includeSlot(jobRecord.getOutputSlotInflated());
+        transaction.includeJob(jobRecord);
+        transaction.includeJobInstanceRecord(jobRecord.getJobInstanceInflated());
 
         return jobRecord;
     }
@@ -242,27 +249,27 @@ public final class PipelineManager {
      * by the {@code FutureList}. This process is not recursive because we do not
      * currently support {@code FutureLists} of {@code FutureLists}.
      *
-     * @param updateSpec      All newly created Slots will be added to the
-     *                        {@link UpdateSpec#getNonTransactionalGroup() non-transactional
-     *                        group} of the updateSpec. All {@link HandleSlotFilledTask
-     *                        HandleSlotFilledTasks} created will be added to the
-     *                        {@link UpdateSpec#getFinalTransaction() final transaction}. Note
-     *                        that {@code barrier} will not be added to updateSpec. That must be
-     *                        done by the caller.
-     * @param value           A {@code Value}. {@code Null} is interpreted as an
-     *                        {@code ImmediateValue} with a value of {@code Null}.
-     * @param rootJobKey      The rootJobKey of the Pipeline in which the given Barrier
-     *                        lives.
-     * @param generatorJobKey The key of the generator Job of the local graph in
-     *                        which the given barrier lives, or {@code null} if the barrier lives
-     *                        in the root Job graph.
-     * @param queueSettings   The QueueSettings for tasks created by this method
-     * @param graphKey        The key of the local graph in which the barrier lives, or
-     *                        {@code null} if the barrier lives in the root Job graph.
-     * @param barrier         The barrier to which we will add the slots
+     * @param transaction      All newly created Slots will be added to the
+     *                         {@link UpdateSpec.Transaction} of the updateSpec.
+     * @param finalTransaction All {@link HandleSlotFilledTask HandleSlotFilledTasks} created
+     *                         will be added to the {@link UpdateSpec.TransactionWithTasks final
+     *                         transaction}. Note that {@code barrier} will not be added
+     *                         to updateSpec. That must be done by the caller.
+     * @param value            A {@code Value}. {@code Null} is interpreted as an
+     *                         {@code ImmediateValue} with a value of {@code Null}.
+     * @param rootJobKey       The rootJobKey of the Pipeline in which the given Barrier
+     *                         lives.
+     * @param generatorJobKey  The key of the generator Job of the local graph in
+     *                         which the given barrier lives, or {@code null} if the barrier lives
+     *                         in the root Job graph.
+     * @param queueSettings    The QueueSettings for tasks created by this method
+     * @param graphKey         The key of the local graph in which the barrier lives, or
+     *                         {@code null} if the barrier lives in the root Job graph.
+     * @param barrier          The barrier to which we will add the slots
      */
     private void registerSlotsWithBarrier(
-            final UpdateSpec updateSpec,
+            final UpdateSpec.Transaction transaction,
+            final UpdateSpec.TransactionWithTasks finalTransaction,
             final Value<?> value,
             final UUID rootJobKey,
             final UUID generatorJobKey,
@@ -277,26 +284,26 @@ public final class PipelineManager {
                 concreteValue = iv.getValue();
             }
             final Slot slot = new Slot(this, rootJobKey, generatorJobKey, graphKey);
-            registerSlotFilled(updateSpec, queueSettings, slot, concreteValue);
+            registerSlotFilled(transaction, finalTransaction, queueSettings, slot, concreteValue);
             barrier.addRegularArgumentSlot(slot);
         } else if (value instanceof FutureValueImpl<?>) {
             final FutureValueImpl<?> futureValue = (FutureValueImpl<?>) value;
             final Slot slot = futureValue.getSlot();
             barrier.addRegularArgumentSlot(slot);
-            updateSpec.getNonTransactionalGroup().includeSlot(slot);
+            transaction.includeSlot(slot);
         } else if (value instanceof FutureList<?>) {
             final FutureList<?> futureList = (FutureList<?>) value;
             final List<Slot> slotList = new ArrayList<>(futureList.getListOfValues().size());
             // The dummyListSlot is a marker slot that indicates that the
             // next group of slots forms a single list argument.
             final Slot dummyListSlot = new Slot(this, rootJobKey, generatorJobKey, graphKey);
-            registerSlotFilled(updateSpec, queueSettings, dummyListSlot, null);
+            registerSlotFilled(transaction, finalTransaction, queueSettings, dummyListSlot, null);
             for (final Value<?> valFromList : futureList.getListOfValues()) {
                 Slot slot = null;
                 if (valFromList instanceof ImmediateValue<?>) {
                     final ImmediateValue<?> ivFromList = (ImmediateValue<?>) valFromList;
                     slot = new Slot(this, rootJobKey, generatorJobKey, graphKey);
-                    registerSlotFilled(updateSpec, queueSettings, slot, ivFromList.getValue());
+                    registerSlotFilled(transaction, finalTransaction, queueSettings, slot, ivFromList.getValue());
                 } else if (valFromList instanceof FutureValueImpl<?>) {
                     final FutureValueImpl<?> futureValFromList = (FutureValueImpl<?>) valFromList;
                     slot = futureValFromList.getSlot();
@@ -307,7 +314,7 @@ public final class PipelineManager {
                     throwUnrecognizedValueException(valFromList);
                 }
                 slotList.add(slot);
-                updateSpec.getNonTransactionalGroup().includeSlot(slot);
+                transaction.includeSlot(slot);
             }
             barrier.addListArgumentSlots(dummyListSlot, slotList);
         } else {
@@ -327,21 +334,24 @@ public final class PipelineManager {
      * newly filled Slot. We register the Slot and the Task with the given
      * UpdateSpec for later saving.
      *
-     * @param updateSpec    The Slot will be added to the
-     *                      {@link UpdateSpec#getNonTransactionalGroup() non-transactional
-     *                      group} of the updateSpec. The new {@link HandleSlotFilledTask} will
-     *                      be added to the {@link UpdateSpec#getFinalTransaction() final
-     *                      transaction}.
-     * @param queueSettings queue settings for the created task
-     * @param slot          the Slot to fill
-     * @param value         the value with which to fill it
+     * @param transaction      The Slot will be added to the {@link UpdateSpec.Transaction transaction}.
+     * @param finalTransaction The new {@link HandleSlotFilledTask} will be added to
+     *                         the {@link UpdateSpec.TransactionWithTasks final transaction}.
+     * @param queueSettings    queue settings for the created task
+     * @param slot             the Slot to fill
+     * @param value            the value with which to fill it
      */
     private void registerSlotFilled(
-            final UpdateSpec updateSpec, final QueueSettings queueSettings, final Slot slot, final Object value) {
+            final UpdateSpec.Transaction transaction,
+            final UpdateSpec.TransactionWithTasks finalTransaction,
+            final QueueSettings queueSettings,
+            final Slot slot,
+            final Object value
+    ) {
         slot.fill(value);
-        updateSpec.getNonTransactionalGroup().includeSlot(slot);
+        transaction.includeSlot(slot);
         final Task task = new HandleSlotFilledTask(slot.getKey(), queueSettings);
-        updateSpec.getFinalTransaction().registerTask(task);
+        finalTransaction.registerTask(task);
     }
 
     /**
@@ -400,7 +410,7 @@ public final class PipelineManager {
         final JobRecord jobRecord = backEnd.queryJob(jobHandle, JobRecord.InflationType.NONE);
         jobRecord.setState(State.STOPPED);
         final UpdateSpec updateSpec = new UpdateSpec(jobRecord.getRootJobKey());
-        updateSpec.getOrCreateTransaction("stopJob").includeJob(jobRecord);
+        updateSpec.newTransaction("stopJob").includeJob(jobRecord);
         backEnd.save(updateSpec, jobRecord.getQueueSettings());
     }
 
@@ -498,7 +508,7 @@ public final class PipelineManager {
             throw new OrphanedObjectException(promiseHandle);
         }
         final UpdateSpec updateSpec = new UpdateSpec(slot.getRootJobKey());
-        registerSlotFilled(updateSpec, generatorJob.getQueueSettings(), slot, value);
+        registerSlotFilled(updateSpec.newTransaction("acceptPromisedValue:" + promiseHandle), updateSpec.getFinalTransaction(), generatorJob.getQueueSettings(), slot, value);
         backEnd.save(updateSpec, generatorJob.getQueueSettings());
     }
 
@@ -582,7 +592,7 @@ public final class PipelineManager {
     }
 
     /**
-     * Return handleException method (if callErrorHandler is <code>true</code>).
+     * Return handleException method (if callErrorHandler is {@code true}).
      * Otherwise return first run method (order is defined by order of
      * {@link Class#getMethods()} is return. <br>
      * TODO(user) Consider actually looking for a method with matching
@@ -594,8 +604,8 @@ public final class PipelineManager {
      * @param callErrorHandler should handleException method be returned instead
      *                         of run
      * @param params           parameters to be passed to the method to invoke
-     * @return Either run or handleException method of {@code class}. <code>null
-     * </code> is returned if @{code callErrorHandler} is <code>true</code>
+     * @return Either run or handleException method of {@code class}. {@code null
+     * } is returned if @{code callErrorHandler} is {@code true}
      * and no handleException with matching signature is found.
      */
     @SuppressWarnings("unchecked")
@@ -700,7 +710,7 @@ public final class PipelineManager {
         // will stop trying to release it.
         runBarrier.setReleased();
         UpdateSpec tempSpec = new UpdateSpec(rootJobKey);
-        tempSpec.getOrCreateTransaction("releaseRunBarrier").includeBarrier(runBarrier);
+        tempSpec.newTransaction("runJob:releaseRunBarrier:" + runBarrier.getKey()).includeBarrier(runBarrier);
         backEnd.save(tempSpec, jobRecord.getQueueSettings());
 
         final State jobState = jobRecord.getState();
@@ -765,7 +775,7 @@ public final class PipelineManager {
         jobRecord.incrementAttemptNumber();
         jobRecord.setStartTime(new Date());
         tempSpec = new UpdateSpec(jobRecord.getRootJobKey());
-        tempSpec.getNonTransactionalGroup().includeJob(jobRecord);
+        tempSpec.newTransaction("runJob:setStartTime:" + jobRecord.getKey()).includeJob(jobRecord);
         if (!backEnd.saveWithJobStateCheck(
                 tempSpec, jobRecord.getQueueSettings(), jobKey, State.WAITING_TO_RUN, State.RETRY)) {
             LOGGER.info("Ignoring runJob request for job " + jobRecord + " which is not in a"
@@ -810,11 +820,29 @@ public final class PipelineManager {
         // by the running of the job.
         // See "http://goto/java-pipeline-model".
         LOGGER.finest("Job returned: " + returnValue);
-        registerSlotsWithBarrier(updateSpec, returnValue, rootJobKey, jobRecord.getKey(), jobRecord.getQueueSettings(), currentRunKey, finalizeBarrier);
+        registerSlotsWithBarrier(
+                updateSpec.getFinalTransaction(),
+                updateSpec.getFinalTransaction(),
+                returnValue,
+                rootJobKey,
+                jobRecord.getKey(),
+                jobRecord.getQueueSettings(),
+                currentRunKey,
+                finalizeBarrier
+        );
         // adding all the children FutureValues to finalize barrier to automatically wait util all of them are finished
         if (!childValues.isEmpty()) {
             for (final FutureValue<?> childValue : childValues) {
-                registerSlotsWithBarrier(updateSpec, childValue, rootJobKey, jobRecord.getKey(), jobRecord.getQueueSettings(), currentRunKey, finalizeBarrier);
+                registerSlotsWithBarrier(
+                        updateSpec.getFinalTransaction(),
+                        updateSpec.getFinalTransaction(),
+                        childValue,
+                        rootJobKey,
+                        jobRecord.getKey(),
+                        jobRecord.getQueueSettings(),
+                        currentRunKey,
+                        finalizeBarrier
+                );
             }
         }
         jobRecord.setState(State.WAITING_TO_FINALIZE);
@@ -872,7 +900,7 @@ public final class PipelineManager {
         }
         jobRecord.setState(State.CANCELED);
         final UpdateSpec updateSpec = new UpdateSpec(jobRecord.getRootJobKey());
-        updateSpec.getNonTransactionalGroup().includeJob(jobRecord);
+        updateSpec.newTransaction("cancelJob:" + jobKey).includeJob(jobRecord);
         if (jobRecord.isExceptionHandlerSpecified()) {
             executeExceptionHandler(updateSpec, jobRecord, new CancellationException(), true);
         }
@@ -903,12 +931,13 @@ public final class PipelineManager {
                 currentRunKey,
                 caughtException
         );
-        updateSpec.getNonTransactionalGroup().includeException(exceptionRecord);
+        final UpdateSpec.Transaction updateGroup = updateSpec.newTransaction("handleExceptionDuringRun:" + jobRecord.getKey());
+        updateGroup.includeException(exceptionRecord);
         final UUID exceptionKey = exceptionRecord.getKey();
         jobRecord.setExceptionKey(exceptionKey);
         if (jobRecord.isCallExceptionHandler() || attemptNumber >= maxAttempts) {
             jobRecord.setState(State.STOPPED);
-            updateSpec.getNonTransactionalGroup().includeJob(jobRecord);
+            updateGroup.includeJob(jobRecord);
             if (jobRecord.isExceptionHandlerSpecified()) {
                 cancelChildren(jobRecord, null);
                 executeExceptionHandler(updateSpec, jobRecord, caughtException, false);
@@ -924,7 +953,7 @@ public final class PipelineManager {
                 } else {
                     rootJobRecord.setState(State.STOPPED);
                     rootJobRecord.setExceptionKey(exceptionKey);
-                    updateSpec.getNonTransactionalGroup().includeJob(rootJobRecord);
+                    updateGroup.includeJob(rootJobRecord);
                 }
             }
             backEnd.save(updateSpec, jobRecord.getQueueSettings());
@@ -951,7 +980,7 @@ public final class PipelineManager {
      */
     private void executeExceptionHandler(final UpdateSpec updateSpec, final JobRecord jobRecord,
                                          final Throwable caughtException, final boolean ignoreException) {
-        updateSpec.getNonTransactionalGroup().includeJob(jobRecord);
+        updateSpec.newTransaction("executeExceptionHandler:" + jobRecord.getKey()).includeJob(jobRecord);
         final UUID errorHandlingGraphKey = UuidGenerator.nextUuid();
         final Job<?> jobInstance = jobRecord.getJobInstanceInflated().getJobInstanceDeserialized();
 
@@ -1056,7 +1085,7 @@ public final class PipelineManager {
         // HandleSlotFilled tasks will stop trying
         finalizeBarrier.setReleased();
         UpdateSpec updateSpec = new UpdateSpec(jobRecord.getRootJobKey());
-        updateSpec.getOrCreateTransaction("releaseFinalizeBarrier").includeBarrier(finalizeBarrier);
+        updateSpec.newTransaction("finalizeJob:releaseFinalizeBarrier:" + jobRecord.getKey()).includeBarrier(finalizeBarrier);
         backEnd.save(updateSpec, jobRecord.getQueueSettings());
 
         updateSpec = new UpdateSpec(jobRecord.getRootJobKey());
@@ -1087,8 +1116,9 @@ public final class PipelineManager {
         outputSlot.setSourceJobKey(fillerJobKey);
 
         // Save the job and the output slot
-        updateSpec.getNonTransactionalGroup().includeJob(jobRecord);
-        updateSpec.getNonTransactionalGroup().includeSlot(outputSlot);
+        final UpdateSpec.Transaction updateGroup = updateSpec.newTransaction("finalizeJob:jobAndSlot:" + jobKey);
+        updateGroup.includeJob(jobRecord);
+        updateGroup.includeSlot(outputSlot);
         backEnd.save(updateSpec, jobRecord.getQueueSettings());
 
         // enqueue a HandleSlotFilled task
@@ -1191,7 +1221,7 @@ public final class PipelineManager {
         final UUID rootJobKey = task.getRootJobKey();
         final UpdateSpec updateSpec = new UpdateSpec(rootJobKey);
         slot.fill(null);
-        updateSpec.getNonTransactionalGroup().includeSlot(slot);
+        updateSpec.newTransaction("handleDelayedSlotFill:" + slotKey).includeSlot(slot);
         backEnd.save(updateSpec, task.getQueueSettings());
         // re-reading Slot (in handleSlotFilled) is needed (to capture slot fill after this one)
         handleSlotFilled(new HandleSlotFilledTask(slotKey, task.getQueueSettings()));

@@ -90,9 +90,9 @@ public interface JobSetting extends Serializable {
      * wait time will be
      *
      * <pre>
-     * <code>
+     * {@code
      * backoffSeconds * backoffFactor ^ attemptNumber
-     * </code>
+     * }
      * </pre>
      */
     final class BackoffSeconds extends IntValuedSetting {
@@ -110,9 +110,9 @@ public interface JobSetting extends Serializable {
      * wait time will be
      *
      * <pre>
-     * <code>
+     * {@code
      * backoffSeconds * backoffFactor ^ attemptNumber
-     * </code>
+     * }
      * </pre>
      */
     final class BackoffFactor extends IntValuedSetting {

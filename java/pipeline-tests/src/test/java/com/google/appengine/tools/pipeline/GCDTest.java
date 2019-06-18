@@ -84,8 +84,7 @@ public class GCDTest extends PipelineTest {
         assertTrue(latch.await(6, TimeUnit.MINUTES));
         assertEquals(expectedMessage, builder.toString());
         // Wait for job task thread to complete
-        Thread.sleep(2000);
-        JobInfo jobInfo = service.getJobInfo(pipelineId);
+        final JobInfo jobInfo = waitUntilJobComplete(pipelineId);
         assertEquals(JobInfo.State.COMPLETED_SUCCESSFULLY, jobInfo.getJobState());
     }
 }

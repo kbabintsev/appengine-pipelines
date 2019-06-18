@@ -141,83 +141,44 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
         spanner.close();
     }
 
-    private void addAll(final Collection<? extends PipelineModelObject> objects, final Mutations allMutations, final boolean runTransaction) {
-        if (objects.isEmpty()) {
-            return;
-        }
-        for (final PipelineModelObject x : objects) {
-            LOGGER.finest("Storing: " + x);
-            final PipelineMutation m = x.toEntity();
-            final Mutation mutation = m.getDatabaseMutation().build();
-            allMutations.addDatabaseMutation(mutation);
-            if (m.getValueMutation() != null) {
-                allMutations.addValueMutation(m.getValueMutation());
-            }
-
-            if (runTransaction) {
-                databaseClient.readWriteTransaction().run(new TransactionRunner.TransactionCallable<Void>() {
-                    @Nullable
-                    @Override
-                    public Void run(final TransactionContext transaction) {
-                        transaction.buffer(mutation);
-                        return null;
-                    }
-                });
-            }
-        }
-    }
-
-    private void addAll(final UpdateSpec.Group group, final Mutations allMutations, final boolean runTransaction) {
-        addAll(group.getBarriers(), allMutations, runTransaction);
-        addAll(group.getJobs(), allMutations, runTransaction);
-        addAll(group.getSlots(), allMutations, runTransaction);
-        addAll(group.getJobInstanceRecords(), allMutations, runTransaction);
-        addAll(group.getFailureRecords(), allMutations, runTransaction);
-    }
-
-    private void saveAll(final UpdateSpec.Group transactionSpec, @Nullable final TransactionContext parentTransaction) {
-        final Mutations allMutations = new Mutations();
-        addAll(transactionSpec, allMutations, parentTransaction == null);
-        for (final PipelineMutation.ValueMutation valueMutation : allMutations.getValueMutations()) {
-            saveBlob(valueMutation.getPath(), valueMutation.getValue());
-        }
-
-        if (parentTransaction != null) {
-            parentTransaction.buffer(allMutations.getDatabaseMutations());
-        }
-    }
-
     private boolean transactionallySaveAll(final UpdateSpec.Transaction transactionSpec,
                                            final QueueSettings queueSettings, final UUID rootJobKey, final UUID jobKey, final JobRecord.State... expectedStates) {
-        final Boolean out = databaseClient.readWriteTransaction().run(new TransactionRunner.TransactionCallable<Boolean>() {
-            @Nullable
-            @Override
-            public Boolean run(final TransactionContext transaction) {
-                if (jobKey != null && expectedStates != null) {
-                    final Struct entity = transaction.readRow(JobRecord.DATA_STORE_KIND, Key.of(jobKey.toString()), ImmutableList.of(JobRecord.STATE_PROPERTY));
-                    if (entity == null) {
-                        throw new RuntimeException(
-                                "Fatal Pipeline corruption error. No JobRecord found with key = " + jobKey);
-                    }
-                    final JobRecord.State state = JobRecord.State.valueOf(entity.getString(JobRecord.STATE_PROPERTY));
-                    boolean stateIsExpected = false;
-                    for (final JobRecord.State expectedState : expectedStates) {
-                        if (state == expectedState) {
-                            stateIsExpected = true;
-                            break;
+        final Mutations mutations = new Mutations(transactionSpec);
+        mutations.saveBlobs();
+        final Boolean out;
+        if (mutations.hasSomethingToBuffer()) {
+            out = databaseClient.readWriteTransaction().run(new TransactionRunner.TransactionCallable<Boolean>() {
+                @Nullable
+                @Override
+                public Boolean run(final TransactionContext transaction) {
+                    if (jobKey != null && expectedStates != null) {
+                        final Struct entity = transaction.readRow(JobRecord.DATA_STORE_KIND, Key.of(jobKey.toString()), ImmutableList.of(JobRecord.STATE_PROPERTY));
+                        if (entity == null) {
+                            throw new RuntimeException(
+                                    "Fatal Pipeline corruption error. No JobRecord found with key = " + jobKey);
+                        }
+                        final JobRecord.State state = JobRecord.State.valueOf(entity.getString(JobRecord.STATE_PROPERTY));
+                        boolean stateIsExpected = false;
+                        for (final JobRecord.State expectedState : expectedStates) {
+                            if (state == expectedState) {
+                                stateIsExpected = true;
+                                break;
+                            }
+                        }
+                        if (!stateIsExpected) {
+                            LOGGER.info("Job " + jobKey + " is not in one of the expected states: "
+                                    + Arrays.asList(expectedStates)
+                                    + " and so transactionallySaveAll() will not continue.");
+                            return false;
                         }
                     }
-                    if (!stateIsExpected) {
-                        LOGGER.info("Job " + jobKey + " is not in one of the expected states: "
-                                + Arrays.asList(expectedStates)
-                                + " and so transactionallySaveAll() will not continue.");
-                        return false;
-                    }
+                    mutations.bufferInto(transaction);
+                    return true;
                 }
-                saveAll(transactionSpec, transaction);
-                return true;
-            }
-        });
+            });
+        } else {
+            out = true;
+        }
         if (transactionSpec instanceof UpdateSpec.TransactionWithTasks) {
             final UpdateSpec.TransactionWithTasks transactionWithTasks =
                     (UpdateSpec.TransactionWithTasks) transactionSpec;
@@ -348,10 +309,19 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
                                          final QueueSettings queueSettings, final UUID jobKey,
                                          final JobRecord.State... expectedStates) {
         // tryFiveTimes was here
-        saveAll(updateSpec.getNonTransactionalGroup(), null);
-        for (final UpdateSpec.Transaction transactionSpec : updateSpec.getTransactions()) {
-            //tryFiveTimes was here
-            transactionallySaveAll(transactionSpec, queueSettings, updateSpec.getRootJobKey(), null);
+        for (final UpdateSpec.Transaction group : updateSpec.getTransactions()) {
+            final Mutations mutations = new Mutations(group);
+            mutations.saveBlobs();
+            if (mutations.hasSomethingToBuffer()) {
+                databaseClient.readWriteTransaction().run(new TransactionRunner.TransactionCallable<Void>() {
+                    @Nullable
+                    @Override
+                    public Void run(final TransactionContext transaction) {
+                        mutations.bufferInto(transaction);
+                        return null;
+                    }
+                });
+            }
         }
 
         // TODO(user): Replace this with plug-able hooks that could be used by tests,
@@ -427,7 +397,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
      * {@link Barrier Barriers} so that {@link Barrier#getWaitingOnInflated()}
      * will not return null;
      *
-     * @param barriers
+     * @param barriers Barrier to fill slots
      */
     private void inflateBarriers(final Collection<Barrier> barriers) {
         // Step 1. Build the set of keys corresponding to the slots.
@@ -723,24 +693,51 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
         deleteAll(FanoutTaskRecord.DATA_STORE_KIND, rootJobKey);
     }
 
-    private static final class Mutations {
+    private final class Mutations {
+
+        private final String name;
         private final List<Mutation> databaseMutations = Lists.newArrayList();
         private final List<PipelineMutation.ValueMutation> valueMutations = Lists.newArrayList();
 
-        public void addDatabaseMutation(final Mutation mutation) {
-            databaseMutations.add(mutation);
+        private Mutations(final UpdateSpec.Transaction group) {
+            this.name = group.getName();
+            addAllOneType(group.getBarriers());
+            addAllOneType(group.getSlots());
+            addAllOneType(group.getFailureRecords());
+            addAllOneType(group.getJobs());
+            addAllOneType(group.getJobInstanceRecords());
         }
 
-        public void addValueMutation(final PipelineMutation.ValueMutation valueMutation) {
-            valueMutations.add(valueMutation);
+        private void addAllOneType(final Collection<? extends PipelineModelObject> objects) {
+            if (objects.isEmpty()) {
+                return;
+            }
+            for (final PipelineModelObject x : objects) {
+                final PipelineMutation m = x.toEntity();
+                final Mutation mutation = m.getDatabaseMutation().build();
+                databaseMutations.add(mutation);
+                if (m.getValueMutation() != null) {
+                    valueMutations.add(m.getValueMutation());
+                }
+            }
         }
 
-        public List<Mutation> getDatabaseMutations() {
-            return databaseMutations;
+        public void saveBlobs() {
+            if (!valueMutations.isEmpty()) {
+                LOGGER.finest("Mutations: '" + name + "' saving " + valueMutations.size() + " storage blobs");
+                for (final PipelineMutation.ValueMutation valueMutation : valueMutations) {
+                    saveBlob(valueMutation.getPath(), valueMutation.getValue());
+                }
+            }
         }
 
-        public List<PipelineMutation.ValueMutation> getValueMutations() {
-            return valueMutations;
+        public boolean hasSomethingToBuffer() {
+            return !databaseMutations.isEmpty();
+        }
+
+        public void bufferInto(final TransactionContext transaction) {
+            LOGGER.finest("Mutations: '" + name + "' saving " + databaseMutations.size() + " database rows");
+            transaction.buffer(databaseMutations);
         }
     }
 

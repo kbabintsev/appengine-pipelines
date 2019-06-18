@@ -78,7 +78,7 @@ public abstract class PipelineModelObject {
     /**
      * Construct a new PipelineModelObject from the provided data.
      *
-     * @param tableName
+     * @param tableName       The name of the table where entity is stored
      * @param rootJobKey      The key of the root job for this pipeline. This must be
      *                        non-null, except in the case that we are currently constructing the
      *                        root job. In that case {@code thisKey} and {@code egParentKey} must
@@ -124,7 +124,7 @@ public abstract class PipelineModelObject {
      * generatorJobKey, and graphKey, a newly generated key, and no entity group
      * parent.
      *
-     * @param tableName
+     * @param tableName       The name of the table where entity is stored
      * @param rootJobKey      The key of the root job for this pipeline. This must be
      *                        non-null, except in the case that we are currently constructing the
      *                        root job. In that case this must be a {@link JobRecord}.
@@ -147,7 +147,7 @@ public abstract class PipelineModelObject {
     /**
      * Construct a new PipelineModelObject from the previously saved Entity.
      *
-     * @param tableName
+     * @param tableName The name of the table where entity is stored
      * @param entity    An Entity obtained previously from a call to
      *                  {@link #toEntity()}.
      */

@@ -84,8 +84,8 @@ public final class JsonUtils {
     }
 
     /**
-     * Convert an <code>org.json.JSONObject</code> into a <code>Map</code> and an
-     * <code>org.json.JSONArray</code> into a <code>List</code>
+     * Convert an {@code org.json.JSONObject} into a {@code Map} and an
+     * {@code org.json.JSONArray} into a {@code List}
      */
     private static Object convert(final Object x) throws JSONException {
         if (x instanceof JSONObject) {

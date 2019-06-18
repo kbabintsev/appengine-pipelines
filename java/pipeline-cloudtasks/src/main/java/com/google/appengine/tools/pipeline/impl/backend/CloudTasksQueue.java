@@ -238,7 +238,7 @@ public final class CloudTasksQueue implements PipelineTaskQueue {
     /**
      * Add seconds to Now() and serialize it to ISO 8601
      *
-     * @param seconds
+     * @param seconds amount of seconds to add to now()
      * @return date in ISO 8601
      */
     private String getScheduleTime(final int seconds) {
