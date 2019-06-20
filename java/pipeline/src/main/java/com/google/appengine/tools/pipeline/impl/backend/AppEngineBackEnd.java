@@ -142,7 +142,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
     }
 
     private boolean transactionallySaveAll(final UpdateSpec.Transaction transactionSpec,
-                                           final QueueSettings queueSettings, final UUID rootJobKey, final UUID jobKey, final JobRecord.State... expectedStates) {
+                                           final QueueSettings queueSettings, final UUID pipelineKey, final UUID jobKey, final JobRecord.State... expectedStates) {
         final Mutations mutations = new Mutations(transactionSpec);
         mutations.saveBlobs();
         final Boolean out;
@@ -152,7 +152,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
                 @Override
                 public Boolean run(final TransactionContext transaction) {
                     if (jobKey != null && expectedStates != null) {
-                        final Struct entity = transaction.readRow(JobRecord.DATA_STORE_KIND, Key.of(rootJobKey.toString(), jobKey.toString()), ImmutableList.of(JobRecord.STATE_PROPERTY));
+                        final Struct entity = transaction.readRow(JobRecord.DATA_STORE_KIND, Key.of(pipelineKey.toString(), jobKey.toString()), ImmutableList.of(JobRecord.STATE_PROPERTY));
                         if (entity == null) {
                             throw new RuntimeException(
                                     "Fatal Pipeline corruption error. No JobRecord found with key = " + jobKey);
@@ -185,7 +185,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
             final Collection<Task> tasks = transactionWithTasks.getTasks();
             if (tasks.size() > 0) {
                 final byte[] encodedTasks = FanoutTask.encodeTasks(tasks);
-                final FanoutTaskRecord ftRecord = new FanoutTaskRecord(rootJobKey, encodedTasks);
+                final FanoutTaskRecord ftRecord = new FanoutTaskRecord(pipelineKey, encodedTasks);
                 // Store FanoutTaskRecord outside of any transaction, but before
                 // the FanoutTask is enqueued. If the put succeeds but the
                 // enqueue fails then the FanoutTaskRecord is orphaned. But
@@ -198,7 +198,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
                         return null;
                     }
                 });
-                final FanoutTask fannoutTask = new FanoutTask(rootJobKey, ftRecord.getKey(), queueSettings);
+                final FanoutTask fannoutTask = new FanoutTask(pipelineKey, ftRecord.getKey(), queueSettings);
                 taskQueue.enqueue(fannoutTask);
             }
         }
@@ -330,7 +330,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
         TestUtils.throwHereForTesting("AppEngineBackeEnd.saveWithJobStateCheck.beforeFinalTransaction");
         //tryFiveTimes was here
         final boolean wasSaved = transactionallySaveAll(
-                updateSpec.getFinalTransaction(), queueSettings, updateSpec.getRootJobKey(), jobKey, expectedStates);
+                updateSpec.getFinalTransaction(), queueSettings, updateSpec.getPipelineKey(), jobKey, expectedStates);
         return wasSaved;
     }
 
@@ -340,9 +340,9 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
     }
 
     @Override
-    public JobRecord queryJob(final UUID rootJobKey, final UUID jobKey, final JobRecord.InflationType inflationType)
+    public JobRecord queryJob(final UUID pipelineKey, final UUID jobKey, final JobRecord.InflationType inflationType)
             throws NoSuchObjectException {
-        final Struct entity = getEntity("queryJob", JobRecord.DATA_STORE_KIND, JobRecord.PROPERTIES, rootJobKey, jobKey);
+        final Struct entity = getEntity("queryJob", JobRecord.DATA_STORE_KIND, JobRecord.PROPERTIES, pipelineKey, jobKey);
         final JobRecord jobRecord = new JobRecord(null, entity);
         Barrier runBarrier = null;
         Barrier finalizeBarrier = null;
@@ -351,24 +351,24 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
         ExceptionRecord failureRecord = null;
         switch (inflationType) {
             case FOR_RUN:
-                runBarrier = queryBarrier(rootJobKey, jobRecord.getRunBarrierKey(), true);
-                finalizeBarrier = queryBarrier(rootJobKey, jobRecord.getFinalizeBarrierKey(), false);
+                runBarrier = queryBarrier(pipelineKey, jobRecord.getRunBarrierKey(), true);
+                finalizeBarrier = queryBarrier(pipelineKey, jobRecord.getFinalizeBarrierKey(), false);
                 jobInstanceRecord =
                         new JobInstanceRecord(
                                 pipelineManager.get(),
                                 null,
-                                getEntity("queryJob", JobInstanceRecord.DATA_STORE_KIND, JobInstanceRecord.PROPERTIES, rootJobKey, jobRecord.getJobInstanceKey())
+                                getEntity("queryJob", JobInstanceRecord.DATA_STORE_KIND, JobInstanceRecord.PROPERTIES, pipelineKey, jobRecord.getJobInstanceKey())
                         );
-                outputSlot = querySlot(rootJobKey, jobRecord.getOutputSlotKey(), false);
+                outputSlot = querySlot(pipelineKey, jobRecord.getOutputSlotKey(), false);
                 break;
             case FOR_FINALIZE:
-                finalizeBarrier = queryBarrier(rootJobKey, jobRecord.getFinalizeBarrierKey(), true);
-                outputSlot = querySlot(rootJobKey, jobRecord.getOutputSlotKey(), false);
+                finalizeBarrier = queryBarrier(pipelineKey, jobRecord.getFinalizeBarrierKey(), true);
+                outputSlot = querySlot(pipelineKey, jobRecord.getOutputSlotKey(), false);
                 break;
             case FOR_OUTPUT:
-                outputSlot = querySlot(rootJobKey, jobRecord.getOutputSlotKey(), false);
+                outputSlot = querySlot(pipelineKey, jobRecord.getOutputSlotKey(), false);
                 final UUID failureKey = jobRecord.getExceptionKey();
-                failureRecord = queryFailure(rootJobKey, failureKey);
+                failureRecord = queryFailure(pipelineKey, failureKey);
                 break;
             default:
         }
@@ -405,20 +405,20 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
                 + String.join(",", fields.build()) + " "
                 + "FROM " + PipelineRecord.DATA_STORE_KIND + " "
                 + "JOIN " + JobRecord.DATA_STORE_KIND + " "
-                + "ON " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.ROOT_JOB_KEY_PROPERTY + " = " + JobRecord.DATA_STORE_KIND + "." + JobRecord.ID_PROPERTY + " ");
+                + "ON " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.PIPELINE_KEY_PROPERTY + " = " + JobRecord.DATA_STORE_KIND + "." + JobRecord.KEY_PROPERTY + " ");
         if (queryOutputSlot) {
             statement.append("FULL JOIN " + Slot.DATA_STORE_KIND + " "
-                    + "ON " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.ROOT_JOB_KEY_PROPERTY + " = " + Slot.DATA_STORE_KIND + "." + Slot.ROOT_JOB_KEY_PROPERTY + " "
-                    + "AND " + JobRecord.DATA_STORE_KIND + "." + JobRecord.OUTPUT_SLOT_PROPERTY + " = " + Slot.DATA_STORE_KIND + "." + Slot.ID_PROPERTY + " ");
+                    + "ON " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.PIPELINE_KEY_PROPERTY + " = " + Slot.DATA_STORE_KIND + "." + Slot.PIPELINE_KEY_PROPERTY + " "
+                    + "AND " + JobRecord.DATA_STORE_KIND + "." + JobRecord.OUTPUT_SLOT_PROPERTY + " = " + Slot.DATA_STORE_KIND + "." + Slot.KEY_PROPERTY + " ");
         }
         if (queryException) {
             statement.append("FULL JOIN " + ExceptionRecord.DATA_STORE_KIND + " "
-                    + "ON " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.ROOT_JOB_KEY_PROPERTY + " = " + ExceptionRecord.DATA_STORE_KIND + "." + ExceptionRecord.ROOT_JOB_KEY_PROPERTY + " "
-                    + "AND " + JobRecord.DATA_STORE_KIND + "." + JobRecord.EXCEPTION_KEY_PROPERTY + " = " + ExceptionRecord.DATA_STORE_KIND + "." + ExceptionRecord.ID_PROPERTY + " ");
+                    + "ON " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.PIPELINE_KEY_PROPERTY + " = " + ExceptionRecord.DATA_STORE_KIND + "." + ExceptionRecord.PIPELINE_KEY_PROPERTY + " "
+                    + "AND " + JobRecord.DATA_STORE_KIND + "." + JobRecord.EXCEPTION_KEY_PROPERTY + " = " + ExceptionRecord.DATA_STORE_KIND + "." + ExceptionRecord.KEY_PROPERTY + " ");
         }
         if (pipelineKey != null) {
-            statement.append("WHERE " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.ROOT_JOB_KEY_PROPERTY + " = @rootJobKey ")
-                    .bind("rootJobKey").to(pipelineKey.toString());
+            statement.append("WHERE " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.PIPELINE_KEY_PROPERTY + " = @pipelineKey ")
+                    .bind("pipelineKey").to(pipelineKey.toString());
         } else {
             if (classFilter == null) {
                 statement.append("WHERE true ");
@@ -432,7 +432,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
                     .bind("states").toStringArray(inStates.stream().map(JobRecord.State::toString).collect(Collectors.toList()));
         }
         if (UuidGenerator.isTest()) {
-            statement.append("AND " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.ROOT_JOB_KEY_PROPERTY + " LIKE @prefix ")
+            statement.append("AND " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.PIPELINE_KEY_PROPERTY + " LIKE @prefix ")
                     .bind("prefix").to(UuidGenerator.getTestPrefix() + "%");
         }
         statement.append("ORDER BY " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.ROOT_JOB_DISPLAY_NAME + " ");
@@ -475,8 +475,8 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
      * {@code inflate = true} means that {@link Barrier#getWaitingOnInflated()}
      * will not return {@code null}.
      */
-    private Barrier queryBarrier(final UUID rootJobKey, final UUID barrierKey, final boolean inflate) throws NoSuchObjectException {
-        final Struct entity = getEntity("queryBarrier", Barrier.DATA_STORE_KIND, Barrier.PROPERTIES, rootJobKey, barrierKey);
+    private Barrier queryBarrier(final UUID pipelineKey, final UUID barrierKey, final boolean inflate) throws NoSuchObjectException {
+        final Struct entity = getEntity("queryBarrier", Barrier.DATA_STORE_KIND, Barrier.PROPERTIES, pipelineKey, barrierKey);
         final Barrier barrier = new Barrier(null, entity);
         if (inflate) {
             final Collection<Barrier> barriers = new ArrayList<>(1);
@@ -510,7 +510,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
                 keySet,
                 struct -> {
                     slotMap.put(
-                            new RecordKey(UUID.fromString(struct.getString(Slot.ROOT_JOB_KEY_PROPERTY)), UUID.fromString(struct.getString(Slot.ID_PROPERTY))),
+                            new RecordKey(UUID.fromString(struct.getString(Slot.PIPELINE_KEY_PROPERTY)), UUID.fromString(struct.getString(Slot.KEY_PROPERTY))),
                             new Slot(pipelineManager.get(), null, struct)
                     );
                 }
@@ -523,8 +523,8 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
     }
 
     @Override
-    public Slot querySlot(final UUID rootJobKey, final UUID slotKey, final boolean inflate) throws NoSuchObjectException {
-        final Struct entity = getEntity("querySlot", Slot.DATA_STORE_KIND, Slot.PROPERTIES, rootJobKey, slotKey);
+    public Slot querySlot(final UUID pipelineKey, final UUID slotKey, final boolean inflate) throws NoSuchObjectException {
+        final Struct entity = getEntity("querySlot", Slot.DATA_STORE_KIND, Slot.PROPERTIES, pipelineKey, slotKey);
         final Slot slot = new Slot(pipelineManager.get(), null, entity);
         if (inflate) {
             final Map<RecordKey, Barrier> barriers = new HashMap<>();
@@ -536,8 +536,8 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
                     struct -> {
                         barriers.put(
                                 new RecordKey(
-                                        UUID.fromString(struct.getString(Barrier.ROOT_JOB_KEY_PROPERTY)),
-                                        UUID.fromString(struct.getString(Barrier.ID_PROPERTY))
+                                        UUID.fromString(struct.getString(Barrier.PIPELINE_KEY_PROPERTY)),
+                                        UUID.fromString(struct.getString(Barrier.KEY_PROPERTY))
                                 ),
                                 new Barrier(null, struct)
                         );
@@ -550,18 +550,18 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
     }
 
     @Override
-    public ExceptionRecord queryFailure(final UUID rootJobKey, final UUID failureKey) throws NoSuchObjectException {
+    public ExceptionRecord queryFailure(final UUID pipelineKey, final UUID failureKey) throws NoSuchObjectException {
         if (failureKey == null) {
             return null;
         }
-        final Struct entity = getEntity("ReadExceptionRecord", ExceptionRecord.DATA_STORE_KIND, ExceptionRecord.PROPERTIES, rootJobKey, failureKey);
+        final Struct entity = getEntity("ReadExceptionRecord", ExceptionRecord.DATA_STORE_KIND, ExceptionRecord.PROPERTIES, pipelineKey, failureKey);
         return new ExceptionRecord(pipelineManager.get(), null, entity);
     }
 
     private void getEntities(final String logString, final String tableName, final List<String> columns, final Collection<RecordKey> keys, final Consumer<StructReader> consumer) {
         //tryFiveTimes was here
         final KeySet.Builder keysBuilder = KeySet.newBuilder();
-        keys.forEach(key -> keysBuilder.addKey(Key.of(key.getRootJobKey().toString(), key.getKey().toString())));
+        keys.forEach(key -> keysBuilder.addKey(Key.of(key.getPipelineKey().toString(), key.getKey().toString())));
         int count = 0;
         try (ResultSet rs = databaseClient.singleUse().read(
                 tableName,
@@ -579,11 +579,11 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
         }
     }
 
-    private Struct getEntity(final String logString, final String tableName, final List<String> columns, final UUID rootJobKey, final UUID key) throws NoSuchObjectException {
+    private Struct getEntity(final String logString, final String tableName, final List<String> columns, final UUID pipelineKey, final UUID key) throws NoSuchObjectException {
         // tryFiveTimes was here
-        final Struct entity = databaseClient.singleUse().readRow(tableName, Key.of(rootJobKey.toString(), key.toString()), columns);
+        final Struct entity = databaseClient.singleUse().readRow(tableName, Key.of(pipelineKey.toString(), key.toString()), columns);
         if (entity == null) {
-            throw new NoSuchObjectException(tableName, rootJobKey, key);
+            throw new NoSuchObjectException(tableName, pipelineKey, key);
         }
         return entity;
     }
@@ -592,19 +592,19 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
     public void handleFanoutTask(final FanoutTask fanoutTask) throws NoSuchObjectException {
         final UUID fanoutTaskRecordKey = fanoutTask.getRecordKey();
         // Fetch the fanoutTaskRecord outside of any transaction
-        final Struct entity = getEntity("handleFanoutTask", FanoutTaskRecord.DATA_STORE_KIND, FanoutTaskRecord.PROPERTIES, fanoutTask.getRootJobKey(), fanoutTaskRecordKey);
+        final Struct entity = getEntity("handleFanoutTask", FanoutTaskRecord.DATA_STORE_KIND, FanoutTaskRecord.PROPERTIES, fanoutTask.getPipelineKey(), fanoutTaskRecordKey);
         final FanoutTaskRecord ftRecord = new FanoutTaskRecord(null, entity);
         final byte[] encodedBytes = ftRecord.getPayload();
         taskQueue.enqueue(FanoutTask.decodeTasks(encodedBytes));
     }
 
-    public void queryAll(final String tableName, final List<String> columns, final UUID rootJobKey, final Consumer<StructReader> consumer) {
+    public void queryAll(final String tableName, final List<String> columns, final UUID pipelineKey, final Consumer<StructReader> consumer) {
         try (ResultSet rs = databaseClient.singleUse().executeQuery(
                 Statement.newBuilder(
                         "SELECT " + String.join(", ", columns) + " "
                                 + "FROM " + tableName + " "
-                                + "WHERE " + PipelineModelObject.ROOT_JOB_KEY_PROPERTY + " = @rootJobKey"
-                ).bind("rootJobKey").to(rootJobKey.toString()).build()
+                                + "WHERE " + PipelineModelObject.PIPELINE_KEY_PROPERTY + " = @pipelineKey"
+                ).bind("pipelineKey").to(pipelineKey.toString()).build()
         )) {
             {
                 while (rs.next()) {
@@ -634,7 +634,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
 
         );
         if (UuidGenerator.isTest()) {
-            builder.append("AND " + PipelineRecord.ROOT_JOB_KEY_PROPERTY + " LIKE @prefix ")
+            builder.append("AND " + PipelineRecord.PIPELINE_KEY_PROPERTY + " LIKE @prefix ")
                     .bind("prefix").to(UuidGenerator.getTestPrefix() + "%");
         }
         builder.append("ORDER BY " + PipelineRecord.ROOT_JOB_DISPLAY_NAME);
@@ -654,14 +654,14 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
         final String prefix = UuidGenerator.getTestPrefix();
         try (ResultSet rs = databaseClient.singleUse().executeQuery(
                 Statement.newBuilder(
-                        "SELECT DISTINCT " + JobRecord.ROOT_JOB_KEY_PROPERTY + " "
+                        "SELECT DISTINCT " + JobRecord.PIPELINE_KEY_PROPERTY + " "
                                 + "FROM " + JobRecord.DATA_STORE_KIND + " "
-                                + "WHERE " + JobRecord.ROOT_JOB_KEY_PROPERTY + " LIKE @prefix"
+                                + "WHERE " + JobRecord.PIPELINE_KEY_PROPERTY + " LIKE @prefix"
                 ).bind("prefix").to(prefix + "%").build()
         )) {
             {
                 while (rs.next()) {
-                    pipelines.add(UUID.fromString(rs.getString(JobRecord.ROOT_JOB_KEY_PROPERTY)));
+                    pipelines.add(UUID.fromString(rs.getString(JobRecord.PIPELINE_KEY_PROPERTY)));
                 }
             }
         }
@@ -670,42 +670,42 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
     }
 
     @Override
-    public PipelineObjects queryFullPipeline(final UUID rootJobKey) {
+    public PipelineObjects queryFullPipeline(final UUID pipelineKey) {
         final Map<UUID, JobRecord> jobs = new HashMap<>();
         final Map<RecordKey, Slot> slots = new HashMap<>();
         final Map<RecordKey, Barrier> barriers = new HashMap<>();
         final Map<UUID, JobInstanceRecord> jobInstanceRecords = new HashMap<>();
         final Map<UUID, ExceptionRecord> failureRecords = new HashMap<>();
 
-        final PipelineRecord pipeline = new PipelineRecord(null, databaseClient.singleUse().readRow(PipelineRecord.DATA_STORE_KIND, Key.of(rootJobKey.toString()), PipelineRecord.PROPERTIES));
-        queryAll(Barrier.DATA_STORE_KIND, Barrier.PROPERTIES, rootJobKey, (struct) -> {
+        final PipelineRecord pipeline = new PipelineRecord(null, databaseClient.singleUse().readRow(PipelineRecord.DATA_STORE_KIND, Key.of(pipelineKey.toString()), PipelineRecord.PROPERTIES));
+        queryAll(Barrier.DATA_STORE_KIND, Barrier.PROPERTIES, pipelineKey, (struct) -> {
             barriers.put(
-                    new RecordKey(UUID.fromString(struct.getString(Barrier.ROOT_JOB_KEY_PROPERTY)), UUID.fromString(struct.getString(Barrier.ID_PROPERTY))),
+                    new RecordKey(UUID.fromString(struct.getString(Barrier.PIPELINE_KEY_PROPERTY)), UUID.fromString(struct.getString(Barrier.KEY_PROPERTY))),
                     new Barrier(null, struct)
             );
         });
-        queryAll(Slot.DATA_STORE_KIND, Slot.PROPERTIES, rootJobKey, (struct) -> {
+        queryAll(Slot.DATA_STORE_KIND, Slot.PROPERTIES, pipelineKey, (struct) -> {
             slots.put(
-                    new RecordKey(UUID.fromString(struct.getString(Slot.ROOT_JOB_KEY_PROPERTY)), UUID.fromString(struct.getString(Slot.ID_PROPERTY))),
+                    new RecordKey(UUID.fromString(struct.getString(Slot.PIPELINE_KEY_PROPERTY)), UUID.fromString(struct.getString(Slot.KEY_PROPERTY))),
                     new Slot(pipelineManager.get(), null, struct, true)
             );
         });
-        queryAll(JobRecord.DATA_STORE_KIND, JobRecord.PROPERTIES, rootJobKey, (struct) -> {
-            jobs.put(UUID.fromString(struct.getString(JobRecord.ID_PROPERTY)), new JobRecord(null, struct));
+        queryAll(JobRecord.DATA_STORE_KIND, JobRecord.PROPERTIES, pipelineKey, (struct) -> {
+            jobs.put(UUID.fromString(struct.getString(JobRecord.KEY_PROPERTY)), new JobRecord(null, struct));
         });
-        queryAll(JobInstanceRecord.DATA_STORE_KIND, JobInstanceRecord.PROPERTIES, rootJobKey, (struct) -> {
-            jobInstanceRecords.put(UUID.fromString(struct.getString(JobInstanceRecord.ID_PROPERTY)), new JobInstanceRecord(pipelineManager.get(), null, struct));
+        queryAll(JobInstanceRecord.DATA_STORE_KIND, JobInstanceRecord.PROPERTIES, pipelineKey, (struct) -> {
+            jobInstanceRecords.put(UUID.fromString(struct.getString(JobInstanceRecord.KEY_PROPERTY)), new JobInstanceRecord(pipelineManager.get(), null, struct));
         });
-        queryAll(ExceptionRecord.DATA_STORE_KIND, ExceptionRecord.PROPERTIES, rootJobKey, (struct) -> {
-            failureRecords.put(UUID.fromString(struct.getString(ExceptionRecord.ID_PROPERTY)), new ExceptionRecord(pipelineManager.get(), null, struct));
+        queryAll(ExceptionRecord.DATA_STORE_KIND, ExceptionRecord.PROPERTIES, pipelineKey, (struct) -> {
+            failureRecords.put(UUID.fromString(struct.getString(ExceptionRecord.KEY_PROPERTY)), new ExceptionRecord(pipelineManager.get(), null, struct));
         });
-        return new PipelineObjects(rootJobKey, pipeline, jobs, slots, barriers, jobInstanceRecords, failureRecords);
+        return new PipelineObjects(pipelineKey, pipeline, jobs, slots, barriers, jobInstanceRecords, failureRecords);
     }
 
     /**
      * Delete all datastore entities corresponding to the given pipeline.
      *
-     * @param rootJobKey The root job key identifying the pipeline
+     * @param pipelineKey The root job key identifying the pipeline
      * @param force      If this parameter is not {@code true} then this method will
      *                   throw an {@link IllegalStateException} if the specified pipeline is not in the
      *                   {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#FINALIZED} or
@@ -719,10 +719,10 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
      *                               {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#STOPPED} state.
      */
     @Override
-    public void deletePipeline(final UUID rootJobKey, final boolean force, final boolean async) throws IllegalStateException {
+    public void deletePipeline(final UUID pipelineKey, final boolean force, final boolean async) throws IllegalStateException {
         if (!force) {
             try {
-                final JobRecord rootJobRecord = queryJob(rootJobKey, rootJobKey, JobRecord.InflationType.NONE);
+                final JobRecord rootJobRecord = queryJob(pipelineKey, pipelineKey, JobRecord.InflationType.NONE);
                 switch (rootJobRecord.getState()) {
                     case FINALIZED:
                     case STOPPED:
@@ -737,7 +737,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
         if (async) {
             // We do all the checks above before bothering to enqueue a task.
             // They will have to be done again when the task is processed.
-            final DeletePipelineTask task = new DeletePipelineTask(rootJobKey, force, new QueueSettings());
+            final DeletePipelineTask task = new DeletePipelineTask(pipelineKey, force, new QueueSettings());
             taskQueue.enqueue(task);
             return;
         }
@@ -746,8 +746,8 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
             @Override
             public Void run(final TransactionContext transaction) {
                 final long deleted = transaction.executeUpdate(
-                        Statement.newBuilder("DELETE FROM " + PipelineRecord.DATA_STORE_KIND + " WHERE " + PipelineRecord.ROOT_JOB_KEY_PROPERTY + " = @rootJobKey")
-                                .bind("rootJobKey").to(rootJobKey.toString())
+                        Statement.newBuilder("DELETE FROM " + PipelineRecord.DATA_STORE_KIND + " WHERE " + PipelineRecord.PIPELINE_KEY_PROPERTY + " = @pipelineKey")
+                                .bind("pipelineKey").to(pipelineKey.toString())
                                 .build()
                 );
                 return null;

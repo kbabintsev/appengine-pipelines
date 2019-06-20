@@ -40,12 +40,12 @@ public final class AbortJobHandler {
 
     void doGet(final HttpServletRequest req, final HttpServletResponse resp)
             throws IOException, ServletException {
-        final UUID rootJobHandle = UUID.fromString(req.getParameter(ROOT_PIPELINE_ID));
-        if (null == rootJobHandle) {
+        final UUID pipelineKey = UUID.fromString(req.getParameter(ROOT_PIPELINE_ID));
+        if (null == pipelineKey) {
             throw new ServletException(ROOT_PIPELINE_ID + " parameter not found.");
         }
         try {
-            pipelineManager.cancelJob(rootJobHandle, rootJobHandle);
+            pipelineManager.cancelJob(pipelineKey, pipelineKey);
         } catch (NoSuchObjectException nsoe) {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;

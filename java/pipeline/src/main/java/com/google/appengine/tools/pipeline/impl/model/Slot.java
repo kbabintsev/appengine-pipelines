@@ -67,16 +67,16 @@ public final class Slot extends PipelineModelObject {
 
     public Slot(
             final PipelineManager pipelineManager,
-            final UUID rootJobKey,
+            final UUID pipelineKey,
             final UUID generatorJobKey,
             final UUID graphKey
     ) {
-        super(DATA_STORE_KIND, rootJobKey, generatorJobKey, graphKey);
+        super(DATA_STORE_KIND, pipelineKey, generatorJobKey, graphKey);
         waitingOnMeKeys = new LinkedList<>();
         valueProxy = new ValueProxy(
                 pipelineManager,
                 null,
-                new ValueStoragePath(getRootJobKey(), DATA_STORE_KIND, getKey())
+                new ValueStoragePath(getPipelineKey(), DATA_STORE_KIND, getKey())
         );
     }
 
@@ -93,14 +93,14 @@ public final class Slot extends PipelineModelObject {
         waitingOnMeKeys = getRecordKeyListProperty(Record.property(prefix, WAITING_ON_ME_PROPERTY), entity).orElse(null);
         final String valueLocationProperty = Record.property(prefix, VALUE_LOCATION_PROPERTY);
         final String databaseValueProperty = Record.property(prefix, DATABASE_VALUE_PROPERTY);
-        final String rootJobKeyProperty = Record.property(prefix, ROOT_JOB_KEY_PROPERTY);
-        final String idProperty = Record.property(prefix, ID_PROPERTY);
+        final String pipelineKeyProperty = Record.property(prefix, PIPELINE_KEY_PROPERTY);
+        final String idProperty = Record.property(prefix, KEY_PROPERTY);
         valueProxy = new ValueProxy(
                 pipelineManager,
                 entity.isNull(valueLocationProperty) ? ValueLocation.DATABASE : ValueLocation.valueOf(entity.getString(valueLocationProperty)),
                 entity.isNull(databaseValueProperty) ? null : entity.getBytes(databaseValueProperty).toByteArray(),
                 lazy,
-                new ValueStoragePath(UUID.fromString(entity.getString(rootJobKeyProperty)), DATA_STORE_KIND, UUID.fromString(entity.getString(idProperty)))
+                new ValueStoragePath(UUID.fromString(entity.getString(pipelineKeyProperty)), DATA_STORE_KIND, UUID.fromString(entity.getString(idProperty)))
         );
     }
 
@@ -146,7 +146,7 @@ public final class Slot extends PipelineModelObject {
     }
 
     public void addWaiter(final Barrier waiter) {
-        waitingOnMeKeys.add(new RecordKey(waiter.getRootJobKey(), waiter.getKey()));
+        waitingOnMeKeys.add(new RecordKey(waiter.getPipelineKey(), waiter.getKey()));
         if (null == waitingOnMeInflated) {
             waitingOnMeInflated = new LinkedList<>();
         }

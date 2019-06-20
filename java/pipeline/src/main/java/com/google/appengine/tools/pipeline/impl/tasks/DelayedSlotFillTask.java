@@ -35,11 +35,11 @@ public final class DelayedSlotFillTask extends ObjRefTask {
      *
      * @param slot          The Slot whose filling is to be handled
      * @param delay         The delay in seconds before task gets executed
-     * @param rootJobKey    The key of the root job of the pipeline
+     * @param pipelineKey    The key of the root job of the pipeline
      * @param queueSettings The queue settings
      */
-    public DelayedSlotFillTask(final Slot slot, final long delay, final UUID rootJobKey, final QueueSettings queueSettings) {
-        super(Type.DELAYED_SLOT_FILL, "delayedSlotFillTask", rootJobKey, slot.getKey(), queueSettings);
+    public DelayedSlotFillTask(final Slot slot, final long delay, final UUID pipelineKey, final QueueSettings queueSettings) {
+        super(Type.DELAYED_SLOT_FILL, "delayedSlotFillTask", pipelineKey, slot.getKey(), queueSettings);
         getQueueSettings().setDelayInSeconds(delay);
     }
 

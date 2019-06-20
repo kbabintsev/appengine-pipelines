@@ -127,7 +127,7 @@ public final class JsonGenerator {
         final Map<String, Object> topLevel = new HashMap<>(3);
         for (final PipelineRecord pipeline : pipelineRoots) {
             final Map<String, Object> mapRepresentation = buildMapRepresentation(pipeline);
-            mapRepresentation.put(PIPELINE_ID, pipeline.getRootJobKey().toString());
+            mapRepresentation.put(PIPELINE_ID, pipeline.getPipelineKey().toString());
             jobList.add(mapRepresentation);
         }
         topLevel.put(PIPELINES, jobList);
@@ -156,7 +156,7 @@ public final class JsonGenerator {
 
     private static Map<String, Object> buildMapRepresentation(final PipelineRecord pipeline) {
         final Map<String, Object> map = buildMapRepresentation(pipeline.getRootJob());
-        String jobClass = pipeline.getRootJobDisplayName();
+        String jobClass = pipeline.getPipelineDisplayName();
         if (jobClass == null) {
             //TODO: think abrout returning this feature
             final JobInstanceRecord jobInstanceInflated = pipeline.getRootJob().getJobInstanceInflated();

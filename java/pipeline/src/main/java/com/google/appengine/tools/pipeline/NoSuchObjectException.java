@@ -22,8 +22,8 @@ import java.util.UUID;
 public class NoSuchObjectException extends Exception {
     private static final long serialVersionUID = 949320101929454628L;
 
-    public NoSuchObjectException(final String tableName, final UUID rootJobKey, final UUID key) {
-        super(tableName + ":" + rootJobKey + ":" + key);
+    public NoSuchObjectException(final String tableName, final UUID pipelineKey, final UUID key) {
+        super(tableName + ":" + pipelineKey + ":" + key);
     }
 
     public NoSuchObjectException(final String message) {

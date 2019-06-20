@@ -244,7 +244,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
     ) {
         this(
                 pipelineManager,
-                generatorJob.getRootJobKey(),
+                generatorJob.getPipelineKey(),
                 jobKey,
                 generatorJob.getKey(),
                 graphKeyParam,
@@ -275,7 +275,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
 
     private JobRecord(
             final PipelineManager pipelineManager,
-            final UUID rootJobKey,
+            final UUID pipelineKey,
             final UUID thisKey,
             final UUID generatorJobKey,
             final UUID graphKey,
@@ -284,7 +284,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
             final JobSetting[] settings,
             final QueueSettings parentQueueSettings
     ) {
-        super(DATA_STORE_KIND, rootJobKey, thisKey, generatorJobKey, graphKey);
+        super(DATA_STORE_KIND, pipelineKey, thisKey, generatorJobKey, graphKey);
         jobInstanceRecordInflated = new JobInstanceRecord(pipelineManager, this, jobInstance);
         jobInstanceKey = jobInstanceRecordInflated.getKey();
         exceptionHandlerSpecified = hasExceptionHandler(jobInstance);
@@ -293,7 +293,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
         runBarrierKey = runBarrierInflated.getKey();
         finalizeBarrierInflated = new Barrier(Barrier.Type.FINALIZE, this);
         finalizeBarrierKey = finalizeBarrierInflated.getKey();
-        outputSlotInflated = new Slot(pipelineManager, getRootJobKey(), getGeneratorJobKey(), getGraphKey());
+        outputSlotInflated = new Slot(pipelineManager, getPipelineKey(), getGeneratorJobKey(), getGraphKey());
         // Initially we set the filler of the output slot to be this Job.
         // During finalize we may reset it to the filler of the finalize slot.
         outputSlotInflated.setSourceJobKey(getKey());

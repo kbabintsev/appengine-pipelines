@@ -129,13 +129,13 @@ public class MiscPipelineTest extends PipelineTest {
         ConcreteJob job = new ConcreteJob();
         UUID pipelineId = service.startNewPipeline(job);
         PipelineInfo jobRecord = pipelineManager.getPipeline(pipelineId);
-        assertEquals(job.getJobDisplayName(), jobRecord.getRootJobDisplayName());
+        assertEquals(job.getJobDisplayName(), jobRecord.getPipelineDisplayName());
         PipelineInfo jobInfo = waitUntilPipelineComplete(pipelineId);
         assertEquals("Shalom", jobInfo.getOutput());
         jobRecord = pipelineManager.getPipeline(pipelineId);
-        assertEquals(job.getJobDisplayName(), jobRecord.getRootJobDisplayName());
+        assertEquals(job.getJobDisplayName(), jobRecord.getPipelineDisplayName());
         PipelineObjects pobjects = pipelineManager.queryFullPipeline(pipelineId);
-        assertEquals(job.getJobDisplayName(), pobjects.getPipeline().getRootJobDisplayName());
+        assertEquals(job.getJobDisplayName(), pobjects.getPipeline().getPipelineDisplayName());
     }
 
     public void testJobInheritence() throws Exception {
@@ -183,7 +183,7 @@ public class MiscPipelineTest extends PipelineTest {
         JobInfo jobInfo = service.getJobInfo(pipelineId, pipelineId);
         assertEquals(State.RUNNING, jobInfo.getJobState());
         HandleExceptionChild2Job.childLatch1.await();
-        service.cancelPipeline(pipelineId, pipelineId);
+        service.cancelPipeline(pipelineId);
         HandleExceptionChild2Job.childLatch2.countDown();
         waitUntilTaskQueueIsEmpty();
         jobInfo = service.getJobInfo(pipelineId, pipelineId);

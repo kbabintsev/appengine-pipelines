@@ -6,11 +6,11 @@ import com.google.common.base.Objects;
 import java.util.UUID;
 
 public final class RecordKey {
-    private final UUID rootJobKey;
+    private final UUID pipelineKey;
     private final UUID key;
 
-    public RecordKey(final UUID rootJobKey, final UUID key) {
-        this.rootJobKey = rootJobKey;
+    public RecordKey(final UUID pipelineKey, final UUID key) {
+        this.pipelineKey = pipelineKey;
         this.key = key;
     }
 
@@ -19,12 +19,12 @@ public final class RecordKey {
         if (split.length != 2) {
             throw new RuntimeException("Can't deserialize RecordKey. Must be {UUID}:{UUID");
         }
-        this.rootJobKey = UUID.fromString(split[0]);
+        this.pipelineKey = UUID.fromString(split[0]);
         this.key = UUID.fromString(split[1]);
     }
 
-    public UUID getRootJobKey() {
-        return rootJobKey;
+    public UUID getPipelineKey() {
+        return pipelineKey;
     }
 
     public UUID getKey() {
@@ -32,7 +32,7 @@ public final class RecordKey {
     }
 
     public String sertialize() {
-        return rootJobKey + ":" + key;
+        return pipelineKey + ":" + key;
     }
 
     @Override
@@ -44,19 +44,19 @@ public final class RecordKey {
             return false;
         }
         final RecordKey recordKey = (RecordKey) o;
-        return Objects.equal(rootJobKey, recordKey.rootJobKey)
+        return Objects.equal(pipelineKey, recordKey.pipelineKey)
                 && Objects.equal(key, recordKey.key);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(rootJobKey, key);
+        return Objects.hashCode(pipelineKey, key);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("rootJobKey", rootJobKey)
+                .add("pipelineKey", pipelineKey)
                 .add("key", key)
                 .toString();
     }

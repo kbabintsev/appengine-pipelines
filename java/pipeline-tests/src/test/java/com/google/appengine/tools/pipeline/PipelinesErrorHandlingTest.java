@@ -138,7 +138,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
     public void testPipelineCancellation() throws Exception {
         UUID pipelineId = service.startNewPipeline(new TestPipelineCancellationJob());
         Thread.sleep(10000);
-        service.cancelPipeline(pipelineId, pipelineId);
+        service.cancelPipeline(pipelineId);
         try {
             waitForJobToComplete(pipelineId);
             fail("should throw");

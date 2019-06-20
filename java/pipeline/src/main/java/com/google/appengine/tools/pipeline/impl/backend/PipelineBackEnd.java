@@ -74,7 +74,7 @@ public interface PipelineBackEnd {
      * @throws NoSuchObjectException If Either the JobRecord or any of the
      *                               associated Slots or Barriers are not found in the data store.
      */
-    JobRecord queryJob(UUID rootJobKey, UUID key, JobRecord.InflationType inflationType) throws NoSuchObjectException;
+    JobRecord queryJob(UUID pipelineKey, UUID key, JobRecord.InflationType inflationType) throws NoSuchObjectException;
 
     /**
      * Get the JobRecord with the given Key from the data store, and optionally
@@ -110,7 +110,7 @@ public interface PipelineBackEnd {
      * of objects.
      * @throws NoSuchObjectException if unable to find an entity
      */
-    Slot querySlot(UUID rootJobKey, UUID key, boolean inflate) throws NoSuchObjectException;
+    Slot querySlot(UUID pipelineKey, UUID key, boolean inflate) throws NoSuchObjectException;
 
     /**
      * Get the Failure with the given Key from the data store.
@@ -119,7 +119,7 @@ public interface PipelineBackEnd {
      * @return A {@code FailureRecord}
      * @throws NoSuchObjectException if unable to find an entity
      */
-    ExceptionRecord queryFailure(UUID rootJobKey, UUID key) throws NoSuchObjectException;
+    ExceptionRecord queryFailure(UUID pipelineKey, UUID key) throws NoSuchObjectException;
 
     /**
      * Enqueues to the App Engine task queue the tasks encoded by the given
@@ -141,12 +141,12 @@ public interface PipelineBackEnd {
      * Queries the data store for all Pipeline objects associated with the given
      * root Job Key
      */
-    PipelineObjects queryFullPipeline(UUID rootJobKey);
+    PipelineObjects queryFullPipeline(UUID pipelineKey);
 
     /**
      * Delete all datastore entities corresponding to the given pipeline.
      *
-     * @param rootJobKey The root job key identifying the pipeline
+     * @param pipelineKey The root job key identifying the pipeline
      * @param force      If this parameter is not {@code true} then this method will
      *                   throw an {@link IllegalStateException} if the specified pipeline is
      *                   not in the
@@ -164,7 +164,7 @@ public interface PipelineBackEnd {
      *                               {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#STOPPED}
      *                               state.
      */
-    void deletePipeline(UUID rootJobKey, boolean force, boolean async)
+    void deletePipeline(UUID pipelineKey, boolean force, boolean async)
             throws IllegalStateException;
 
     void cleanBlobs(String prefix);

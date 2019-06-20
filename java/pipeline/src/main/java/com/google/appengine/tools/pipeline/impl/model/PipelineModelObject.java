@@ -38,13 +38,13 @@ import java.util.stream.Collectors;
  */
 public abstract class PipelineModelObject implements Record {
 
-    public static final String ROOT_JOB_KEY_PROPERTY = "rootJobKey";
-    public static final String ID_PROPERTY = "id";
+    public static final String PIPELINE_KEY_PROPERTY = "pipelineKey";
+    public static final String KEY_PROPERTY = "key";
     private static final String GENERATOR_JOB_PROPERTY = "generatorJobKey";
     private static final String GRAPH_KEY_PROPERTY = "graphKey";
     protected static final List<String> BASE_PROPERTIES = ImmutableList.of(
-            ROOT_JOB_KEY_PROPERTY,
-            ID_PROPERTY,
+            PIPELINE_KEY_PROPERTY,
+            KEY_PROPERTY,
             GENERATOR_JOB_PROPERTY,
             GRAPH_KEY_PROPERTY
     );
@@ -59,7 +59,7 @@ public abstract class PipelineModelObject implements Record {
      * Datastore key of the root job identifying the Pipeline to which this object
      * belongs.
      */
-    private final UUID rootJobKey;
+    private final UUID pipelineKey;
 
     /**
      * Datastore key of the generator job of this object. Your generator job is
@@ -82,7 +82,7 @@ public abstract class PipelineModelObject implements Record {
      * Construct a new PipelineModelObject from the provided data.
      *
      * @param tableName       The name of the table where entity is stored
-     * @param rootJobKey      The key of the root job for this pipeline. This must be
+     * @param pipelineKey      The key of the root job for this pipeline. This must be
      *                        non-null, except in the case that we are currently constructing the
      *                        root job. In that case {@code thisKey} and {@code egParentKey} must
      *                        both be null and this must be a {@link JobRecord}.
@@ -99,12 +99,12 @@ public abstract class PipelineModelObject implements Record {
      *                        its barriers or slots.
      */
     protected PipelineModelObject(
-            final String tableName, final UUID rootJobKey, final UUID thisKey, final UUID generatorJobKey, final UUID graphKey) {
+            final String tableName, final UUID pipelineKey, final UUID thisKey, final UUID generatorJobKey, final UUID graphKey) {
         if (null == tableName) {
             throw new IllegalArgumentException("tableName is null");
         }
-        if (null == rootJobKey) {
-            throw new IllegalArgumentException("rootJobKey is null");
+        if (null == pipelineKey) {
+            throw new IllegalArgumentException("pipelineKey is null");
         }
         if (generatorJobKey == null && graphKey != null
                 || generatorJobKey != null && graphKey == null) {
@@ -112,7 +112,7 @@ public abstract class PipelineModelObject implements Record {
                     "Either neither or both of generatorParentJobKey and graphKey must be set.");
         }
         this.tableName = tableName;
-        this.rootJobKey = rootJobKey;
+        this.pipelineKey = pipelineKey;
         this.generatorJobKey = generatorJobKey;
         this.graphKey = graphKey;
         if (null == thisKey) {
@@ -123,12 +123,12 @@ public abstract class PipelineModelObject implements Record {
     }
 
     /**
-     * Construct a new PipelineModelObject with the given rootJobKey,
+     * Construct a new PipelineModelObject with the given pipelineKey,
      * generatorJobKey, and graphKey, a newly generated key, and no entity group
      * parent.
      *
      * @param tableName       The name of the table where entity is stored
-     * @param rootJobKey      The key of the root job for this pipeline. This must be
+     * @param pipelineKey      The key of the root job for this pipeline. This must be
      *                        non-null, except in the case that we are currently constructing the
      *                        root job. In that case this must be a {@link JobRecord}.
      * @param generatorJobKey The key of the job whose run() method created this
@@ -142,9 +142,9 @@ public abstract class PipelineModelObject implements Record {
      *                        its barriers or slots.
      */
     protected PipelineModelObject(
-            final String tableName, final UUID rootJobKey, final UUID generatorJobKey, final UUID graphKey
+            final String tableName, final UUID pipelineKey, final UUID generatorJobKey, final UUID graphKey
     ) {
-        this(tableName, rootJobKey, null, generatorJobKey, graphKey);
+        this(tableName, pipelineKey, null, generatorJobKey, graphKey);
     }
 
     /**
@@ -157,8 +157,8 @@ public abstract class PipelineModelObject implements Record {
     protected PipelineModelObject(final String tableName, @Nullable final String prefix, final StructReader entity) {
         this(
                 tableName,
-                entity.isNull(Record.property(prefix, ROOT_JOB_KEY_PROPERTY)) ? null : UUID.fromString(entity.getString(Record.property(prefix, ROOT_JOB_KEY_PROPERTY))),
-                UUID.fromString(entity.getString(Record.property(prefix, ID_PROPERTY))),
+                entity.isNull(Record.property(prefix, PIPELINE_KEY_PROPERTY)) ? null : UUID.fromString(entity.getString(Record.property(prefix, PIPELINE_KEY_PROPERTY))),
+                UUID.fromString(entity.getString(Record.property(prefix, KEY_PROPERTY))),
                 entity.isNull(Record.property(prefix, GENERATOR_JOB_PROPERTY)) ? null : UUID.fromString(entity.getString(Record.property(prefix, GENERATOR_JOB_PROPERTY))),
                 entity.isNull(Record.property(prefix, GRAPH_KEY_PROPERTY)) ? null : UUID.fromString(entity.getString(Record.property(prefix, GRAPH_KEY_PROPERTY)))
         );
@@ -206,7 +206,7 @@ public abstract class PipelineModelObject implements Record {
     }
 
     public static boolean isNullInJoin(@Nonnull final String prefix, @Nonnull final StructReader struct) {
-        return struct.isNull(Record.property(prefix, ID_PROPERTY));
+        return struct.isNull(Record.property(prefix, KEY_PROPERTY));
     }
 
     @Override
@@ -214,8 +214,8 @@ public abstract class PipelineModelObject implements Record {
 
     protected final PipelineMutation toProtoEntity() {
         final Mutation.WriteBuilder writeBuilder = Mutation.newInsertOrUpdateBuilder(tableName);
-        writeBuilder.set(ID_PROPERTY).to(key.toString());
-        writeBuilder.set(ROOT_JOB_KEY_PROPERTY).to(rootJobKey.toString());
+        writeBuilder.set(KEY_PROPERTY).to(key.toString());
+        writeBuilder.set(PIPELINE_KEY_PROPERTY).to(pipelineKey.toString());
         if (generatorJobKey != null) {
             writeBuilder.set(GENERATOR_JOB_PROPERTY).to(generatorJobKey.toString());
         }
@@ -229,8 +229,8 @@ public abstract class PipelineModelObject implements Record {
         return key;
     }
 
-    public final UUID getRootJobKey() {
-        return rootJobKey;
+    public final UUID getPipelineKey() {
+        return pipelineKey;
     }
 
     public final UUID getGeneratorJobKey() {

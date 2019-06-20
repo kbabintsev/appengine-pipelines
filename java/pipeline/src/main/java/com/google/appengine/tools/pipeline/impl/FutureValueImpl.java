@@ -43,7 +43,7 @@ public class FutureValueImpl<E> implements FutureValue<E> {
 
     @Override
     public UUID getPipelineHandle() {
-        return slot.getRootJobKey();
+        return slot.getPipelineKey();
     }
 
     @Override

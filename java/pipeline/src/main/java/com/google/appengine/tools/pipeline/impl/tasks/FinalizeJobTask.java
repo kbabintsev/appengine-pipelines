@@ -27,8 +27,8 @@ import java.util.UUID;
  */
 public final class FinalizeJobTask extends ObjRefTask {
 
-    public FinalizeJobTask(final UUID rootJobKey, final UUID jobKey, final QueueSettings queueSettings) {
-        super(Type.FINALIZE_JOB, "finalizeJob", rootJobKey, jobKey, queueSettings);
+    public FinalizeJobTask(final UUID pipelineKey, final UUID jobKey, final QueueSettings queueSettings) {
+        super(Type.FINALIZE_JOB, "finalizeJob", pipelineKey, jobKey, queueSettings);
     }
 
     protected FinalizeJobTask(final Type type, final String taskName, final Properties properties) {

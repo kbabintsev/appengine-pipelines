@@ -76,8 +76,8 @@ public final class Barrier extends PipelineModelObject {
     // transient
     private List<SlotDescriptor> waitingOnInflated;
 
-    private Barrier(final Type type, final UUID rootJobKey, final UUID jobKey, final UUID generatorJobKey, final UUID graphKey) {
-        super(DATA_STORE_KIND, rootJobKey, null, generatorJobKey, graphKey);
+    private Barrier(final Type type, final UUID pipelineKey, final UUID jobKey, final UUID generatorJobKey, final UUID graphKey) {
+        super(DATA_STORE_KIND, pipelineKey, null, generatorJobKey, graphKey);
         this.jobKey = jobKey;
         this.type = type;
         waitingOnGroupSizes = new LinkedList<>();
@@ -86,7 +86,7 @@ public final class Barrier extends PipelineModelObject {
     }
 
     public Barrier(final Type type, final JobRecord jobRecord) {
-        this(type, jobRecord.getRootJobKey(), jobRecord.getKey(), jobRecord.getGeneratorJobKey(),
+        this(type, jobRecord.getPipelineKey(), jobRecord.getKey(), jobRecord.getGeneratorJobKey(),
                 jobRecord.getGraphKey());
     }
 
@@ -221,14 +221,14 @@ public final class Barrier extends PipelineModelObject {
         }
         // if user set waitFor result of a job and framework set it automatically - it would be a problem.
         // That's why we're skipping slot if we already have it
-        if (waitingOnKeys.contains(new RecordKey(slotDescr.getSlot().getRootJobKey(), slotDescr.getSlot().getKey()))) {
+        if (waitingOnKeys.contains(new RecordKey(slotDescr.getSlot().getPipelineKey(), slotDescr.getSlot().getKey()))) {
             return;
         }
         waitingOnInflated.add(slotDescr);
         waitingOnGroupSizes.add((long) slotDescr.getGroupSize());
         final Slot slot = slotDescr.getSlot();
         slot.addWaiter(this);
-        waitingOnKeys.add(new RecordKey(slotDescr.getSlot().getRootJobKey(), slotDescr.getSlot().getKey()));
+        waitingOnKeys.add(new RecordKey(slotDescr.getSlot().getPipelineKey(), slotDescr.getSlot().getKey()));
     }
 
     public void addRegularArgumentSlot(final Slot slot) {

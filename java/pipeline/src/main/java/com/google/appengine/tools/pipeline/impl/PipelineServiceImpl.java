@@ -98,30 +98,30 @@ public class PipelineServiceImpl implements PipelineService {
     }
 
     @Override
-    public void stopPipeline(final UUID rootJobKey, final UUID jobHandle) throws NoSuchObjectException {
-        pipelineManager.stopJob(rootJobKey, jobHandle);
+    public void stopPipeline(final UUID pipelineKey) throws NoSuchObjectException {
+        pipelineManager.stopJob(pipelineKey, pipelineKey);
     }
 
     @Override
-    public void cancelPipeline(final UUID rootJobKey, final UUID jobHandle) throws NoSuchObjectException {
-        pipelineManager.cancelJob(rootJobKey, jobHandle);
+    public void cancelPipeline(final UUID pipelineKey) throws NoSuchObjectException {
+        pipelineManager.cancelJob(pipelineKey, pipelineKey);
     }
 
     @Override
-    public void deletePipelineRecords(final UUID pipelineHandle) throws NoSuchObjectException,
+    public void deletePipelineRecords(final UUID pipelineKey) throws NoSuchObjectException,
             IllegalStateException {
-        deletePipelineRecords(pipelineHandle, false, false);
+        deletePipelineRecords(pipelineKey, false, false);
     }
 
     @Override
-    public void deletePipelineRecords(final UUID pipelineHandle, final boolean force, final boolean async)
+    public void deletePipelineRecords(final UUID pipelineKey, final boolean force, final boolean async)
             throws NoSuchObjectException, IllegalStateException {
-        pipelineManager.deletePipelineRecords(pipelineHandle, force, async);
+        pipelineManager.deletePipelineRecords(pipelineKey, force, async);
     }
 
     @Override
-    public JobInfo getJobInfo(final UUID rootJobKey, final UUID jobHandle) throws NoSuchObjectException {
-        return pipelineManager.getJob(rootJobKey, jobHandle);
+    public JobInfo getJobInfo(final UUID pipelineKey, final UUID jobKey) throws NoSuchObjectException {
+        return pipelineManager.getJob(pipelineKey, jobKey);
     }
 
     @Override
@@ -130,9 +130,9 @@ public class PipelineServiceImpl implements PipelineService {
     }
 
     @Override
-    public void submitPromisedValue(final UUID rootJobKey, final UUID promiseHandle, final Object value)
+    public void submitPromisedValue(final UUID pipelineKey, final UUID promiseHandle, final Object value)
             throws NoSuchObjectException, OrphanedObjectException {
-        pipelineManager.acceptPromisedValue(rootJobKey, promiseHandle, value);
+        pipelineManager.acceptPromisedValue(pipelineKey, promiseHandle, value);
     }
 
     @Override

@@ -44,25 +44,19 @@ public final class JsonTreeHandler {
     void doGet(final HttpServletRequest req, final HttpServletResponse resp)
             throws ServletException {
 
-        final UUID rootJobHandle = UUID.fromString(req.getParameter(ROOT_PIPELINE_ID));
-        if (null == rootJobHandle) {
+        final UUID pipelineKey = UUID.fromString(req.getParameter(ROOT_PIPELINE_ID));
+        if (null == pipelineKey) {
             throw new ServletException(ROOT_PIPELINE_ID + " parameter not found.");
         }
         try {
             final PipelineRecord jobInfo;
             try {
-                jobInfo = pipelineManager.getPipeline(rootJobHandle);
+                jobInfo = pipelineManager.getPipeline(pipelineKey);
             } catch (NoSuchObjectException nsoe) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
-            final UUID rootJobKey = jobInfo.getRootJobKey();
-            if (!rootJobKey.equals(rootJobHandle)) {
-                resp.addHeader(ROOT_PIPELINE_ID, rootJobKey.toString());
-                resp.sendError(HTTP_449, rootJobKey.toString());
-                return;
-            }
-            final PipelineObjects pipelineObjects = pipelineManager.queryFullPipeline(rootJobKey);
+            final PipelineObjects pipelineObjects = pipelineManager.queryFullPipeline(pipelineKey);
             final String asJson = JsonGenerator.pipelineObjectsToJson(pipelineObjects);
             // TODO(user): Temporary until we support abort/delete in Python
             resp.addHeader("Pipeline-Lang", "Java");

@@ -68,18 +68,18 @@ public final class UpdateSpec {
     private static final int INITIAL_MAP_CAPACITY = 10;
     private List<Transaction> transactions = new ArrayList<>();
     private TransactionWithTasks finalTransaction = new TransactionWithTasks("final");
-    private UUID rootJobKey;
+    private UUID pipelineKey;
 
-    public UpdateSpec(final UUID rootJobKey) {
-        this.rootJobKey = rootJobKey;
+    public UpdateSpec(final UUID pipelineKey) {
+        this.pipelineKey = pipelineKey;
     }
 
-    public UUID getRootJobKey() {
-        return rootJobKey;
+    public UUID getPipelineKey() {
+        return pipelineKey;
     }
 
-    public void setRootJobKey(final UUID rootJobKey) {
-        this.rootJobKey = rootJobKey;
+    public void setPipelineKey(final UUID pipelineKey) {
+        this.pipelineKey = pipelineKey;
     }
 
     public TransactionWithTasks getFinalTransaction() {
@@ -137,7 +137,7 @@ public final class UpdateSpec {
          * Include the given Barrier in the group of objects to be saved.
          */
         public final void includePipeline(final PipelineRecord pipeline) {
-            pipelineMap.put(pipeline.getRootJobKey(), pipeline);
+            pipelineMap.put(pipeline.getPipelineKey(), pipeline);
         }
 
         public final Collection<PipelineRecord> getPipelines() {

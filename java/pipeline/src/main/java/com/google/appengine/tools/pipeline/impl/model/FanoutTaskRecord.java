@@ -42,8 +42,8 @@ public final class FanoutTaskRecord extends PipelineModelObject {
 
     private final byte[] payload;
 
-    public FanoutTaskRecord(final UUID rootJobKey, final byte[] payload) {
-        super(DATA_STORE_KIND, rootJobKey, null, null);
+    public FanoutTaskRecord(final UUID pipelineKey, final byte[] payload) {
+        super(DATA_STORE_KIND, pipelineKey, null, null);
         if (payload == null) {
             throw new RuntimeException("Payload must not be null");
         }

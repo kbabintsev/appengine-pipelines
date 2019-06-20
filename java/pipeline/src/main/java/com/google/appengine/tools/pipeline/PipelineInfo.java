@@ -23,5 +23,5 @@ package com.google.appengine.tools.pipeline;
  */
 public interface PipelineInfo extends JobInfo {
 
-    String getRootJobDisplayName();
+    String getPipelineDisplayName();
 }

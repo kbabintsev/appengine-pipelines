@@ -28,10 +28,10 @@ import java.util.UUID;
  */
 public abstract class ObjRefTask extends Task {
 
-    private static final String ROOT_JOB_KEY_PROPERTY = "rootJobKey";
+    private static final String PIPELINE_KEY_PROPERTY = "pipelineKey";
     private static final String KEY_PARAM = "key";
 
-    private final UUID rootJobKey;
+    private final UUID pipelineKey;
     /**
      * The {@code Key} of the object to which this {@code ObjRefTask} refers.
      */
@@ -47,9 +47,9 @@ public abstract class ObjRefTask extends Task {
      *                   will refer. It will be used as part of the task name if
      *                   combined with {@code namePrefix}.
      */
-    protected ObjRefTask(final Type type, final String namePrefix, final UUID rootJobKey, final UUID key, final QueueSettings queueSettings) {
+    protected ObjRefTask(final Type type, final String namePrefix, final UUID pipelineKey, final UUID key, final QueueSettings queueSettings) {
         super(type, createTaskName(namePrefix, key), queueSettings.clone());
-        this.rootJobKey = rootJobKey;
+        this.pipelineKey = pipelineKey;
         this.key = key;
     }
 
@@ -67,7 +67,7 @@ public abstract class ObjRefTask extends Task {
      */
     protected ObjRefTask(final Type type, final String taskName, final Properties properties) {
         super(type, taskName, properties);
-        rootJobKey = UUID.fromString(properties.getProperty(ROOT_JOB_KEY_PROPERTY));
+        pipelineKey = UUID.fromString(properties.getProperty(PIPELINE_KEY_PROPERTY));
         key = UUID.fromString(properties.getProperty(KEY_PARAM));
     }
 
@@ -81,8 +81,8 @@ public abstract class ObjRefTask extends Task {
         return namePrefix + key.toString();
     }
 
-    public final UUID getRootJobKey() {
-        return rootJobKey;
+    public final UUID getPipelineKey() {
+        return pipelineKey;
     }
 
     public final UUID getKey() {
@@ -92,12 +92,12 @@ public abstract class ObjRefTask extends Task {
     @Override
     protected void addProperties(final Properties properties) {
         final String keyString = key.toString();
-        properties.setProperty(ROOT_JOB_KEY_PROPERTY, rootJobKey.toString());
+        properties.setProperty(PIPELINE_KEY_PROPERTY, pipelineKey.toString());
         properties.setProperty(KEY_PARAM, keyString);
     }
 
     @Override
     public String propertiesAsString() {
-        return "rootJobKey=" + rootJobKey + ", key=" + key;
+        return "pipelineKey=" + pipelineKey + ", key=" + key;
     }
 }

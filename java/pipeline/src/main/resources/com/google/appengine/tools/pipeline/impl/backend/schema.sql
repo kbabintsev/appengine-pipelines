@@ -1,11 +1,11 @@
 CREATE TABLE Pipeline (
-	rootJobKey STRING(36) NOT NULL,
+	pipelineKey STRING(36) NOT NULL,
 	rootJobDisplayName STRING(255),
-) PRIMARY KEY (rootJobKey);
+) PRIMARY KEY (pipelineKey);
 
 CREATE TABLE Barrier (
-	rootJobKey STRING(36) NOT NULL,
-	id STRING(36) NOT NULL,
+	pipelineKey STRING(36) NOT NULL,
+	key STRING(36) NOT NULL,
 	barrierType STRING(16) NOT NULL,
 	generatorJobKey STRING(36),
 	graphKey STRING(36),
@@ -13,30 +13,30 @@ CREATE TABLE Barrier (
 	released BOOL NOT NULL,
 	waitingOnGroupSizes ARRAY<INT64>,
 	waitingOnKeys ARRAY<STRING(73)>,
-) PRIMARY KEY (rootJobKey, id),
+) PRIMARY KEY (pipelineKey, key),
 INTERLEAVE IN PARENT Pipeline ON DELETE CASCADE;
 
 CREATE TABLE Exception (
-	rootJobKey STRING(36) NOT NULL,
-	id STRING(36) NOT NULL,
+	pipelineKey STRING(36) NOT NULL,
+	key STRING(36) NOT NULL,
 	exceptionBytes BYTES(MAX) NOT NULL,
 	generatorJobKey STRING(36),
 	graphKey STRING(36),
-) PRIMARY KEY (rootJobKey, id),
+) PRIMARY KEY (pipelineKey, key),
 INTERLEAVE IN PARENT Pipeline ON DELETE CASCADE;
 
 CREATE TABLE FanoutTask (
-	rootJobKey STRING(36) NOT NULL,
-	id STRING(36) NOT NULL,
+	pipelineKey STRING(36) NOT NULL,
+	key STRING(36) NOT NULL,
 	generatorJobKey STRING(36),
 	graphKey STRING(36),
 	payload BYTES(MAX) NOT NULL,
-) PRIMARY KEY (rootJobKey, id),
+) PRIMARY KEY (pipelineKey, key),
 INTERLEAVE IN PARENT Pipeline ON DELETE CASCADE;
 
 CREATE TABLE Job (
-	rootJobKey STRING(36) NOT NULL,
-	id STRING(36) NOT NULL,
+	pipelineKey STRING(36) NOT NULL,
+	key STRING(36) NOT NULL,
 	attemptNum INT64,
 	backoffFactor INT64 NOT NULL,
 	backoffSeconds INT64 NOT NULL,
@@ -63,12 +63,12 @@ CREATE TABLE Job (
 	state STRING(32) NOT NULL,
 	statusConsoleUrl STRING(255),
 	statusMessages ARRAY<STRING(1000)>,
-) PRIMARY KEY (rootJobKey, id),
+) PRIMARY KEY (pipelineKey, key),
 INTERLEAVE IN PARENT Pipeline ON DELETE CASCADE;
 
 CREATE TABLE JobInstance (
-	rootJobKey STRING(36) NOT NULL,
-	id STRING(36) NOT NULL,
+	pipelineKey STRING(36) NOT NULL,
+	key STRING(36) NOT NULL,
 	databaseValue BYTES(MAX),
 	generatorJobKey STRING(36),
 	graphKey STRING(36),
@@ -76,12 +76,12 @@ CREATE TABLE JobInstance (
 	jobDisplayName STRING(255),
 	jobKey STRING(36) NOT NULL,
 	valueLocation STRING(32),
-) PRIMARY KEY (rootJobKey, id),
+) PRIMARY KEY (pipelineKey, key),
 INTERLEAVE IN PARENT Pipeline ON DELETE CASCADE;
 
 CREATE TABLE Slot (
-	rootJobKey STRING(36) NOT NULL,
-	id STRING(36) NOT NULL,
+	pipelineKey STRING(36) NOT NULL,
+	key STRING(36) NOT NULL,
 	databaseValue BYTES(MAX),
 	filled BOOL,
 	fillTime TIMESTAMP,
@@ -90,6 +90,6 @@ CREATE TABLE Slot (
 	sourceJob STRING(36),
 	valueLocation STRING(32),
 	waitingOnMe ARRAY<STRING(73)>,
-) PRIMARY KEY (rootJobKey, id),
+) PRIMARY KEY (pipelineKey, key),
 INTERLEAVE IN PARENT Pipeline ON DELETE CASCADE;
 

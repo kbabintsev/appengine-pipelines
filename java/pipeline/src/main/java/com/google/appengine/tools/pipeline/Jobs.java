@@ -112,8 +112,8 @@ public final class Jobs {
         private static final Logger LOGGER = Logger.getLogger(DeletePipelineJob.class.getName());
         private final UUID key;
 
-        DeletePipelineJob(final UUID rootJobKey) {
-            this.key = rootJobKey;
+        DeletePipelineJob(final UUID pipelineKey) {
+            this.key = pipelineKey;
         }
 
         @Override

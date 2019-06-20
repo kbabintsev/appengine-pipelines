@@ -48,12 +48,12 @@ public final class ExceptionRecord extends PipelineModelObject {
 
     public ExceptionRecord(
             final PipelineManager pipelineManager,
-            final UUID rootJobKey,
+            final UUID pipelineKey,
             final UUID generatorJobKey,
             final UUID graphKey,
             final Throwable exception
     ) {
-        super(DATA_STORE_KIND, rootJobKey, generatorJobKey, graphKey);
+        super(DATA_STORE_KIND, pipelineKey, generatorJobKey, graphKey);
         this.pipelineManager = pipelineManager;
         this.exception = exception;
     }

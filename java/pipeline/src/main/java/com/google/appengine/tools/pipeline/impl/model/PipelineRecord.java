@@ -13,24 +13,24 @@ import java.util.UUID;
 
 public final class PipelineRecord implements Record, PipelineInfo {
     public static final String DATA_STORE_KIND = "Pipeline";
-    public static final String ROOT_JOB_KEY_PROPERTY = "rootJobKey";
+    public static final String PIPELINE_KEY_PROPERTY = "pipelineKey";
     public static final String ROOT_JOB_DISPLAY_NAME = "rootJobDisplayName";
     public static final List<String> PROPERTIES = ImmutableList.<String>builder()
-            .add(ROOT_JOB_KEY_PROPERTY)
+            .add(PIPELINE_KEY_PROPERTY)
             .add(ROOT_JOB_DISPLAY_NAME)
             .build();
-    private final UUID rootJobKey;
+    private final UUID pipelineKey;
     private final String rootJobDisplayName;
     // transient
     private JobRecord rootJob;
 
-    public PipelineRecord(final UUID rootJobKey, final String rootJobDisplayName) {
-        this.rootJobKey = rootJobKey;
+    public PipelineRecord(final UUID pipelineKey, final String rootJobDisplayName) {
+        this.pipelineKey = pipelineKey;
         this.rootJobDisplayName = rootJobDisplayName;
     }
 
     public PipelineRecord(@Nullable final String prefix, @Nonnull final StructReader entity) {
-        rootJobKey = UUID.fromString(entity.getString(Record.property(prefix, ROOT_JOB_KEY_PROPERTY)));
+        pipelineKey = UUID.fromString(entity.getString(Record.property(prefix, PIPELINE_KEY_PROPERTY)));
         rootJobDisplayName = entity.isNull(Record.property(prefix, ROOT_JOB_DISPLAY_NAME))
                 ? null
                 : entity.getString(Record.property(prefix, ROOT_JOB_DISPLAY_NAME));
@@ -40,11 +40,11 @@ public final class PipelineRecord implements Record, PipelineInfo {
         return Record.propertiesForSelect(DATA_STORE_KIND, PROPERTIES, prefix);
     }
 
-    public UUID getRootJobKey() {
-        return rootJobKey;
+    public UUID getPipelineKey() {
+        return pipelineKey;
     }
 
-    public String getRootJobDisplayName() {
+    public String getPipelineDisplayName() {
         return rootJobDisplayName;
     }
 
@@ -64,7 +64,7 @@ public final class PipelineRecord implements Record, PipelineInfo {
     @Override
     public PipelineMutation toEntity() {
         final Mutation.WriteBuilder writeBuilder = Mutation.newInsertOrUpdateBuilder(DATA_STORE_KIND);
-        writeBuilder.set(ROOT_JOB_KEY_PROPERTY).to(rootJobKey.toString());
+        writeBuilder.set(PIPELINE_KEY_PROPERTY).to(pipelineKey.toString());
         writeBuilder.set(ROOT_JOB_DISPLAY_NAME).to(rootJobDisplayName);
         return new PipelineMutation(writeBuilder);
     }

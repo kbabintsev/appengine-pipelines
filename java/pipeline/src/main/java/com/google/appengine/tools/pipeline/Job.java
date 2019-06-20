@@ -244,11 +244,11 @@ public abstract class Job<E> implements Serializable {
     }
 
     public final <F> ImmediateValue<F> immediate(final F value) {
-        return new ImmediateValue<>(thisJobRecord.getRootJobKey(), value);
+        return new ImmediateValue<>(thisJobRecord.getPipelineKey(), value);
     }
 
     public final <F> FutureList<F> futureList(final List<? extends Value<F>> listOfValues) {
-        return new FutureList<>(thisJobRecord.getRootJobKey(), listOfValues);
+        return new FutureList<>(thisJobRecord.getPipelineKey(), listOfValues);
     }
 
     @Inject
@@ -554,7 +554,7 @@ public abstract class Job<E> implements Serializable {
      * of
      */
     public UUID getPipelineKey() {
-        return thisJobRecord.getRootJobKey();
+        return thisJobRecord.getPipelineKey();
     }
 
     protected final String getStatusConsoleUrl() {

@@ -112,7 +112,7 @@ public class OrphanedJobGraphTest extends PipelineTest {
         // Look through all of the JobRecords in the data store
         for (JobRecord record : allObjects.getJobs().values()) {
             // They all have the right rooJobKey
-            assertEquals(rootJobKey, record.getRootJobKey());
+            assertEquals(rootJobKey, record.getPipelineKey());
             if (record.getKey().equals(rootJobKey)) {
                 // This one is the root job
                 assertNull(record.getGraphKey());

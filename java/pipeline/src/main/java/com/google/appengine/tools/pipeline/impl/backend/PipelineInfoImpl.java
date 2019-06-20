@@ -11,8 +11,8 @@ public class PipelineInfoImpl implements PipelineInfo {
     }
 
     @Override
-    public String getRootJobDisplayName() {
-        return pipeline.getRootJobDisplayName();
+    public String getPipelineDisplayName() {
+        return pipeline.getPipelineDisplayName();
     }
 
     @Override

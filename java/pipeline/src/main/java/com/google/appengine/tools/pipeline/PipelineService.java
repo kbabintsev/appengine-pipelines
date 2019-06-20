@@ -194,12 +194,12 @@ public interface PipelineService {
      * cleanup. Use {@link #cancelPipeline(UUID)} to request controlled pipeline
      * termination.
      *
-     * @param pipelineHandle The unique identifier returned from one of the
+     * @param pipelineKey The unique identifier returned from one of the
      *                       {@code startNewPipeline()} methods
      * @throws NoSuchObjectException If the framework cannot find a Pipeline with
      *                               the given identifier.
      */
-    void stopPipeline(UUID rootJobKey, UUID pipelineHandle) throws NoSuchObjectException;
+    void stopPipeline(UUID pipelineKey) throws NoSuchObjectException;
 
     /**
      * Cancel all pipeline jobs. If a cancelled job has
@@ -207,29 +207,29 @@ public interface PipelineService {
      * {@link java.util.concurrent.CancellationException} giving it a chance to
      * perform necessary cleanup.
      *
-     * @param pipelineHandle The unique identifier returned from one of the
+     * @param pipelineKey The unique identifier returned from one of the
      *                       {@code startNewPipeline()} methods
      * @throws NoSuchObjectException If the framework cannot find a Pipeline with
      *                               the given identifier.
      */
-    void cancelPipeline(UUID rootJobKey, UUID pipelineHandle) throws NoSuchObjectException;
+    void cancelPipeline(UUID pipelineKey) throws NoSuchObjectException;
 
     /**
      * Delete all the records associated with a pipeline from the Datastore.
      *
-     * @param pipelineHandle The handle of the pipeline to be deleted. The
+     * @param pipelineKey The handle of the pipeline to be deleted. The
      *                       specified pipeline must exist and it must not be currently running.
      * @throws NoSuchObjectException If the framework cannot find a Pipeline with
      *                               the given identifier.
      * @throws IllegalStateException If the specified Pipeline is still running
      */
-    void deletePipelineRecords(UUID pipelineHandle) throws NoSuchObjectException,
+    void deletePipelineRecords(UUID pipelineKey) throws NoSuchObjectException,
             IllegalStateException;
 
     /**
      * Delete all the records associated with a pipeline from the datastore.
      *
-     * @param pipelineHandle The handle of the pipeline to be deleted
+     * @param pipelineKey The handle of the pipeline to be deleted
      * @param force          If this parameter is not {@code true} then this method will
      *                       throw an {@link IllegalStateException} if the specified pipeline is
      *                       has not already completed or been stopped or aborted. Invoking this
@@ -246,7 +246,7 @@ public interface PipelineService {
      * @throws IllegalStateException If {@code force = false} and the specified
      *                               Pipeline is still running
      */
-    void deletePipelineRecords(UUID pipelineHandle, boolean force, boolean async)
+    void deletePipelineRecords(UUID pipelineKey, boolean force, boolean async)
             throws NoSuchObjectException, IllegalStateException;
 
     /**
@@ -257,12 +257,12 @@ public interface PipelineService {
      * passing in the String returned from
      * {@link FutureValue#getSourceJobHandle()}.
      *
-     * @param jobHandle The unique identifier of a job
+     * @param jobKey The unique identifier of a job
      * @return A {@link JobInfo} representing the specified job
      * @throws NoSuchObjectException If the framework cannot find a job with the
      *                               given identifier.
      */
-    JobInfo getJobInfo(UUID rootJobKey, UUID jobHandle) throws NoSuchObjectException;
+    JobInfo getJobInfo(UUID pipelineKey, UUID jobKey) throws NoSuchObjectException;
 
     PipelineInfo getPipelineInfo(UUID pipelineKey) throws NoSuchObjectException;
 
@@ -297,7 +297,7 @@ public interface PipelineService {
      *                                 some other thread will be submitting the promised value via that
      *                                 non-orphaned handle.
      */
-    void submitPromisedValue(UUID rootJobKey, UUID promiseHandle, Object value) throws NoSuchObjectException,
+    void submitPromisedValue(UUID pipelineKey, UUID promiseHandle, Object value) throws NoSuchObjectException,
             OrphanedObjectException;
 
     void cleanBobs(String prefix);

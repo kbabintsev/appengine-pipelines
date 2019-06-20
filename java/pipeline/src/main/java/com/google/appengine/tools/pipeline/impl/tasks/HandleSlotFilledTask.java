@@ -34,8 +34,8 @@ public final class HandleSlotFilledTask extends ObjRefTask {
      *
      * @param slotKey The key of the Slot whose filling is to be handled
      */
-    public HandleSlotFilledTask(final UUID rootJobKey, final UUID slotKey, final QueueSettings queueSettings) {
-        super(Type.HANDLE_SLOT_FILLED, "handleSlotFilled", rootJobKey, slotKey, queueSettings);
+    public HandleSlotFilledTask(final UUID pipelineKey, final UUID slotKey, final QueueSettings queueSettings) {
+        super(Type.HANDLE_SLOT_FILLED, "handleSlotFilled", pipelineKey, slotKey, queueSettings);
     }
 
     protected HandleSlotFilledTask(final Type type, final String taskName, final Properties properties) {

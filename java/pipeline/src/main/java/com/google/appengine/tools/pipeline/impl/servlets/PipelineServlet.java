@@ -76,8 +76,8 @@ public final class PipelineServlet extends HttpServlet {
         return baseURL;
     }
 
-    public static String makeViewerUrl(final UUID rootJobKey, final UUID jobKey) {
-        return baseUrl() + "status.html?root=" + rootJobKey + "#pipeline-" + jobKey;
+    public static String makeViewerUrl(final UUID pipelineKey, final UUID jobKey) {
+        return baseUrl() + "status.html?root=" + pipelineKey + "#pipeline-" + jobKey;
     }
 
     private Pair<String, RequestType> parseRequestType(final HttpServletRequest req) {

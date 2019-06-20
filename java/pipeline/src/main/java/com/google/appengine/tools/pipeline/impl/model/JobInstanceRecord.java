@@ -59,14 +59,14 @@ public final class JobInstanceRecord extends PipelineModelObject {
     private final ValueProxy valueProxy;
 
     public JobInstanceRecord(final PipelineManager pipelineManager, final JobRecord job, final Job<?> jobInstance) {
-        super(DATA_STORE_KIND, job.getRootJobKey(), job.getGeneratorJobKey(), job.getGraphKey());
+        super(DATA_STORE_KIND, job.getPipelineKey(), job.getGeneratorJobKey(), job.getGraphKey());
         jobKey = job.getKey();
         jobClassName = jobInstance.getClass().getName();
         jobDisplayName = jobInstance.getJobDisplayName();
         valueProxy = new ValueProxy(
                 pipelineManager,
                 jobInstance,
-                new ValueStoragePath(getRootJobKey(), DATA_STORE_KIND, getKey())
+                new ValueStoragePath(getPipelineKey(), DATA_STORE_KIND, getKey())
         );
     }
 
@@ -86,7 +86,7 @@ public final class JobInstanceRecord extends PipelineModelObject {
                 entity.isNull(valueLocationProperty) ? ValueLocation.DATABASE : ValueLocation.valueOf(entity.getString(valueLocationProperty)),
                 entity.isNull(databaseValueProperty) ? null : entity.getBytes(databaseValueProperty).toByteArray(),
                 true,
-                new ValueStoragePath(getRootJobKey(), DATA_STORE_KIND, getKey())
+                new ValueStoragePath(getPipelineKey(), DATA_STORE_KIND, getKey())
         );
     }
 
