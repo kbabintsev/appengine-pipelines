@@ -14,6 +14,8 @@
 
 package com.google.appengine.tools.pipeline;
 
+import java.util.UUID;
+
 /**
  * An implementation of {@link Value} which simply wraps a concrete value.
  * <p>
@@ -67,9 +69,11 @@ package com.google.appengine.tools.pipeline;
  */
 public final class ImmediateValue<E> implements Value<E> {
 
+    private final UUID pipelineHandle;
     private final E value;
 
-    public ImmediateValue(final E val) {
+    public ImmediateValue(final UUID pipelineHandle, final E val) {
+        this.pipelineHandle = pipelineHandle;
         this.value = val;
     }
 
@@ -80,5 +84,10 @@ public final class ImmediateValue<E> implements Value<E> {
     @Override
     public String toString() {
         return "Immediate[" + value + "]";
+    }
+
+    @Override
+    public UUID getPipelineHandle() {
+        return pipelineHandle;
     }
 }

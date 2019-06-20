@@ -45,7 +45,7 @@ public final class AbortJobHandler {
             throw new ServletException(ROOT_PIPELINE_ID + " parameter not found.");
         }
         try {
-            pipelineManager.cancelJob(rootJobHandle);
+            pipelineManager.cancelJob(rootJobHandle, rootJobHandle);
         } catch (NoSuchObjectException nsoe) {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;

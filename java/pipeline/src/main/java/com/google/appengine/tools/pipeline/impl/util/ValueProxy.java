@@ -1,7 +1,6 @@
-package com.google.appengine.tools.pipeline.impl.model;
+package com.google.appengine.tools.pipeline.impl.util;
 
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
-import com.google.appengine.tools.pipeline.impl.util.SerializationUtils;
 import com.google.cloud.ByteArray;
 import com.google.common.base.MoreObjects;
 
@@ -10,7 +9,7 @@ import java.io.IOException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-class ValueProxy {
+public final class ValueProxy {
     private static final int DATABASE_VALUE_LIMIT = 5000000;
     private final PipelineManager pipelineManager;
     private final ValueStoragePath valueStoragePath;
@@ -18,7 +17,7 @@ class ValueProxy {
     private boolean valueLoaded;
     private Object value;
 
-    ValueProxy(
+    public ValueProxy(
             final PipelineManager pipelineManager,
             final ValueLocation valueLocation,
             @Nullable final byte[] valueInDatabase,
@@ -47,7 +46,7 @@ class ValueProxy {
         }
     }
 
-    ValueProxy(
+    public ValueProxy(
             final PipelineManager pipelineManager,
             @Nullable final Object value,
             final ValueStoragePath valueStoragePath

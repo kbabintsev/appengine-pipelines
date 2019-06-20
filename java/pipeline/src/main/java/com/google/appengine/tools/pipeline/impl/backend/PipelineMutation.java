@@ -1,5 +1,6 @@
-package com.google.appengine.tools.pipeline.impl.model;
+package com.google.appengine.tools.pipeline.impl.backend;
 
+import com.google.appengine.tools.pipeline.impl.util.ValueStoragePath;
 import com.google.cloud.spanner.Mutation;
 
 public final class PipelineMutation {

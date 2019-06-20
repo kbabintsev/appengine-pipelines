@@ -15,12 +15,14 @@
 package com.google.appengine.tools.pipeline.impl.model;
 
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
+import com.google.appengine.tools.pipeline.impl.backend.PipelineMutation;
 import com.google.appengine.tools.pipeline.impl.util.SerializationUtils;
 import com.google.cloud.ByteArray;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.StructReader;
 import com.google.common.collect.ImmutableList;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
@@ -56,10 +58,10 @@ public final class ExceptionRecord extends PipelineModelObject {
         this.exception = exception;
     }
 
-    public ExceptionRecord(final PipelineManager pipelineManager, final StructReader entity) {
-        super(DATA_STORE_KIND, entity);
+    public ExceptionRecord(final PipelineManager pipelineManager, @Nullable final String prefix, final StructReader entity) {
+        super(DATA_STORE_KIND, prefix, entity);
         this.pipelineManager = pipelineManager;
-        final ByteArray serializedExceptionBlob = entity.getBytes(EXCEPTION_PROPERTY);
+        final ByteArray serializedExceptionBlob = entity.getBytes(Record.property(prefix, EXCEPTION_PROPERTY));
         final byte[] serializedException = serializedExceptionBlob.toByteArray();
         try {
             exception = (Throwable) SerializationUtils.deserialize(serializedException);
@@ -68,12 +70,16 @@ public final class ExceptionRecord extends PipelineModelObject {
         }
     }
 
+    public static List<String> propertiesForSelect(@Nullable final String prefix) {
+        return Record.propertiesForSelect(DATA_STORE_KIND, PROPERTIES, prefix);
+    }
+
     public Throwable getException() {
         return exception;
     }
 
     @Override
-    protected String getDatastoreKind() {
+    public String getDatastoreKind() {
         return DATA_STORE_KIND;
     }
 

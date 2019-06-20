@@ -29,11 +29,11 @@ import com.google.appengine.tools.pipeline.Route;
 import com.google.appengine.tools.pipeline.impl.FutureValueImpl;
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
+import com.google.appengine.tools.pipeline.impl.backend.PipelineMutation;
 import com.google.appengine.tools.pipeline.impl.util.CallingBackLogger;
 import com.google.appengine.tools.pipeline.impl.util.JsonUtils;
 import com.google.appengine.tools.pipeline.impl.util.ServiceUtils;
 import com.google.appengine.tools.pipeline.impl.util.StringUtils;
-import com.google.appengine.tools.pipeline.impl.util.UuidGenerator;
 import com.google.cloud.Timestamp;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.StructReader;
@@ -42,6 +42,8 @@ import com.google.common.collect.Lists;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Date;
@@ -64,33 +66,32 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
     public static final int STATUS_MESSAGES_MAX_LENGTH = 1000;
     public static final String DATA_STORE_KIND = "Job";
     public static final String STATE_PROPERTY = "state";
-    public static final String ROOT_JOB_DISPLAY_NAME = "rootJobDisplayName";
     // Data store entity property names
-    private static final String JOB_INSTANCE_PROPERTY = "jobInstance";
-    private static final String RUN_BARRIER_PROPERTY = "runBarrier";
-    private static final String FINALIZE_BARRIER_PROPERTY = "finalizeBarrier";
-    private static final String EXCEPTION_HANDLING_ANCESTOR_KEY_PROPERTY =
+    public static final String JOB_INSTANCE_PROPERTY = "jobInstance";
+    public static final String RUN_BARRIER_PROPERTY = "runBarrier";
+    public static final String FINALIZE_BARRIER_PROPERTY = "finalizeBarrier";
+    public static final String EXCEPTION_HANDLING_ANCESTOR_KEY_PROPERTY =
             "exceptionHandlingAncestorKey";
-    private static final String EXCEPTION_HANDLER_SPECIFIED_PROPERTY = "hasExceptionHandler";
-    private static final String EXCEPTION_HANDLER_JOB_KEY_PROPERTY = "exceptionHandlerJobKey";
-    private static final String EXCEPTION_HANDLER_JOB_GRAPH_KEY_PROPERTY =
+    public static final String EXCEPTION_HANDLER_SPECIFIED_PROPERTY = "hasExceptionHandler";
+    public static final String EXCEPTION_HANDLER_JOB_KEY_PROPERTY = "exceptionHandlerJobKey";
+    public static final String EXCEPTION_HANDLER_JOB_GRAPH_KEY_PROPERTY =
             "exceptionHandlerJobGraphKey";
-    private static final String CALL_EXCEPTION_HANDLER_PROPERTY = "callExceptionHandler";
-    private static final String IGNORE_EXCEPTION_PROPERTY = "ignoreException";
-    private static final String OUTPUT_SLOT_PROPERTY = "outputSlot";
-    private static final String EXCEPTION_KEY_PROPERTY = "exceptionKey";
-    private static final String START_TIME_PROPERTY = "startTime";
-    private static final String END_TIME_PROPERTY = "endTime";
-    private static final String CHILD_KEYS_PROPERTY = "childKeys";
-    private static final String ATTEMPT_NUM_PROPERTY = "attemptNum";
-    private static final String MAX_ATTEMPTS_PROPERTY = "maxAttempts";
-    private static final String BACKOFF_SECONDS_PROPERTY = "backoffSeconds";
-    private static final String BACKOFF_FACTOR_PROPERTY = "backoffFactor";
-    private static final String ON_QUEUE_PROPERTY = "onQueue";
-    private static final String ROUTE_PROPERY = "route";
-    private static final String CHILD_GRAPH_KEY_PROPERTY = "childGraphKey";
-    private static final String STATUS_CONSOLE_URL = "statusConsoleUrl";
-    private static final String STATUS_MESSAGES = "statusMessages";
+    public static final String CALL_EXCEPTION_HANDLER_PROPERTY = "callExceptionHandler";
+    public static final String IGNORE_EXCEPTION_PROPERTY = "ignoreException";
+    public static final String OUTPUT_SLOT_PROPERTY = "outputSlot";
+    public static final String EXCEPTION_KEY_PROPERTY = "exceptionKey";
+    public static final String START_TIME_PROPERTY = "startTime";
+    public static final String END_TIME_PROPERTY = "endTime";
+    public static final String CHILD_KEYS_PROPERTY = "childKeys";
+    public static final String ATTEMPT_NUM_PROPERTY = "attemptNum";
+    public static final String MAX_ATTEMPTS_PROPERTY = "maxAttempts";
+    public static final String BACKOFF_SECONDS_PROPERTY = "backoffSeconds";
+    public static final String BACKOFF_FACTOR_PROPERTY = "backoffFactor";
+    public static final String ON_QUEUE_PROPERTY = "onQueue";
+    public static final String ROUTE_PROPERY = "route";
+    public static final String CHILD_GRAPH_KEY_PROPERTY = "childGraphKey";
+    public static final String STATUS_CONSOLE_URL = "statusConsoleUrl";
+    public static final String STATUS_MESSAGES = "statusMessages";
     public static final List<String> PROPERTIES = ImmutableList.<String>builder()
             .addAll(BASE_PROPERTIES)
             .add(
@@ -117,8 +118,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
                     ROUTE_PROPERY,
                     CHILD_GRAPH_KEY_PROPERTY,
                     STATUS_CONSOLE_URL,
-                    STATUS_MESSAGES,
-                    ROOT_JOB_DISPLAY_NAME
+                    STATUS_MESSAGES
             )
             .build();
     // persistent fields
@@ -145,7 +145,6 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
     private long backoffFactor = JobSetting.BackoffFactor.DEFAULT;
     private String statusConsoleUrl;
     private List<String> statusMessages;
-    private String rootJobDisplayName;
     // transient fields
     private Barrier runBarrierInflated;
     private Barrier finalizeBarrierInflated;
@@ -159,64 +158,61 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
      *
      * @param entity structure to read JobRecord from
      */
-    public JobRecord(final StructReader entity) {
-        super(DATA_STORE_KIND, entity);
-        jobInstanceKey = UUID.fromString(entity.getString(JOB_INSTANCE_PROPERTY));
-        finalizeBarrierKey = UUID.fromString(entity.getString(FINALIZE_BARRIER_PROPERTY));
-        runBarrierKey = UUID.fromString(entity.getString(RUN_BARRIER_PROPERTY));
-        outputSlotKey = UUID.fromString(entity.getString(OUTPUT_SLOT_PROPERTY));
-        state = State.valueOf(entity.getString(STATE_PROPERTY));
-        exceptionHandlingAncestorKey = entity.isNull(EXCEPTION_HANDLING_ANCESTOR_KEY_PROPERTY)
+    public JobRecord(@Nullable final String prefix, @Nonnull final StructReader entity) {
+        super(DATA_STORE_KIND, prefix, entity);
+        jobInstanceKey = UUID.fromString(entity.getString(Record.property(prefix, JOB_INSTANCE_PROPERTY)));
+        finalizeBarrierKey = UUID.fromString(entity.getString(Record.property(prefix, FINALIZE_BARRIER_PROPERTY)));
+        runBarrierKey = UUID.fromString(entity.getString(Record.property(prefix, RUN_BARRIER_PROPERTY)));
+        outputSlotKey = UUID.fromString(entity.getString(Record.property(prefix, OUTPUT_SLOT_PROPERTY)));
+        state = State.valueOf(entity.getString(Record.property(prefix, STATE_PROPERTY)));
+        exceptionHandlingAncestorKey = entity.isNull(Record.property(prefix, EXCEPTION_HANDLING_ANCESTOR_KEY_PROPERTY))
                 ? null
-                : UUID.fromString(entity.getString(EXCEPTION_HANDLING_ANCESTOR_KEY_PROPERTY));
-        exceptionHandlerSpecified = !entity.isNull(EXCEPTION_HANDLER_SPECIFIED_PROPERTY)
-                && entity.getBoolean(EXCEPTION_HANDLER_SPECIFIED_PROPERTY);
-        exceptionHandlerJobKey = entity.isNull(EXCEPTION_HANDLER_JOB_KEY_PROPERTY)
+                : UUID.fromString(entity.getString(Record.property(prefix, EXCEPTION_HANDLING_ANCESTOR_KEY_PROPERTY)));
+        exceptionHandlerSpecified = !entity.isNull(Record.property(prefix, EXCEPTION_HANDLER_SPECIFIED_PROPERTY))
+                && entity.getBoolean(Record.property(prefix, EXCEPTION_HANDLER_SPECIFIED_PROPERTY));
+        exceptionHandlerJobKey = entity.isNull(Record.property(prefix, EXCEPTION_HANDLER_JOB_KEY_PROPERTY))
                 ? null
-                : UUID.fromString(entity.getString(EXCEPTION_HANDLER_JOB_KEY_PROPERTY));
-        exceptionHandlerJobGraphKey = entity.isNull(EXCEPTION_HANDLER_JOB_GRAPH_KEY_PROPERTY)
+                : UUID.fromString(entity.getString(Record.property(prefix, EXCEPTION_HANDLER_JOB_KEY_PROPERTY)));
+        exceptionHandlerJobGraphKey = entity.isNull(Record.property(prefix, EXCEPTION_HANDLER_JOB_GRAPH_KEY_PROPERTY))
                 ? null
-                : entity.getString(EXCEPTION_HANDLER_JOB_GRAPH_KEY_PROPERTY);
-        callExceptionHandler = !entity.isNull(CALL_EXCEPTION_HANDLER_PROPERTY)
-                && entity.getBoolean(CALL_EXCEPTION_HANDLER_PROPERTY);
-        ignoreException = !entity.isNull(IGNORE_EXCEPTION_PROPERTY)
-                && entity.getBoolean(IGNORE_EXCEPTION_PROPERTY);
-        childGraphKey = entity.isNull(CHILD_GRAPH_KEY_PROPERTY)
+                : entity.getString(Record.property(prefix, EXCEPTION_HANDLER_JOB_GRAPH_KEY_PROPERTY));
+        callExceptionHandler = !entity.isNull(Record.property(prefix, CALL_EXCEPTION_HANDLER_PROPERTY))
+                && entity.getBoolean(Record.property(prefix, CALL_EXCEPTION_HANDLER_PROPERTY));
+        ignoreException = !entity.isNull(Record.property(prefix, IGNORE_EXCEPTION_PROPERTY))
+                && entity.getBoolean(Record.property(prefix, IGNORE_EXCEPTION_PROPERTY));
+        childGraphKey = entity.isNull(Record.property(prefix, CHILD_GRAPH_KEY_PROPERTY))
                 ? null
-                : UUID.fromString(entity.getString(CHILD_GRAPH_KEY_PROPERTY));
-        exceptionKey = entity.isNull(EXCEPTION_KEY_PROPERTY)
+                : UUID.fromString(entity.getString(Record.property(prefix, CHILD_GRAPH_KEY_PROPERTY)));
+        exceptionKey = entity.isNull(Record.property(prefix, EXCEPTION_KEY_PROPERTY))
                 ? null
-                : UUID.fromString(entity.getString(EXCEPTION_KEY_PROPERTY));
-        startTime = entity.isNull(START_TIME_PROPERTY)
+                : UUID.fromString(entity.getString(Record.property(prefix, EXCEPTION_KEY_PROPERTY)));
+        startTime = entity.isNull(Record.property(prefix, START_TIME_PROPERTY))
                 ? null
-                : entity.getTimestamp(START_TIME_PROPERTY).toDate();
-        endTime = entity.isNull(END_TIME_PROPERTY)
+                : entity.getTimestamp(Record.property(prefix, START_TIME_PROPERTY)).toDate();
+        endTime = entity.isNull(Record.property(prefix, END_TIME_PROPERTY))
                 ? null
-                : entity.getTimestamp(END_TIME_PROPERTY).toDate();
-        childKeys = getUuidListProperty(CHILD_KEYS_PROPERTY, entity)
+                : entity.getTimestamp(Record.property(prefix, END_TIME_PROPERTY)).toDate();
+        childKeys = getUuidListProperty(Record.property(prefix, CHILD_KEYS_PROPERTY), entity)
                 .orElse(new LinkedList<>());
 
-        attemptNumber = entity.isNull(ATTEMPT_NUM_PROPERTY)
+        attemptNumber = entity.isNull(Record.property(prefix, ATTEMPT_NUM_PROPERTY))
                 ? 0
-                : entity.getLong(ATTEMPT_NUM_PROPERTY);
-        maxAttempts = entity.getLong(MAX_ATTEMPTS_PROPERTY);
-        backoffSeconds = entity.getLong(BACKOFF_SECONDS_PROPERTY);
-        backoffFactor = entity.getLong(BACKOFF_FACTOR_PROPERTY);
+                : entity.getLong(Record.property(prefix, ATTEMPT_NUM_PROPERTY));
+        maxAttempts = entity.getLong(Record.property(prefix, MAX_ATTEMPTS_PROPERTY));
+        backoffSeconds = entity.getLong(Record.property(prefix, BACKOFF_SECONDS_PROPERTY));
+        backoffFactor = entity.getLong(Record.property(prefix, BACKOFF_FACTOR_PROPERTY));
         try {
-            queueSettings.setRoute(entity.isNull(ROUTE_PROPERY) ? null : JsonUtils.deserialize(entity.getString(ROUTE_PROPERY), Route.class));
+            queueSettings.setRoute(entity.isNull(Record.property(prefix, ROUTE_PROPERY)) ? null : JsonUtils.deserialize(entity.getString(Record.property(prefix, ROUTE_PROPERY)), Route.class));
         } catch (IOException e) {
             throw new RuntimeException("Can't parse '" + ROUTE_PROPERY + "'", e);
         }
-        queueSettings.setOnQueue(entity.isNull(ON_QUEUE_PROPERTY) ? null : entity.getString(ON_QUEUE_PROPERTY));
-        statusConsoleUrl = entity.isNull(STATUS_CONSOLE_URL)
+        queueSettings.setOnQueue(entity.isNull(Record.property(prefix, ON_QUEUE_PROPERTY)) ? null : entity.getString(Record.property(prefix, ON_QUEUE_PROPERTY)));
+        statusConsoleUrl = entity.isNull(Record.property(prefix, STATUS_CONSOLE_URL))
                 ? null
-                : entity.getString(STATUS_CONSOLE_URL);
-        statusMessages = entity.isNull(STATUS_MESSAGES)
+                : entity.getString(Record.property(prefix, STATUS_CONSOLE_URL));
+        statusMessages = entity.isNull(Record.property(prefix, STATUS_MESSAGES))
                 ? Lists.newArrayList()
-                : Lists.newArrayList(entity.getStringList(STATUS_MESSAGES));
-        rootJobDisplayName = entity.isNull(ROOT_JOB_DISPLAY_NAME)
-                ? null
-                : entity.getString(ROOT_JOB_DISPLAY_NAME);
+                : Lists.newArrayList(entity.getStringList(Record.property(prefix, STATUS_MESSAGES)));
     }
 
     /**
@@ -242,13 +238,14 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
             final JobRecord generatorJob,
             final UUID graphKeyParam,
             final Job<?> jobInstance,
+            final UUID jobKey,
             final boolean callExceptionHandler,
             final JobSetting[] settings
     ) {
         this(
                 pipelineManager,
                 generatorJob.getRootJobKey(),
-                null,
+                jobKey,
                 generatorJob.getKey(),
                 graphKeyParam,
                 jobInstance,
@@ -319,7 +316,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
     }
 
     // Constructor for Root Jobs (called by {@link #createRootJobRecord}).
-    private JobRecord(
+    public JobRecord(
             final PipelineManager pipelineManager,
             final UUID key,
             final Job<?> jobInstance,
@@ -328,20 +325,10 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
         // Root Jobs have their rootJobKey the same as their keys and provide null for generatorKey
         // and graphKey. Also, callExceptionHandler is always false.
         this(pipelineManager, key, key, null, null, jobInstance, false, settings, null);
-        rootJobDisplayName = jobInstance.getJobDisplayName();
     }
 
-    /**
-     * A factory method for root jobs.
-     *
-     * @param jobInstance The non-null user-supplied instance of {@code Job} that
-     *                    implements the Job that the newly created JobRecord represents.
-     * @param settings    Array of {@code JobSetting} to apply to the newly created
-     *                    JobRecord.
-     */
-    public static JobRecord createRootJobRecord(final PipelineManager pipelineManager, final Job<?> jobInstance, final JobSetting[] settings) {
-        final UUID key = UuidGenerator.nextUuid();
-        return new JobRecord(pipelineManager, key, jobInstance, settings);
+    public static List<String> propertiesForSelect(@Nullable final String prefix) {
+        return Record.propertiesForSelect(DATA_STORE_KIND, PROPERTIES, prefix);
     }
 
     public static boolean hasExceptionHandler(final Job<?> jobInstance) {
@@ -428,9 +415,6 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
             messages.set(0, "[Truncated]");
         }
         entity.set(STATUS_MESSAGES).toStringArray(messages);
-        if (rootJobDisplayName != null) {
-            entity.set(ROOT_JOB_DISPLAY_NAME).to(rootJobDisplayName);
-        }
         return mutation;
     }
 
@@ -463,7 +447,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
     }
 
     @Override
-    protected String getDatastoreKind() {
+    public String getDatastoreKind() {
         return DATA_STORE_KIND;
     }
 
@@ -667,25 +651,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
 
     @Override
     public JobInfo.State getJobState() {
-        switch (state) {
-            case WAITING_TO_RUN:
-            case WAITING_TO_FINALIZE:
-                return JobInfo.State.RUNNING;
-            case FINALIZED:
-                return JobInfo.State.COMPLETED_SUCCESSFULLY;
-            case CANCELED:
-                return JobInfo.State.CANCELED_BY_REQUEST;
-            case STOPPED:
-                if (null == exceptionKey) {
-                    return JobInfo.State.STOPPED_BY_REQUEST;
-                } else {
-                    return JobInfo.State.STOPPED_BY_ERROR;
-                }
-            case RETRY:
-                return JobInfo.State.WAITING_TO_RETRY;
-            default:
-                throw new RuntimeException("Unrecognized state: " + state);
-        }
+        return JobInfo.convertState(state, exceptionKey);
     }
 
     @Override
@@ -718,10 +684,6 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
         this.exceptionKey = exceptionKey;
     }
 
-    public String getRootJobDisplayName() {
-        return rootJobDisplayName;
-    }
-
     private String getJobInstanceString() {
         if (null == jobInstanceRecordInflated) {
             return "jobInstanceKey=" + jobInstanceKey;
@@ -735,8 +697,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
         return "JobRecord [" + getKeyName(getKey()) + ", " + state + ", " + getJobInstanceString()
                 + ", callExceptionJHandler=" + callExceptionHandler + ", runBarrier="
                 + runBarrierKey + ", finalizeBarrier=" + finalizeBarrierKey
-                + ", outputSlot=" + outputSlotKey + ", rootJobDisplayName="
-                + rootJobDisplayName + ", parent=" + getKeyName(getGeneratorJobKey()) + ", graphKey="
+                + ", outputSlot=" + outputSlotKey + ", parent=" + getKeyName(getGeneratorJobKey()) + ", graphKey="
                 + getGraphKey() + ", childGraphKey=" + childGraphKey + "]";
     }
 

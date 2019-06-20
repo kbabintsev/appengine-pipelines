@@ -26,6 +26,7 @@ import com.google.appengine.tools.pipeline.JobInfo;
 import com.google.appengine.tools.pipeline.JobSetting;
 import com.google.appengine.tools.pipeline.NoSuchObjectException;
 import com.google.appengine.tools.pipeline.OrphanedObjectException;
+import com.google.appengine.tools.pipeline.PipelineInfo;
 import com.google.appengine.tools.pipeline.PipelineService;
 
 import javax.inject.Inject;
@@ -97,13 +98,13 @@ public class PipelineServiceImpl implements PipelineService {
     }
 
     @Override
-    public void stopPipeline(final UUID jobHandle) throws NoSuchObjectException {
-        pipelineManager.stopJob(jobHandle);
+    public void stopPipeline(final UUID rootJobKey, final UUID jobHandle) throws NoSuchObjectException {
+        pipelineManager.stopJob(rootJobKey, jobHandle);
     }
 
     @Override
-    public void cancelPipeline(final UUID jobHandle) throws NoSuchObjectException {
-        pipelineManager.cancelJob(jobHandle);
+    public void cancelPipeline(final UUID rootJobKey, final UUID jobHandle) throws NoSuchObjectException {
+        pipelineManager.cancelJob(rootJobKey, jobHandle);
     }
 
     @Override
@@ -119,14 +120,19 @@ public class PipelineServiceImpl implements PipelineService {
     }
 
     @Override
-    public JobInfo getJobInfo(final UUID jobHandle) throws NoSuchObjectException {
-        return pipelineManager.getJob(jobHandle);
+    public JobInfo getJobInfo(final UUID rootJobKey, final UUID jobHandle) throws NoSuchObjectException {
+        return pipelineManager.getJob(rootJobKey, jobHandle);
     }
 
     @Override
-    public void submitPromisedValue(final UUID promiseHandle, final Object value)
+    public PipelineInfo getPipelineInfo(final UUID pipelineKey) throws NoSuchObjectException {
+        return pipelineManager.getPipeline(pipelineKey);
+    }
+
+    @Override
+    public void submitPromisedValue(final UUID rootJobKey, final UUID promiseHandle, final Object value)
             throws NoSuchObjectException, OrphanedObjectException {
-        pipelineManager.acceptPromisedValue(promiseHandle, value);
+        pipelineManager.acceptPromisedValue(rootJobKey, promiseHandle, value);
     }
 
     @Override

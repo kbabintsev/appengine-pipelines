@@ -51,7 +51,7 @@ public final class JsonTreeHandler {
         try {
             final JobRecord jobInfo;
             try {
-                jobInfo = pipelineManager.getJob(rootJobHandle);
+                jobInfo = pipelineManager.getJob(rootJobHandle, rootJobHandle);
             } catch (NoSuchObjectException nsoe) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;

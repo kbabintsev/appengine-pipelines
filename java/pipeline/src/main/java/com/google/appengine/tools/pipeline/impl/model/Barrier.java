@@ -14,11 +14,13 @@
 
 package com.google.appengine.tools.pipeline.impl.model;
 
+import com.google.appengine.tools.pipeline.impl.backend.PipelineMutation;
 import com.google.appengine.tools.pipeline.impl.util.StringUtils;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.StructReader;
 import com.google.common.collect.ImmutableList;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -34,7 +36,7 @@ import java.util.stream.Collectors;
  * barrier is used to trigger the running of a job. Its list of slots represent
  * arguments to the job. A finalize barrier is used to trigger the finalization
  * of a job. It has only one slot which is used as the output value of the job.
- * The essential properties are:
+ * The essential propertiesForSelect are:
  * <ul>
  * <li>type: Either run or finalize
  * <li>jobKey: The datastore key of the associated job
@@ -68,7 +70,7 @@ public final class Barrier extends PipelineModelObject {
     // persistent
     private final Type type;
     private final UUID jobKey;
-    private final List<UUID> waitingOnKeys;
+    private final List<RecordKey> waitingOnKeys;
     private final List<Long> waitingOnGroupSizes;
     private boolean released;
     // transient
@@ -88,13 +90,13 @@ public final class Barrier extends PipelineModelObject {
                 jobRecord.getGraphKey());
     }
 
-    public Barrier(final StructReader entity) {
-        super(DATA_STORE_KIND, entity);
-        jobKey = UUID.fromString(entity.getString(JOB_KEY_PROPERTY)); // probably not null?
-        type = Type.valueOf(entity.getString(TYPE_PROPERTY)); // probably not null?
-        released = entity.getBoolean(RELEASED_PROPERTY); // probably not null?
-        waitingOnKeys = getUuidListProperty(WAITING_ON_KEYS_PROPERTY, entity).orElse(null);
-        waitingOnGroupSizes = getLongListProperty(WAITING_ON_GROUP_SIZES_PROPERTY, entity).orElse(null);
+    public Barrier(@Nullable final String prefix, final StructReader entity) {
+        super(DATA_STORE_KIND, prefix, entity);
+        jobKey = UUID.fromString(entity.getString(Record.property(prefix, JOB_KEY_PROPERTY))); // probably not null?
+        type = Type.valueOf(entity.getString(Record.property(prefix, TYPE_PROPERTY))); // probably not null?
+        released = entity.getBoolean(Record.property(prefix, RELEASED_PROPERTY)); // probably not null?
+        waitingOnKeys = getRecordKeyListProperty(Record.property(prefix, WAITING_ON_KEYS_PROPERTY), entity).orElse(null);
+        waitingOnGroupSizes = getLongListProperty(Record.property(prefix, WAITING_ON_GROUP_SIZES_PROPERTY), entity).orElse(null);
     }
 
     public static Barrier dummyInstanceForTesting() {
@@ -109,21 +111,21 @@ public final class Barrier extends PipelineModelObject {
         entity.set(JOB_KEY_PROPERTY).to(jobKey.toString());
         entity.set(TYPE_PROPERTY).to(type.toString());
         entity.set(RELEASED_PROPERTY).to(released);
-        entity.set(WAITING_ON_KEYS_PROPERTY).toStringArray(waitingOnKeys.stream().map(UUID::toString).collect(Collectors.toList()));
+        entity.set(WAITING_ON_KEYS_PROPERTY).toStringArray(waitingOnKeys.stream().map(RecordKey::sertialize).collect(Collectors.toList()));
         entity.set(WAITING_ON_GROUP_SIZES_PROPERTY).toInt64Array(waitingOnGroupSizes);
         return mutation;
     }
 
     @Override
-    protected String getDatastoreKind() {
+    public String getDatastoreKind() {
         return DATA_STORE_KIND;
     }
 
-    public void inflate(final Map<UUID, Slot> pool) {
+    public void inflate(final Map<RecordKey, Slot> pool) {
         final int numSlots = waitingOnKeys.size();
         waitingOnInflated = new ArrayList<>(numSlots);
         for (int i = 0; i < numSlots; i++) {
-            final UUID key = waitingOnKeys.get(i);
+            final RecordKey key = waitingOnKeys.get(i);
             final int groupSize = waitingOnGroupSizes.get(i).intValue();
             final Slot slot = pool.get(key);
             if (null == slot) {
@@ -150,7 +152,7 @@ public final class Barrier extends PipelineModelObject {
         released = true;
     }
 
-    public List<UUID> getWaitingOnKeys() {
+    public List<RecordKey> getWaitingOnKeys() {
         return waitingOnKeys;
     }
 
@@ -219,14 +221,14 @@ public final class Barrier extends PipelineModelObject {
         }
         // if user set waitFor result of a job and framework set it automatically - it would be a problem.
         // That's why we're skipping slot if we already have it
-        if (waitingOnKeys.contains(slotDescr.getSlot().getKey())) {
+        if (waitingOnKeys.contains(new RecordKey(slotDescr.getSlot().getRootJobKey(), slotDescr.getSlot().getKey()))) {
             return;
         }
         waitingOnInflated.add(slotDescr);
         waitingOnGroupSizes.add((long) slotDescr.getGroupSize());
         final Slot slot = slotDescr.getSlot();
         slot.addWaiter(this);
-        waitingOnKeys.add(slotDescr.getSlot().getKey());
+        waitingOnKeys.add(new RecordKey(slotDescr.getSlot().getRootJobKey(), slotDescr.getSlot().getKey()));
     }
 
     public void addRegularArgumentSlot(final Slot slot) {

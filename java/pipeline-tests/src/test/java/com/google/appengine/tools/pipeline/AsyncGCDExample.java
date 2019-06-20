@@ -71,8 +71,8 @@ public class AsyncGCDExample {
                     int a = callback.getFirstInt();
                     int b = callback.getSecondInt();
                     try {
-                        service.submitPromisedValue(aHandle, a);
-                        service.submitPromisedValue(bHandle, b);
+                        service.submitPromisedValue(getPipelineKey(), aHandle, a);
+                        service.submitPromisedValue(getPipelineKey(), bHandle, b);
                     } catch (NoSuchObjectException e) {
                         throw new RuntimeException(e);
                     } catch (OrphanedObjectException f) {
@@ -108,7 +108,7 @@ public class AsyncGCDExample {
                     }
                     String name = callback.getUserName();
                     try {
-                        service.submitPromisedValue(handle, name);
+                        service.submitPromisedValue(getPipelineKey(), handle, name);
                     } catch (NoSuchObjectException e) {
                         throw new RuntimeException(e);
                     } catch (OrphanedObjectException f) {

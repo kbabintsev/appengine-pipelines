@@ -182,7 +182,7 @@ public class OrphanedJobGraphTest extends PipelineTest {
             if (usePromise) {
                 PromisedValue<Integer> promisedValue = newPromise();
                 (new Thread(new SupplyPromisedValueRunnable(service, ApiProxy.getCurrentEnvironment(),
-                        promisedValue.getHandle(), runCount.get()))).start();
+                        getPipelineKey(), promisedValue.getHandle(), runCount.get()))).start();
                 logger.info("Starting SupplyPromisedValueRunnable for run " + runCount);
                 dummyValue = promisedValue;
             } else {
@@ -215,12 +215,14 @@ public class OrphanedJobGraphTest extends PipelineTest {
 
         public static AtomicInteger orphanedObjectExcetionCount = new AtomicInteger(0);
         private final PipelineService service;
+        private final UUID pipelineKey;
         private UUID promiseHandle;
         private ApiProxy.Environment apiProxyEnvironment;
         private int runNum;
 
-        public SupplyPromisedValueRunnable(final PipelineService service, ApiProxy.Environment environment, UUID promiseHandle, int runNum) {
+        public SupplyPromisedValueRunnable(final PipelineService service, ApiProxy.Environment environment, final UUID pipelineId, UUID promiseHandle, int runNum) {
             this.service = service;
+            this.pipelineKey = pipelineId;
             this.promiseHandle = promiseHandle;
             this.apiProxyEnvironment = environment;
             this.runNum = runNum;
@@ -239,7 +241,7 @@ public class OrphanedJobGraphTest extends PipelineTest {
             }
             logger.info("SupplyPromisedValueRunnable for run " + runNum + " and handle " + promiseHandle + " awake");
             try {
-                service.submitPromisedValue(promiseHandle, 0);
+                service.submitPromisedValue(pipelineKey, promiseHandle, 0);
             } catch (NoSuchObjectException e) {
                 throw new RuntimeException(e);
             } catch (OrphanedObjectException f) {

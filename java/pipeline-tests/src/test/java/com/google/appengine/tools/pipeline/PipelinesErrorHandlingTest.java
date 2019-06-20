@@ -138,7 +138,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
     public void testPipelineCancellation() throws Exception {
         UUID pipelineId = service.startNewPipeline(new TestPipelineCancellationJob());
         Thread.sleep(10000);
-        service.cancelPipeline(pipelineId);
+        service.cancelPipeline(pipelineId, pipelineId);
         try {
             waitForJobToComplete(pipelineId);
             fail("should throw");
@@ -493,7 +493,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
         public Value<Integer> run(UUID unblockTheAngryOneHandle) throws Exception {
             trace("ParentOfJobToCancel.run");
             // Unblocks a sibling that is going to throw an exception
-            pipelineManager.acceptPromisedValue(unblockTheAngryOneHandle, EXPECTED_RESULT1);
+            pipelineManager.acceptPromisedValue(getPipelineKey(), unblockTheAngryOneHandle, EXPECTED_RESULT1);
             PromisedValue<Integer> neverReady = newPromise();
             return futureCall(new JobToCancel(), neverReady);
         }
@@ -622,7 +622,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
         public Value<Integer> run(UUID unblockTheAngryOneHandle) throws Exception {
             trace("JobToGetCancellationInHandleException.run");
             // Unblocks a sibling that is going to throw an exception
-            pipelineManager.acceptPromisedValue(unblockTheAngryOneHandle, EXPECTED_RESULT1);
+            pipelineManager.acceptPromisedValue(getPipelineKey(), unblockTheAngryOneHandle, EXPECTED_RESULT1);
             throw new IllegalStateException("simulated");
         }
 

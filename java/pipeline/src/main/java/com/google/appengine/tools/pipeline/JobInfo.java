@@ -14,6 +14,10 @@
 
 package com.google.appengine.tools.pipeline;
 
+import com.google.appengine.tools.pipeline.impl.model.JobRecord;
+
+import java.util.UUID;
+
 /**
  * A record about a job that has been registered with the framework. A {@code
  * JobInfo} is obtained via the method
@@ -81,4 +85,25 @@ public interface JobInfo {
         CANCELED_BY_REQUEST
     }
 
+    static State convertState(final JobRecord.State jobState, final UUID exceptionKey) {
+        switch (jobState) {
+            case WAITING_TO_RUN:
+            case WAITING_TO_FINALIZE:
+                return JobInfo.State.RUNNING;
+            case FINALIZED:
+                return JobInfo.State.COMPLETED_SUCCESSFULLY;
+            case CANCELED:
+                return JobInfo.State.CANCELED_BY_REQUEST;
+            case STOPPED:
+                if (null == exceptionKey) {
+                    return JobInfo.State.STOPPED_BY_REQUEST;
+                } else {
+                    return JobInfo.State.STOPPED_BY_ERROR;
+                }
+            case RETRY:
+                return JobInfo.State.WAITING_TO_RETRY;
+            default:
+                throw new RuntimeException("Unrecognized state: " + jobState);
+        }
+    }
 }

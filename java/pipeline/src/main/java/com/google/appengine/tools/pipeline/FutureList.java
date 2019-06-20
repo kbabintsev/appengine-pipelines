@@ -17,6 +17,7 @@ package com.google.appengine.tools.pipeline;
 import com.google.common.collect.ImmutableList;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * A converter from a {@code List} of {@code Values} to a {@code Value<List>}.
@@ -50,16 +51,18 @@ import java.util.List;
  * @author rudominer@google.com (Mitch Rudominer)
  */
 public final class FutureList<E> implements Value<List<E>> {
+    private final UUID pipelineHandle;
     private final List<? extends Value<E>> listOfValues;
 
     /**
      * Constructs a {@code FutureList} from a {@code List} of {@code Values}.
      *
+     * @param pipelineHandle
      * @param listOfValues a {@code List} of {@code Values}. This object takes
      *                     ownership of the list. The client should not continue to hold a
-     *                     reference to it.
      */
-    public FutureList(final List<? extends Value<E>> listOfValues) {
+    public FutureList(final UUID pipelineHandle, final List<? extends Value<E>> listOfValues) {
+        this.pipelineHandle = pipelineHandle;
         if (null == listOfValues) {
             throw new IllegalArgumentException("lisOfValues is null");
         }
@@ -67,8 +70,8 @@ public final class FutureList<E> implements Value<List<E>> {
     }
 
     @SafeVarargs
-    public FutureList(final Value<E> first, final Value<E>... rest) {
-        this(ImmutableList.<Value<E>>builder().add(first).add(rest).build());
+    public FutureList(final UUID pipelineHandle, final Value<E> first, final Value<E>... rest) {
+        this(pipelineHandle, ImmutableList.<Value<E>>builder().add(first).add(rest).build());
     }
 
     /**
@@ -77,5 +80,10 @@ public final class FutureList<E> implements Value<List<E>> {
      */
     public List<? extends Value<E>> getListOfValues() {
         return listOfValues;
+    }
+
+    @Override
+    public UUID getPipelineHandle() {
+        return pipelineHandle;
     }
 }

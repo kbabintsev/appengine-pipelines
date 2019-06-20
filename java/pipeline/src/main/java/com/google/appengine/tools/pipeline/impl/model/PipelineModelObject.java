@@ -14,12 +14,15 @@
 
 package com.google.appengine.tools.pipeline.impl.model;
 
+import com.google.appengine.tools.pipeline.impl.backend.PipelineMutation;
 import com.google.appengine.tools.pipeline.impl.util.UuidGenerator;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.StructReader;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -33,7 +36,7 @@ import java.util.stream.Collectors;
  *
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public abstract class PipelineModelObject {
+public abstract class PipelineModelObject implements Record {
 
     public static final String ROOT_JOB_KEY_PROPERTY = "rootJobKey";
     public static final String ID_PROPERTY = "id";
@@ -151,34 +154,23 @@ public abstract class PipelineModelObject {
      * @param entity    An Entity obtained previously from a call to
      *                  {@link #toEntity()}.
      */
-    protected PipelineModelObject(final String tableName, final StructReader entity) {
-        this(tableName, extractRootJobKey(entity), extractKey(entity), extractGeneratorJobKey(entity),
-                extractGraphKey(entity));
+    protected PipelineModelObject(final String tableName, @Nullable final String prefix, final StructReader entity) {
+        this(
+                tableName,
+                entity.isNull(Record.property(prefix, ROOT_JOB_KEY_PROPERTY)) ? null : UUID.fromString(entity.getString(Record.property(prefix, ROOT_JOB_KEY_PROPERTY))),
+                UUID.fromString(entity.getString(Record.property(prefix, ID_PROPERTY))),
+                entity.isNull(Record.property(prefix, GENERATOR_JOB_PROPERTY)) ? null : UUID.fromString(entity.getString(Record.property(prefix, GENERATOR_JOB_PROPERTY))),
+                entity.isNull(Record.property(prefix, GRAPH_KEY_PROPERTY)) ? null : UUID.fromString(entity.getString(Record.property(prefix, GRAPH_KEY_PROPERTY)))
+        );
         final String expectedEntityType = getDatastoreKind();
         if (!expectedEntityType.equals(tableName)) {
             throw new IllegalArgumentException("The entity is not of kind " + expectedEntityType);
         }
     }
 
-    private static UUID extractRootJobKey(final StructReader entity) {
-        return entity.isNull(ROOT_JOB_KEY_PROPERTY) ? null : UUID.fromString(entity.getString(ROOT_JOB_KEY_PROPERTY));
-    }
-
-    private static UUID extractGeneratorJobKey(final StructReader entity) {
-        return entity.isNull(GENERATOR_JOB_PROPERTY) ? null : UUID.fromString(entity.getString(GENERATOR_JOB_PROPERTY));
-    }
-
-    private static UUID extractGraphKey(final StructReader entity) {
-        return entity.isNull(GRAPH_KEY_PROPERTY) ? null : UUID.fromString(entity.getString(GRAPH_KEY_PROPERTY));
-    }
-
-    private static UUID extractKey(final StructReader entity) {
-        return UUID.fromString(entity.getString(ID_PROPERTY));
-    }
-
-    protected static <E> List<E> buildInflated(final Collection<UUID> listOfIds, final Map<UUID, E> pool) {
+    protected static <E> List<E> buildInflated(final Collection<RecordKey> listOfIds, final Map<RecordKey, E> pool) {
         final ArrayList<E> list = new ArrayList<>(listOfIds.size());
-        for (final UUID id : listOfIds) {
+        for (final RecordKey id : listOfIds) {
             final E x = pool.get(id);
             if (null == x) {
                 throw new RuntimeException("No object found in pool with id=" + id);
@@ -202,10 +194,22 @@ public abstract class PipelineModelObject {
         return Optional.of(entity.getStringList(propertyName).stream().map(UUID::fromString).collect(Collectors.toList()));
     }
 
+    protected static Optional<List<RecordKey>> getRecordKeyListProperty(final String propertyName, final StructReader entity) {
+        if (entity.isNull(propertyName)) {
+            return Optional.empty();
+        }
+        return Optional.of(entity.getStringList(propertyName).stream().map(RecordKey::new).collect(Collectors.toList()));
+    }
+
     protected static String getKeyName(final UUID key) {
         return key == null ? "null" : key.toString();
     }
 
+    public static boolean isNullInJoin(@Nonnull final String prefix, @Nonnull final StructReader struct) {
+        return struct.isNull(Record.property(prefix, ID_PROPERTY));
+    }
+
+    @Override
     public abstract PipelineMutation toEntity();
 
     protected final PipelineMutation toProtoEntity() {
@@ -237,5 +241,6 @@ public abstract class PipelineModelObject {
         return graphKey;
     }
 
-    protected abstract String getDatastoreKind();
+    @Override
+    public abstract String getDatastoreKind();
 }

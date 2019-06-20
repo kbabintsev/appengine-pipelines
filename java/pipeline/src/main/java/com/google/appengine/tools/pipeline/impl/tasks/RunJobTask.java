@@ -29,13 +29,13 @@ public final class RunJobTask extends ObjRefTask {
 
     private final Integer attemptNumber;
 
-    public RunJobTask(final UUID jobKey, final Integer attemptNumber, final QueueSettings queueSettings) {
-        super(Type.RUN_JOB, "runJob", jobKey, queueSettings);
+    public RunJobTask(final UUID rootJobKey, final UUID jobKey, final Integer attemptNumber, final QueueSettings queueSettings) {
+        super(Type.RUN_JOB, "runJob", rootJobKey, jobKey, queueSettings);
         this.attemptNumber = attemptNumber;
     }
 
-    public RunJobTask(final UUID jobKey, final QueueSettings queueSettings) {
-        this(jobKey, null, queueSettings);
+    public RunJobTask(final UUID rootJobKey, final UUID jobKey, final QueueSettings queueSettings) {
+        this(rootJobKey, jobKey, null, queueSettings);
     }
 
     protected RunJobTask(final Type type, final String taskName, final Properties properties) {

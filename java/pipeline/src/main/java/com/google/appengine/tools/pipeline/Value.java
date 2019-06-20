@@ -14,6 +14,8 @@
 
 package com.google.appengine.tools.pipeline;
 
+import java.util.UUID;
+
 /**
  * An abstract represention of an input to our output from a job.
  * <p>
@@ -52,4 +54,14 @@ package com.google.appengine.tools.pipeline;
  * @author rudominer@google.com (Mitch Rudominer)
  */
 public interface Value<E> {
+    /**
+     * Returns a String uniquely identifying the Pipeline that this {@code
+     * FutureValue} belongs to. This is the same as the handle of the root job of
+     * the Pipeline. This String may be passed to
+     * {@link PipelineService#getJobInfo(java.util.UUID)} in order to query the state of
+     * the root Job.
+     *
+     * @return a String uniquely identifying the Pipeline
+     */
+    UUID getPipelineHandle();
 }

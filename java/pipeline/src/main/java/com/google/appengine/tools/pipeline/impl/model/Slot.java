@@ -15,11 +15,16 @@
 package com.google.appengine.tools.pipeline.impl.model;
 
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
+import com.google.appengine.tools.pipeline.impl.backend.PipelineMutation;
+import com.google.appengine.tools.pipeline.impl.util.ValueLocation;
+import com.google.appengine.tools.pipeline.impl.util.ValueProxy;
+import com.google.appengine.tools.pipeline.impl.util.ValueStoragePath;
 import com.google.cloud.Timestamp;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.StructReader;
 import com.google.common.collect.ImmutableList;
 
+import javax.annotation.Nullable;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -34,12 +39,12 @@ import java.util.stream.Collectors;
  */
 public final class Slot extends PipelineModelObject {
     public static final String DATA_STORE_KIND = "Slot";
-    private static final String FILLED_PROPERTY = "filled";
-    private static final String WAITING_ON_ME_PROPERTY = "waitingOnMe";
-    private static final String FILL_TIME_PROPERTY = "fillTime";
-    private static final String SOURCE_JOB_KEY_PROPERTY = "sourceJob";
-    private static final String VALUE_LOCATION_PROPERTY = "valueLocation";
-    private static final String DATABASE_VALUE_PROPERTY = "databaseValue";
+    public static final String FILLED_PROPERTY = "filled";
+    public static final String WAITING_ON_ME_PROPERTY = "waitingOnMe";
+    public static final String FILL_TIME_PROPERTY = "fillTime";
+    public static final String SOURCE_JOB_KEY_PROPERTY = "sourceJob";
+    public static final String VALUE_LOCATION_PROPERTY = "valueLocation";
+    public static final String DATABASE_VALUE_PROPERTY = "databaseValue";
     public static final List<String> PROPERTIES = ImmutableList.<String>builder()
             .addAll(BASE_PROPERTIES)
             .add(
@@ -51,7 +56,7 @@ public final class Slot extends PipelineModelObject {
                     DATABASE_VALUE_PROPERTY
             )
             .build();
-    private final List<UUID> waitingOnMeKeys;
+    private final List<RecordKey> waitingOnMeKeys;
     // persistent
     private boolean filled;
     private Date fillTime;
@@ -75,24 +80,32 @@ public final class Slot extends PipelineModelObject {
         );
     }
 
-    public Slot(final PipelineManager pipelineManager, final StructReader entity) {
-        this(pipelineManager, entity, false);
+    public Slot(final PipelineManager pipelineManager, @Nullable final String prefix, final StructReader entity) {
+        this(pipelineManager, prefix, entity, false);
     }
 
-    public Slot(final PipelineManager pipelineManager, final StructReader entity, final boolean lazy) {
-        super(DATA_STORE_KIND, entity);
-        filled = !entity.isNull(FILL_TIME_PROPERTY)
-                && entity.getBoolean(FILLED_PROPERTY);
-        fillTime = entity.isNull(FILL_TIME_PROPERTY) ? null : entity.getTimestamp(FILL_TIME_PROPERTY).toDate();
-        sourceJobKey = entity.isNull(SOURCE_JOB_KEY_PROPERTY) ? null : UUID.fromString(entity.getString(SOURCE_JOB_KEY_PROPERTY));
-        waitingOnMeKeys = getUuidListProperty(WAITING_ON_ME_PROPERTY, entity).orElse(null);
+    public Slot(final PipelineManager pipelineManager, @Nullable final String prefix, final StructReader entity, final boolean lazy) {
+        super(DATA_STORE_KIND, prefix, entity);
+        filled = !entity.isNull(Record.property(prefix, FILL_TIME_PROPERTY))
+                && entity.getBoolean(Record.property(prefix, FILLED_PROPERTY));
+        fillTime = entity.isNull(Record.property(prefix, FILL_TIME_PROPERTY)) ? null : entity.getTimestamp(Record.property(prefix, FILL_TIME_PROPERTY)).toDate();
+        sourceJobKey = entity.isNull(Record.property(prefix, SOURCE_JOB_KEY_PROPERTY)) ? null : UUID.fromString(entity.getString(Record.property(prefix, SOURCE_JOB_KEY_PROPERTY)));
+        waitingOnMeKeys = getRecordKeyListProperty(Record.property(prefix, WAITING_ON_ME_PROPERTY), entity).orElse(null);
+        final String valueLocationProperty = Record.property(prefix, VALUE_LOCATION_PROPERTY);
+        final String databaseValueProperty = Record.property(prefix, DATABASE_VALUE_PROPERTY);
+        final String rootJobKeyProperty = Record.property(prefix, ROOT_JOB_KEY_PROPERTY);
+        final String idProperty = Record.property(prefix, ID_PROPERTY);
         valueProxy = new ValueProxy(
                 pipelineManager,
-                entity.isNull(VALUE_LOCATION_PROPERTY) ? ValueLocation.DATABASE : ValueLocation.valueOf(entity.getString(VALUE_LOCATION_PROPERTY)),
-                entity.isNull(DATABASE_VALUE_PROPERTY) ? null : entity.getBytes(DATABASE_VALUE_PROPERTY).toByteArray(),
+                entity.isNull(valueLocationProperty) ? ValueLocation.DATABASE : ValueLocation.valueOf(entity.getString(valueLocationProperty)),
+                entity.isNull(databaseValueProperty) ? null : entity.getBytes(databaseValueProperty).toByteArray(),
                 lazy,
-                new ValueStoragePath(getRootJobKey(), DATA_STORE_KIND, getKey())
+                new ValueStoragePath(UUID.fromString(entity.getString(rootJobKeyProperty)), DATA_STORE_KIND, UUID.fromString(entity.getString(idProperty)))
         );
+    }
+
+    public static List<String> propertiesForSelect(@Nullable final String prefix) {
+        return Record.propertiesForSelect(DATA_STORE_KIND, PROPERTIES, prefix);
     }
 
     @Override
@@ -118,22 +131,22 @@ public final class Slot extends PipelineModelObject {
         entity.set(WAITING_ON_ME_PROPERTY).toStringArray(
                 waitingOnMeKeys == null
                         ? null
-                        : waitingOnMeKeys.stream().map(UUID::toString).collect(Collectors.toList())
+                        : waitingOnMeKeys.stream().map(RecordKey::sertialize).collect(Collectors.toList())
         );
         return mutation;
     }
 
     @Override
-    protected String getDatastoreKind() {
+    public String getDatastoreKind() {
         return DATA_STORE_KIND;
     }
 
-    public void inflate(final Map<UUID, Barrier> pool) {
+    public void inflate(final Map<RecordKey, Barrier> pool) {
         waitingOnMeInflated = buildInflated(waitingOnMeKeys, pool);
     }
 
     public void addWaiter(final Barrier waiter) {
-        waitingOnMeKeys.add(waiter.getKey());
+        waitingOnMeKeys.add(new RecordKey(waiter.getRootJobKey(), waiter.getKey()));
         if (null == waitingOnMeInflated) {
             waitingOnMeInflated = new LinkedList<>();
         }
@@ -169,7 +182,7 @@ public final class Slot extends PipelineModelObject {
         fillTime = new Date();
     }
 
-    public List<UUID> getWaitingOnMeKeys() {
+    public List<RecordKey> getWaitingOnMeKeys() {
         return waitingOnMeKeys;
     }
 

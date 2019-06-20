@@ -89,7 +89,7 @@ public class MiscPipelineTest extends PipelineTest {
         JobInfo jobInfo = waitUntilJobComplete(pipelineId);
         assertEquals(JobInfo.State.COMPLETED_SUCCESSFULLY, jobInfo.getJobState());
         assertEquals("123", jobInfo.getOutput());
-        assertNotNull(service.getJobInfo(pipelineId));
+        assertNotNull(service.getJobInfo(pipelineId, pipelineId));
     }
 
     public void testWaitForAllAndDelete() throws Exception {
@@ -105,7 +105,7 @@ public class MiscPipelineTest extends PipelineTest {
         assertEquals("123", jobInfo.getOutput());
         waitUntilTaskQueueIsEmpty();
         try {
-            service.getJobInfo(pipelineId);
+            service.getJobInfo(pipelineId, pipelineId);
             fail("Was expecting a NoSuchObjectException exception");
         } catch (NoSuchObjectException expected) {
             // expected;
@@ -128,14 +128,14 @@ public class MiscPipelineTest extends PipelineTest {
     public void testGetJobDisplayName() throws Exception {
         ConcreteJob job = new ConcreteJob();
         UUID pipelineId = service.startNewPipeline(job);
-        JobRecord jobRecord = pipelineManager.getJob(pipelineId);
+        PipelineInfo jobRecord = pipelineManager.getPipeline(pipelineId);
         assertEquals(job.getJobDisplayName(), jobRecord.getRootJobDisplayName());
-        JobInfo jobInfo = waitUntilJobComplete(pipelineId);
+        PipelineInfo jobInfo = waitUntilPipelineComplete(pipelineId);
         assertEquals("Shalom", jobInfo.getOutput());
-        jobRecord = pipelineManager.getJob(pipelineId);
+        jobRecord = pipelineManager.getPipeline(pipelineId);
         assertEquals(job.getJobDisplayName(), jobRecord.getRootJobDisplayName());
         PipelineObjects pobjects = pipelineManager.queryFullPipeline(pipelineId);
-        assertEquals(job.getJobDisplayName(), pobjects.getRootJob().getRootJobDisplayName());
+        assertEquals(job.getJobDisplayName(), pobjects.getPipeline().getRootJobDisplayName());
     }
 
     public void testJobInheritence() throws Exception {
@@ -180,13 +180,13 @@ public class MiscPipelineTest extends PipelineTest {
         UUID pipelineId = service.startNewPipeline(new HandleExceptionParentJob(),
                 new JobSetting.BackoffSeconds(1), new JobSetting.BackoffFactor(1),
                 new JobSetting.MaxAttempts(2));
-        JobInfo jobInfo = service.getJobInfo(pipelineId);
+        JobInfo jobInfo = service.getJobInfo(pipelineId, pipelineId);
         assertEquals(State.RUNNING, jobInfo.getJobState());
         HandleExceptionChild2Job.childLatch1.await();
-        service.cancelPipeline(pipelineId);
+        service.cancelPipeline(pipelineId, pipelineId);
         HandleExceptionChild2Job.childLatch2.countDown();
         waitUntilTaskQueueIsEmpty();
-        jobInfo = service.getJobInfo(pipelineId);
+        jobInfo = service.getJobInfo(pipelineId, pipelineId);
         assertEquals(State.CANCELED_BY_REQUEST, jobInfo.getJobState());
         assertNull(jobInfo.getOutput());
         assertTrue(HandleExceptionParentJob.child0.get());
@@ -266,7 +266,7 @@ public class MiscPipelineTest extends PipelineTest {
         public Value<List<String>> run() throws Exception {
             FutureValue<String> child1 = futureCall(new StrJob<>(), immediate(123L));
             FutureValue<String> child2 = futureCall(new StrJob<>(), immediate(456L));
-            return new FutureList<>(ImmutableList.of(child1, child2));
+            return futureList(ImmutableList.of(child1, child2));
         }
     }
 
@@ -447,7 +447,7 @@ public class MiscPipelineTest extends PipelineTest {
 
         @Override
         public Value<Void> run(String value, UUID handle) throws Exception {
-            service.submitPromisedValue(handle, value);
+            service.submitPromisedValue(getPipelineKey(), handle, value);
             return null;
         }
     }
@@ -601,7 +601,7 @@ public class MiscPipelineTest extends PipelineTest {
             list.add(new Temp<>("hello"));
             list.add(new Temp<>(" "));
             list.add(new Temp<>("world"));
-            pipelineManager.acceptPromisedValue(handle, list);
+            pipelineManager.acceptPromisedValue(getPipelineKey(), handle, list);
             return null;
         }
     }

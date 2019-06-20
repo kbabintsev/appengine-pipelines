@@ -15,14 +15,14 @@
 package com.google.appengine.tools.pipeline.impl.servlets;
 
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
-import com.google.appengine.tools.pipeline.impl.model.JobRecord;
-import com.google.appengine.tools.pipeline.util.Pair;
+import com.google.appengine.tools.pipeline.impl.model.PipelineRecord;
 
 import javax.inject.Inject;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * @author tkaitchuck@google.com (Tom Kaitchuck)
@@ -57,7 +57,7 @@ public final class JsonListHandler {
         final String classFilter = getParam(req, CLASS_FILTER_PARAMETER);
         final String limit = getParam(req, LIMIT_PARAMETER);
         final String offset = getParam(req, OFFSET_PARAMETER);
-        final Pair<? extends Iterable<JobRecord>, String> pipelineRoots = pipelineManager.queryRootPipelines(
+        final List<PipelineRecord> pipelineRoots = pipelineManager.queryRootPipelines(
                 classFilter,
                 null,
                 limit == null ? DEFAULT_LIMIT : Integer.parseInt(limit),

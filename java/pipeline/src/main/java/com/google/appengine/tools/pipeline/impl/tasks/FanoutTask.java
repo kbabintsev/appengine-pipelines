@@ -59,16 +59,19 @@ public final class FanoutTask extends Task {
     private static final String PROPERTY_SEPARATOR = ",,";
     private static final String TASK_NAME_DELIMITER = "--";
     private static final String TASK_SEPARATOR = ";;";
+    private static final String ROOT_JOB_KEY_PROPERTY = "rootJobKey";
     private static final String RECORD_KEY_PROPERTY = "recordKey";
 
+    private final UUID rootJobKey;
     private final UUID recordKey;
 
     /**
      * Construct a new FanoutTask that contains the given data store Key. This
      * constructor is used to construct an instance to be enqueued.
      */
-    public FanoutTask(final UUID recordKey, final QueueSettings queueSettings) {
+    public FanoutTask(final UUID rootJobKey, final UUID recordKey, final QueueSettings queueSettings) {
         super(Type.FAN_OUT, null, queueSettings.clone());
+        this.rootJobKey = rootJobKey;
         this.recordKey = recordKey;
     }
 
@@ -78,6 +81,7 @@ public final class FanoutTask extends Task {
      */
     public FanoutTask(final Type type, final String taskName, final Properties properties) {
         super(type, taskName, properties);
+        this.rootJobKey = UUID.fromString(properties.getProperty(ROOT_JOB_KEY_PROPERTY));
         this.recordKey = UUID.fromString(properties.getProperty(RECORD_KEY_PROPERTY));
     }
 
@@ -133,7 +137,12 @@ public final class FanoutTask extends Task {
 
     @Override
     protected void addProperties(final Properties properties) {
+        properties.setProperty(ROOT_JOB_KEY_PROPERTY, rootJobKey.toString());
         properties.setProperty(RECORD_KEY_PROPERTY, recordKey.toString());
+    }
+
+    public UUID getRootJobKey() {
+        return rootJobKey;
     }
 
     public UUID getRecordKey() {
@@ -142,6 +151,6 @@ public final class FanoutTask extends Task {
 
     @Override
     public String propertiesAsString() {
-        return "key=" + recordKey;
+        return "rootJobKey=" + rootJobKey + ", key=" + recordKey;
     }
 }

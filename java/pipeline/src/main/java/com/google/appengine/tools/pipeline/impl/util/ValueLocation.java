@@ -1,4 +1,4 @@
-package com.google.appengine.tools.pipeline.impl.model;
+package com.google.appengine.tools.pipeline.impl.util;
 
 public enum ValueLocation {
     DATABASE,

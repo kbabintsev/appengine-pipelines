@@ -50,13 +50,13 @@ public class FanoutTaskTest extends TestCase {
         helper.setUp();
         System.setProperty(USE_SIMPLE_UUIDS_FOR_DEBUGGING, "true");
         UUID key = UUID.fromString("00000000-0000-0000-0001-000000000001");
-        RunJobTask runJobTask = new RunJobTask(key, queueSettings1);
+        RunJobTask runJobTask = new RunJobTask(key, key, queueSettings1);
         key = UUID.fromString("00000000-0000-0000-0001-000000000002");
-        RunJobTask runJobTask2 = new RunJobTask(key, queueSettings2);
+        RunJobTask runJobTask2 = new RunJobTask(key, key, queueSettings2);
         key = UUID.fromString("00000000-0000-0000-0001-000000000003");
-        FinalizeJobTask finalizeJobTask = new FinalizeJobTask(key, queueSettings1);
+        FinalizeJobTask finalizeJobTask = new FinalizeJobTask(key, key, queueSettings1);
         key = UUID.fromString("00000000-0000-0000-0002-000000000001");
-        HandleSlotFilledTask hsfTask = new HandleSlotFilledTask(key, queueSettings2);
+        HandleSlotFilledTask hsfTask = new HandleSlotFilledTask(key, key, queueSettings2);
         listOfTasks = ImmutableList.of(runJobTask, runJobTask2, finalizeJobTask, hsfTask);
         encodedBytes = FanoutTask.encodeTasks(listOfTasks);
     }

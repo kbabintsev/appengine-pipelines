@@ -27,8 +27,8 @@ import java.util.UUID;
  */
 public final class CancelJobTask extends ObjRefTask {
 
-    public CancelJobTask(final UUID jobKey, final QueueSettings queueSettings) {
-        super(Type.CANCEL_JOB, "cancelJob", jobKey, queueSettings);
+    public CancelJobTask(final UUID rootJobKey, final UUID jobKey, final QueueSettings queueSettings) {
+        super(Type.CANCEL_JOB, "cancelJob", rootJobKey, jobKey, queueSettings);
     }
 
     protected CancelJobTask(final Type type, final String taskName, final Properties properties) {

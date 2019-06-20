@@ -19,6 +19,7 @@ import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.appengine.tools.pipeline.impl.PromisedValueImpl;
 import com.google.appengine.tools.pipeline.impl.backend.UpdateSpec;
 import com.google.appengine.tools.pipeline.impl.model.JobRecord;
+import com.google.appengine.tools.pipeline.impl.util.UuidGenerator;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
@@ -150,8 +151,21 @@ public abstract class Job<E> implements Serializable {
      * @param value The value to be wrapped by the {@code ImmediateValue}
      * @return a new {@code ImmediateValue}
      */
-    public static <F> ImmediateValue<F> immediate(final F value) {
-        return new ImmediateValue<>(value);
+    public static <F> ImmediateValue<F> immediate(final UUID pipelineKey, final F value) {
+        return new ImmediateValue<>(pipelineKey, value);
+    }
+
+    /**
+     * Constructs a new {@code FutureList}. This method is only syntactic sugar.
+     * {@code futureList(listOfValues)} is equivalent to {@code new
+     * FutureList(listOfValues)}.
+     *
+     * @param <F>          The type of element in the list
+     * @param listOfValues A list of {@code Values<F>}
+     * @return A new {@code FutureList<F>}.
+     */
+    public static <F> FutureList<F> futureList(final UUID pipelineKey, final List<? extends Value<F>> listOfValues) {
+        return new FutureList<>(pipelineKey, listOfValues);
     }
 
     /**
@@ -229,17 +243,12 @@ public abstract class Job<E> implements Serializable {
         return new JobSetting.StatusConsoleUrl(statusConsoleUrl);
     }
 
-    /**
-     * Constructs a new {@code FutureList}. This method is only syntactic sugar.
-     * {@code futureList(listOfValues)} is equivalent to {@code new
-     * FutureList(listOfValues)}.
-     *
-     * @param <F>          The type of element in the list
-     * @param listOfValues A list of {@code Values<F>}
-     * @return A new {@code FutureList<F>}.
-     */
-    public static <F> FutureList<F> futureList(final List<? extends Value<F>> listOfValues) {
-        return new FutureList<>(listOfValues);
+    public final <F> ImmediateValue<F> immediate(final F value) {
+        return new ImmediateValue<>(thisJobRecord.getRootJobKey(), value);
+    }
+
+    public final <F> FutureList<F> futureList(final List<? extends Value<F>> listOfValues) {
+        return new FutureList<>(thisJobRecord.getRootJobKey(), listOfValues);
     }
 
     @Inject
@@ -299,8 +308,9 @@ public abstract class Job<E> implements Serializable {
      */
     public <T> FutureValue<T> futureCallUnchecked(final JobSetting[] settings, final Job<?> jobInstance,
                                                   final Object... params) {
+        final UUID assignedJobKey = UuidGenerator.nextUuid();
         final JobRecord childJobRecord = pipelineManager.registerNewJobRecord(
-                updateSpec, settings, thisJobRecord, currentRunKey, jobInstance, params);
+                updateSpec, updateSpec.newTransaction("futureCallUnchecked:" + assignedJobKey), settings, thisJobRecord, currentRunKey, jobInstance, assignedJobKey, params);
         thisJobRecord.appendChildKey(childJobRecord.getKey());
         // adding the FutureValue of a child job to internal list to block the parent job until all children are finished
         final FutureValueImpl<T> out = new FutureValueImpl<>(childJobRecord.getOutputSlotInflated());

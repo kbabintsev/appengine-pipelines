@@ -19,6 +19,7 @@ import com.google.appengine.tools.pipeline.impl.model.ExceptionRecord;
 import com.google.appengine.tools.pipeline.impl.model.JobInstanceRecord;
 import com.google.appengine.tools.pipeline.impl.model.JobRecord;
 import com.google.appengine.tools.pipeline.impl.model.PipelineModelObject;
+import com.google.appengine.tools.pipeline.impl.model.PipelineRecord;
 import com.google.appengine.tools.pipeline.impl.model.Slot;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
 
@@ -113,6 +114,7 @@ public final class UpdateSpec {
         private static final int INITIAL_SIZE = 20;
 
         private final String name;
+        private Map<UUID, PipelineRecord> pipelineMap = new HashMap<>(1);
         private Map<UUID, JobRecord> jobMap = new HashMap<>(INITIAL_SIZE);
         private Map<UUID, Barrier> barrierMap = new HashMap<>(INITIAL_SIZE);
         private Map<UUID, Slot> slotMap = new HashMap<>(INITIAL_SIZE);
@@ -123,12 +125,23 @@ public final class UpdateSpec {
             this.name = name;
         }
 
+        private static <E extends PipelineModelObject> void put(final Map<UUID, E> map, final E object) {
+            map.put(object.getKey(), object);
+        }
+
         public final String getName() {
             return name;
         }
 
-        private static <E extends PipelineModelObject> void put(final Map<UUID, E> map, final E object) {
-            map.put(object.getKey(), object);
+        /**
+         * Include the given Barrier in the group of objects to be saved.
+         */
+        public final void includePipeline(final PipelineRecord pipeline) {
+            pipelineMap.put(pipeline.getRootJobKey(), pipeline);
+        }
+
+        public final Collection<PipelineRecord> getPipelines() {
+            return pipelineMap.values();
         }
 
         /**

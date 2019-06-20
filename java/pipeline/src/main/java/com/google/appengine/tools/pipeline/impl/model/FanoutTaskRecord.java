@@ -14,11 +14,13 @@
 
 package com.google.appengine.tools.pipeline.impl.model;
 
+import com.google.appengine.tools.pipeline.impl.backend.PipelineMutation;
 import com.google.cloud.ByteArray;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.StructReader;
 import com.google.common.collect.ImmutableList;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.UUID;
 
@@ -48,9 +50,9 @@ public final class FanoutTaskRecord extends PipelineModelObject {
         this.payload = payload;
     }
 
-    public FanoutTaskRecord(final StructReader entity) {
-        super(DATA_STORE_KIND, entity);
-        final ByteArray payloadBlob = entity.getBytes(PAYLOAD_PROPERTY);
+    public FanoutTaskRecord(@Nullable final String prefix, final StructReader entity) {
+        super(DATA_STORE_KIND, prefix, entity);
+        final ByteArray payloadBlob = entity.getBytes(Record.property(prefix, PAYLOAD_PROPERTY));
         payload = payloadBlob.toByteArray();
     }
 
@@ -59,7 +61,7 @@ public final class FanoutTaskRecord extends PipelineModelObject {
     }
 
     @Override
-    protected String getDatastoreKind() {
+    public String getDatastoreKind() {
         return DATA_STORE_KIND;
     }
 

@@ -31,8 +31,8 @@ public final class HandleChildExceptionTask extends ObjRefTask {
 
     private final UUID failedChildKey;
 
-    public HandleChildExceptionTask(final UUID jobKey, final UUID failedChildKey, final QueueSettings queueSettings) {
-        super(Type.HANDLE_CHILD_EXCEPTION, "handleChildFailure", jobKey, queueSettings);
+    public HandleChildExceptionTask(final UUID rootJobKey, final UUID jobKey, final UUID failedChildKey, final QueueSettings queueSettings) {
+        super(Type.HANDLE_CHILD_EXCEPTION, "handleChildFailure", rootJobKey, jobKey, queueSettings);
         if (null == failedChildKey) {
             throw new NullPointerException("failedChildKey");
         }

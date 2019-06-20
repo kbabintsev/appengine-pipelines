@@ -32,13 +32,13 @@ public class AllTests {
         suite.addTestSuite(OrphanedJobGraphTest.class);
         suite.addTestSuite(LetterCounterTest.class);
         suite.addTestSuite(FutureListTest.class);
-        suite.addTestSuite(GCDTest.class);
         suite.addTestSuite(RetryTest.class);
         suite.addTestSuite(PipelinesErrorHandlingTest.class);
         suite.addTestSuite(DelayedValueTest.class);
         suite.addTestSuite(ConcurrencyTest.class);
         suite.addTestSuite(JsonClassFilterHandlerTest.class);
         suite.addTestSuite(JsonListHandlerTest.class);
+        suite.addTestSuite(GCDTest.class);
         return suite;
     }
 

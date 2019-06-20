@@ -83,7 +83,7 @@ public class RetryTest extends PipelineTest {
         UUID pipelineId = runJob(1, 4, 10, succeedTheLastTime);
         // Wait for framework to save Job information
         Thread.sleep(1000L + ACCEPTABLE_LAG_SECONDS * 1000);
-        JobInfo jobInfo = service.getJobInfo(pipelineId);
+        JobInfo jobInfo = service.getJobInfo(pipelineId, pipelineId);
         JobInfo.State expectedState =
                 (succeedTheLastTime ? JobInfo.State.COMPLETED_SUCCESSFULLY
                         : JobInfo.State.STOPPED_BY_ERROR);

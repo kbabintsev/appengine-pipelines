@@ -36,7 +36,7 @@ public final class DeletePipelineTask extends ObjRefTask {
     private final boolean force;
 
     public DeletePipelineTask(final UUID rootJobKey, final boolean force, final QueueSettings queueSettings) {
-        super(Type.DELETE_PIPELINE, "deletePipeline", rootJobKey, queueSettings);
+        super(Type.DELETE_PIPELINE, "deletePipeline", rootJobKey, rootJobKey, queueSettings);
         this.force = force;
     }
 
@@ -54,10 +54,6 @@ public final class DeletePipelineTask extends ObjRefTask {
     @Override
     public String propertiesAsString() {
         return super.propertiesAsString() + ", force=" + force;
-    }
-
-    public UUID getRootJobKey() {
-        return getKey();
     }
 
     public boolean shouldForce() {

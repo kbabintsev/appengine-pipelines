@@ -115,7 +115,7 @@ public class AppEngineTaskQueueTest extends TestCase {
 
     private Task createTask() {
         UUID key = UuidGenerator.nextUuid();
-        Task task = new RunJobTask(key, new QueueSettings().setRoute(new Route().setVersion("m1")));
+        Task task = new RunJobTask(key, key, new QueueSettings().setRoute(new Route().setVersion("m1")));
         return task;
     }
 }

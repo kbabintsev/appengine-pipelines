@@ -14,23 +14,14 @@
 
 package com.google.appengine.tools.pipeline;
 
-import java.util.UUID;
-
 /**
+ * A record about a job that has been registered with the framework. A {@code
+ * JobInfo} is obtained via the method
+ * {@link PipelineService#getJobInfo(UUID)}.
+ *
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class NoSuchObjectException extends Exception {
-    private static final long serialVersionUID = 949320101929454628L;
+public interface PipelineInfo extends JobInfo {
 
-    public NoSuchObjectException(final String tableName, final UUID rootJobKey, final UUID key) {
-        super(tableName + ":" + rootJobKey + ":" + key);
-    }
-
-    public NoSuchObjectException(final String message) {
-        super(message);
-    }
-
-    public NoSuchObjectException(final String message, final Throwable cause) {
-        super(message, cause);
-    }
+    String getRootJobDisplayName();
 }

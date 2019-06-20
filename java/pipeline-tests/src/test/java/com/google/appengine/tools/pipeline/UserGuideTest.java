@@ -55,7 +55,7 @@ public class UserGuideTest extends PipelineTest {
 
     private void doComplexJobTest(int x, int y, int z) throws Exception {
         UUID pipelineId = service.startNewPipeline(new ComplexJob(), x, y, z);
-        JobInfo jobInfo = service.getJobInfo(pipelineId);
+        JobInfo jobInfo = service.getJobInfo(pipelineId, pipelineId);
         JobInfo.State state = jobInfo.getJobState();
         if (JobInfo.State.COMPLETED_SUCCESSFULLY == state) {
             System.out.println("The output is " + jobInfo.getOutput());

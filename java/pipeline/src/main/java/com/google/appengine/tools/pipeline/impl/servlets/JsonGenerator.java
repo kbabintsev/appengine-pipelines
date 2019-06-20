@@ -15,13 +15,12 @@
 package com.google.appengine.tools.pipeline.impl.servlets;
 
 import com.google.appengine.tools.pipeline.impl.model.Barrier;
-import com.google.appengine.tools.pipeline.impl.model.JobInstanceRecord;
 import com.google.appengine.tools.pipeline.impl.model.JobRecord;
 import com.google.appengine.tools.pipeline.impl.model.PipelineObjects;
+import com.google.appengine.tools.pipeline.impl.model.PipelineRecord;
 import com.google.appengine.tools.pipeline.impl.model.Slot;
 import com.google.appengine.tools.pipeline.impl.model.SlotDescriptor;
 import com.google.appengine.tools.pipeline.impl.util.JsonUtils;
-import com.google.appengine.tools.pipeline.util.Pair;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -95,7 +94,7 @@ public final class JsonGenerator {
     }
 
     public static String pipelineRootsToJson(
-            final Pair<? extends Iterable<JobRecord>, String> pipelineRoots) {
+            final List<PipelineRecord> pipelineRoots) {
         final Map<String, Object> mapRepresentation = rootsToMapRepresentation(pipelineRoots);
         return JsonUtils.mapToJson(mapRepresentation);
     }
@@ -122,18 +121,15 @@ public final class JsonGenerator {
     }
 
     private static Map<String, Object> rootsToMapRepresentation(
-            final Pair<? extends Iterable<JobRecord>, String> pipelineRoots) {
+            final List<PipelineRecord> pipelineRoots) {
         final List<Map<String, Object>> jobList = new LinkedList<>();
         final Map<String, Object> topLevel = new HashMap<>(3);
-        for (final JobRecord rootRecord : pipelineRoots.getFirst()) {
-            final Map<String, Object> mapRepresentation = buildMapRepresentation(rootRecord);
-            mapRepresentation.put(PIPELINE_ID, rootRecord.getKey().toString());
+        for (final PipelineRecord pipeline : pipelineRoots) {
+            final Map<String, Object> mapRepresentation = buildMapRepresentation(pipeline);
+            mapRepresentation.put(PIPELINE_ID, pipeline.getRootJobKey().toString());
             jobList.add(mapRepresentation);
         }
         topLevel.put(PIPELINES, jobList);
-        if (pipelineRoots.getSecond() != null) {
-            topLevel.put(CURSOR, pipelineRoots.getSecond());
-        }
         return topLevel;
     }
 
@@ -157,18 +153,24 @@ public final class JsonGenerator {
         return map;
     }
 
-    private static Map<String, Object> buildMapRepresentation(final JobRecord jobRecord) {
-        final Map<String, Object> map = new HashMap<>(5);
-        String jobClass = jobRecord.getRootJobDisplayName();
+    private static Map<String, Object> buildMapRepresentation(final PipelineRecord pipeline) {
+        final Map<String, Object> map = buildMapRepresentation(pipeline.getRootJob());
+        String jobClass = pipeline.getRootJobDisplayName();
         if (jobClass == null) {
-            final JobInstanceRecord jobInstanceInflated = jobRecord.getJobInstanceInflated();
-            if (null != jobInstanceInflated) {
-                jobClass = jobInstanceInflated.getJobDisplayName();
-            } else {
-                jobClass = "";
-            }
+            //TODO: think abrout returning this feature
+//            final JobInstanceRecord jobInstanceInflated = pipeline.getJobInstanceInflated();
+//            if (null != jobInstanceInflated) {
+//                jobClass = jobInstanceInflated.getJobDisplayName();
+//            } else {
+            jobClass = "";
+//            }
         }
         map.put(JOB_CLASS, jobClass);
+        return map;
+    }
+
+    private static Map<String, Object> buildMapRepresentation(final JobRecord jobRecord) {
+        final Map<String, Object> map = new HashMap<>(5);
         String statusString = null;
         switch (jobRecord.getState()) {
             case WAITING_TO_RUN:

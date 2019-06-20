@@ -30,19 +30,21 @@ public final class PipelineObjects {
 
     private static final Logger LOGGER = Logger.getLogger(PipelineObjects.class.getName());
 
+    private PipelineRecord pipeline;
     private JobRecord rootJob;
     private Map<UUID, JobRecord> jobs;
-    private Map<UUID, Slot> slots;
-    private Map<UUID, Barrier> barriers;
+    private Map<RecordKey, Slot> slots;
+    private Map<RecordKey, Barrier> barriers;
     private Map<UUID, JobInstanceRecord> jobInstanceRecords;
 
     /**
      * The {@code PipelineObjects} takes ownership of the objects passed in. The
      * caller should not hold references to them.
      */
-    public PipelineObjects(final UUID rootJobKey, final Map<UUID, JobRecord> jobs, final Map<UUID, Slot> slots,
-                           final Map<UUID, Barrier> barriers, final Map<UUID, JobInstanceRecord> jobInstanceRecords,
+    public PipelineObjects(final UUID rootJobKey, final PipelineRecord pipeline, final Map<UUID, JobRecord> jobs, final Map<RecordKey, Slot> slots,
+                           final Map<RecordKey, Barrier> barriers, final Map<UUID, JobInstanceRecord> jobInstanceRecords,
                            final Map<UUID, ExceptionRecord> failureRecords) {
+        this.pipeline = pipeline;
         this.jobInstanceRecords = jobInstanceRecords;
         this.barriers = barriers;
         this.jobs = jobs;
@@ -113,6 +115,10 @@ public final class PipelineObjects {
         }
     }
 
+    public PipelineRecord getPipeline() {
+        return pipeline;
+    }
+
     public JobRecord getRootJob() {
         return rootJob;
     }
@@ -121,11 +127,11 @@ public final class PipelineObjects {
         return jobs;
     }
 
-    public Map<UUID, Slot> getSlots() {
+    public Map<RecordKey, Slot> getSlots() {
         return slots;
     }
 
-    public Map<UUID, Barrier> getBarriers() {
+    public Map<RecordKey, Barrier> getBarriers() {
         return barriers;
     }
 

@@ -16,10 +16,15 @@ package com.google.appengine.tools.pipeline.impl.model;
 
 import com.google.appengine.tools.pipeline.Job;
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
+import com.google.appengine.tools.pipeline.impl.backend.PipelineMutation;
+import com.google.appengine.tools.pipeline.impl.util.ValueLocation;
+import com.google.appengine.tools.pipeline.impl.util.ValueProxy;
+import com.google.appengine.tools.pipeline.impl.util.ValueStoragePath;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.StructReader;
 import com.google.common.collect.ImmutableList;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.UUID;
 
@@ -65,19 +70,21 @@ public final class JobInstanceRecord extends PipelineModelObject {
         );
     }
 
-    public JobInstanceRecord(final PipelineManager pipelineManager, final StructReader entity) {
-        super(DATA_STORE_KIND, entity);
-        jobKey = UUID.fromString(entity.getString(JOB_KEY_PROPERTY)); // probably not null?
-        jobClassName = entity.getString(JOB_CLASS_NAME_PROPERTY); // probably not null?
-        if (!entity.isNull(JOB_DISPLAY_NAME_PROPERTY)) {
-            jobDisplayName = entity.getString(JOB_DISPLAY_NAME_PROPERTY);
+    public JobInstanceRecord(final PipelineManager pipelineManager, @Nullable final String prefix, final StructReader entity) {
+        super(DATA_STORE_KIND, prefix, entity);
+        jobKey = UUID.fromString(entity.getString(Record.property(prefix, JOB_KEY_PROPERTY))); // probably not null?
+        jobClassName = entity.getString(Record.property(prefix, JOB_CLASS_NAME_PROPERTY)); // probably not null?
+        if (!entity.isNull(Record.property(prefix, JOB_DISPLAY_NAME_PROPERTY))) {
+            jobDisplayName = entity.getString(Record.property(prefix, JOB_DISPLAY_NAME_PROPERTY));
         } else {
             jobDisplayName = jobClassName;
         }
+        final String valueLocationProperty = Record.property(prefix, VALUE_LOCATION_PROPERTY);
+        final String databaseValueProperty = Record.property(prefix, DATABASE_VALUE_PROPERTY);
         valueProxy = new ValueProxy(
                 pipelineManager,
-                entity.isNull(VALUE_LOCATION_PROPERTY) ? ValueLocation.DATABASE : ValueLocation.valueOf(entity.getString(VALUE_LOCATION_PROPERTY)),
-                entity.isNull(DATABASE_VALUE_PROPERTY) ? null : entity.getBytes(DATABASE_VALUE_PROPERTY).toByteArray(),
+                entity.isNull(valueLocationProperty) ? ValueLocation.DATABASE : ValueLocation.valueOf(entity.getString(valueLocationProperty)),
+                entity.isNull(databaseValueProperty) ? null : entity.getBytes(databaseValueProperty).toByteArray(),
                 true,
                 new ValueStoragePath(getRootJobKey(), DATA_STORE_KIND, getKey())
         );
@@ -102,7 +109,7 @@ public final class JobInstanceRecord extends PipelineModelObject {
     }
 
     @Override
-    protected String getDatastoreKind() {
+    public String getDatastoreKind() {
         return DATA_STORE_KIND;
     }
 

@@ -28,10 +28,6 @@ import java.util.UUID;
  */
 public final class DelayedSlotFillTask extends ObjRefTask {
 
-    private static final String ROOT_JOB_KEY_PARAM = "rootJobKey";
-
-    private final UUID rootJobKey;
-
     /**
      * This constructor is used on the sending side. That is, it is used to
      * construct a {@code HandleSlotFilledTask}to be enqueued.
@@ -43,32 +39,15 @@ public final class DelayedSlotFillTask extends ObjRefTask {
      * @param queueSettings The queue settings
      */
     public DelayedSlotFillTask(final Slot slot, final long delay, final UUID rootJobKey, final QueueSettings queueSettings) {
-        super(Type.DELAYED_SLOT_FILL, "delayedSlotFillTask", slot.getKey(), queueSettings);
+        super(Type.DELAYED_SLOT_FILL, "delayedSlotFillTask", rootJobKey, slot.getKey(), queueSettings);
         getQueueSettings().setDelayInSeconds(delay);
-        this.rootJobKey = rootJobKey;
     }
 
     protected DelayedSlotFillTask(final Type type, final String taskName, final Properties properties) {
         super(type, taskName, properties);
-        rootJobKey = UUID.fromString(properties.getProperty(ROOT_JOB_KEY_PARAM));
-    }
-
-    @Override
-    protected void addProperties(final Properties properties) {
-        super.addProperties(properties);
-        properties.setProperty(ROOT_JOB_KEY_PARAM, rootJobKey.toString());
-    }
-
-    @Override
-    public String propertiesAsString() {
-        return super.propertiesAsString() + ", rootJobKey=" + rootJobKey;
     }
 
     public UUID getSlotKey() {
         return getKey();
-    }
-
-    public UUID getRootJobKey() {
-        return rootJobKey;
     }
 }

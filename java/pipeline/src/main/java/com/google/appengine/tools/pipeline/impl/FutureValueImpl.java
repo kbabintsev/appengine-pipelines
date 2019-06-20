@@ -17,6 +17,8 @@ package com.google.appengine.tools.pipeline.impl;
 import com.google.appengine.tools.pipeline.FutureValue;
 import com.google.appengine.tools.pipeline.impl.model.Slot;
 
+import java.util.UUID;
+
 /**
  * An implementation of {@link FutureValue} that wraps a {@link Slot}.
  *
@@ -35,13 +37,13 @@ public class FutureValueImpl<E> implements FutureValue<E> {
     }
 
     @Override
-    public String getSourceJobHandle() {
-        return slot.getSourceJobKey().toString();
+    public UUID getSourceJobHandle() {
+        return slot.getSourceJobKey();
     }
 
     @Override
-    public String getPipelineHandle() {
-        return slot.getRootJobKey().toString();
+    public UUID getPipelineHandle() {
+        return slot.getRootJobKey();
     }
 
     @Override

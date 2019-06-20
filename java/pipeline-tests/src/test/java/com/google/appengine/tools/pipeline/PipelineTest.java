@@ -129,7 +129,21 @@ public abstract class PipelineTest extends TestCase {
     protected JobInfo waitUntilJobComplete(UUID pipelineId) throws Exception {
         while (true) {
             Thread.sleep(2000);
-            JobInfo jobInfo = service.getJobInfo(pipelineId);
+            JobInfo jobInfo = service.getJobInfo(pipelineId, pipelineId);
+            switch (jobInfo.getJobState()) {
+                case RUNNING:
+                case WAITING_TO_RETRY:
+                    break;
+                default:
+                    return jobInfo;
+            }
+        }
+    }
+
+    protected PipelineInfo waitUntilPipelineComplete(UUID pipelineId) throws Exception {
+        while (true) {
+            Thread.sleep(2000);
+            PipelineInfo jobInfo = service.getPipelineInfo(pipelineId);
             switch (jobInfo.getJobState()) {
                 case RUNNING:
                 case WAITING_TO_RETRY:
@@ -146,7 +160,7 @@ public abstract class PipelineTest extends TestCase {
         switch (jobInfo.getJobState()) {
             case COMPLETED_SUCCESSFULLY:
                 Thread.sleep(3000); // apparently after status change, something might not be propagated correctly and you need to wait some time.
-                jobInfo = service.getJobInfo(pipelineId); // re-getting the job
+                jobInfo = service.getJobInfo(pipelineId, pipelineId); // re-getting the job
                 return (T) jobInfo.getOutput();
             case STOPPED_BY_ERROR:
                 throw new RuntimeException("Job stopped " + jobInfo.getError());

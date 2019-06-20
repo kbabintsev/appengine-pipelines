@@ -51,7 +51,7 @@ public final class Jobs {
     }
 
     public static <T> Value<T> waitForAll(final Job<?> caller, final T value, final Value<?>... values) {
-        return caller.futureCall(new WaitForAllJob<T>(), Job.immediate(value),
+        return caller.futureCall(new WaitForAllJob<T>(), Job.immediate(caller.getPipelineKey(), value),
                 createWaitForSettingArray(values));
     }
 
@@ -69,7 +69,7 @@ public final class Jobs {
         return caller.futureCall(
                 new DeletePipelineJob<T>(
                         caller.getPipelineKey()),
-                Job.immediate(value),
+                Job.immediate(caller.getPipelineKey(), value),
                 createWaitForSettingArray(values)
         );
     }

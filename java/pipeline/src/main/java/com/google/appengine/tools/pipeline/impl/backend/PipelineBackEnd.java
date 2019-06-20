@@ -19,13 +19,14 @@ import com.google.appengine.tools.pipeline.impl.QueueSettings;
 import com.google.appengine.tools.pipeline.impl.model.ExceptionRecord;
 import com.google.appengine.tools.pipeline.impl.model.JobRecord;
 import com.google.appengine.tools.pipeline.impl.model.PipelineObjects;
+import com.google.appengine.tools.pipeline.impl.model.PipelineRecord;
 import com.google.appengine.tools.pipeline.impl.model.Slot;
-import com.google.appengine.tools.pipeline.impl.model.ValueStoragePath;
 import com.google.appengine.tools.pipeline.impl.tasks.FanoutTask;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
-import com.google.appengine.tools.pipeline.util.Pair;
+import com.google.appengine.tools.pipeline.impl.util.ValueStoragePath;
 
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -73,7 +74,21 @@ public interface PipelineBackEnd {
      * @throws NoSuchObjectException If Either the JobRecord or any of the
      *                               associated Slots or Barriers are not found in the data store.
      */
-    JobRecord queryJob(UUID key, JobRecord.InflationType inflationType) throws NoSuchObjectException;
+    JobRecord queryJob(UUID rootJobKey, UUID key, JobRecord.InflationType inflationType) throws NoSuchObjectException;
+
+    /**
+     * Get the JobRecord with the given Key from the data store, and optionally
+     * also get some of the Barriers and Slots associated with it.
+     *
+     * @param pipelineKey   The key of the JobRecord to be fetched
+     * @param inflationType Specifies the manner in which the returned JobRecord
+     *                      should be inflated.
+     * @return A {@code JobRecord}, possibly with a partially-inflated associated
+     * graph of objects.
+     * @throws NoSuchObjectException If Either the JobRecord or any of the
+     *                               associated Slots or Barriers are not found in the data store.
+     */
+    PipelineRecord queryPipeline(UUID pipelineKey) throws NoSuchObjectException;
 
     /**
      * Get the Slot with the given Key from the data store, and optionally also
@@ -95,7 +110,7 @@ public interface PipelineBackEnd {
      * of objects.
      * @throws NoSuchObjectException if unable to find an entity
      */
-    Slot querySlot(UUID key, boolean inflate) throws NoSuchObjectException;
+    Slot querySlot(UUID rootJobKey, UUID key, boolean inflate) throws NoSuchObjectException;
 
     /**
      * Get the Failure with the given Key from the data store.
@@ -104,7 +119,7 @@ public interface PipelineBackEnd {
      * @return A {@code FailureRecord}
      * @throws NoSuchObjectException if unable to find an entity
      */
-    ExceptionRecord queryFailure(UUID key) throws NoSuchObjectException;
+    ExceptionRecord queryFailure(UUID rootJobKey, UUID key) throws NoSuchObjectException;
 
     /**
      * Enqueues to the App Engine task queue the tasks encoded by the given
@@ -177,7 +192,7 @@ public interface PipelineBackEnd {
      * @param offset      Results offset (zero or negative will be treated as no offset).
      * @return a Pair of job records and a next cursor (or null, if no more results).
      */
-    Pair<? extends Iterable<JobRecord>, String> queryRootPipelines(
+    List<PipelineRecord> queryRootPipelines(
             @Nullable String classFilter,
             @Nullable Set<JobRecord.State> inStates,
             int limit,

@@ -77,9 +77,9 @@ public abstract class Task {
     /**
      * Construct a task from {@code Properties}. This method is used on the
      * receiving side. That is, it is used to construct a {@code Task} from an
-     * HttpRequest sent from the App Engine task queue. {@code properties} must
+     * HttpRequest sent from the App Engine task queue. {@code propertiesForSelect} must
      * contain a property named {@link #TASK_TYPE_PARAMETER}. In addition it must
-     * contain the properties specified by the concrete subclass of this class
+     * contain the propertiesForSelect specified by the concrete subclass of this class
      * corresponding to the task type.
      */
     public static Task fromProperties(final String taskName, final Properties properties) {

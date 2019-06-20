@@ -199,7 +199,7 @@ public interface PipelineService {
      * @throws NoSuchObjectException If the framework cannot find a Pipeline with
      *                               the given identifier.
      */
-    void stopPipeline(UUID pipelineHandle) throws NoSuchObjectException;
+    void stopPipeline(UUID rootJobKey, UUID pipelineHandle) throws NoSuchObjectException;
 
     /**
      * Cancel all pipeline jobs. If a cancelled job has
@@ -212,7 +212,7 @@ public interface PipelineService {
      * @throws NoSuchObjectException If the framework cannot find a Pipeline with
      *                               the given identifier.
      */
-    void cancelPipeline(UUID pipelineHandle) throws NoSuchObjectException;
+    void cancelPipeline(UUID rootJobKey, UUID pipelineHandle) throws NoSuchObjectException;
 
     /**
      * Delete all the records associated with a pipeline from the Datastore.
@@ -262,7 +262,9 @@ public interface PipelineService {
      * @throws NoSuchObjectException If the framework cannot find a job with the
      *                               given identifier.
      */
-    JobInfo getJobInfo(UUID jobHandle) throws NoSuchObjectException;
+    JobInfo getJobInfo(UUID rootJobKey, UUID jobHandle) throws NoSuchObjectException;
+
+    PipelineInfo getPipelineInfo(UUID pipelineKey) throws NoSuchObjectException;
 
     /**
      * This method is used to give the framework a value that is provided
@@ -295,7 +297,7 @@ public interface PipelineService {
      *                                 some other thread will be submitting the promised value via that
      *                                 non-orphaned handle.
      */
-    void submitPromisedValue(UUID promiseHandle, Object value) throws NoSuchObjectException,
+    void submitPromisedValue(UUID rootJobKey, UUID promiseHandle, Object value) throws NoSuchObjectException,
             OrphanedObjectException;
 
     void cleanBobs(String prefix);
