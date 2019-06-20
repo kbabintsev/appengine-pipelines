@@ -102,9 +102,9 @@ public final class PipelineObjects {
             }
         }
         for (final JobRecord jobRec : jobs.values()) {
-            final Barrier runBarrier = barriers.get(jobRec.getRunBarrierKey());
-            final Barrier finalizeBarrier = barriers.get(jobRec.getFinalizeBarrierKey());
-            final Slot outputSlot = slots.get(jobRec.getOutputSlotKey());
+            final Barrier runBarrier = barriers.get(new RecordKey(rootJobKey, jobRec.getRunBarrierKey()));
+            final Barrier finalizeBarrier = barriers.get(new RecordKey(rootJobKey, jobRec.getFinalizeBarrierKey()));
+            final Slot outputSlot = slots.get(new RecordKey(rootJobKey, jobRec.getOutputSlotKey()));
             final JobInstanceRecord jobInstanceRecord = jobInstanceRecords.get(jobRec.getJobInstanceKey());
             ExceptionRecord failureRecord = null;
             final UUID failureKey = jobRec.getExceptionKey();
