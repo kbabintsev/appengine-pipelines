@@ -1,7 +1,7 @@
 CREATE TABLE Pipeline (
 	rootJobKey STRING(36) NOT NULL,
 	rootJobDisplayName STRING(255),
-) PRIMARY KEY (rootJobKey)
+) PRIMARY KEY (rootJobKey);
 
 CREATE TABLE Barrier (
 	rootJobKey STRING(36) NOT NULL,

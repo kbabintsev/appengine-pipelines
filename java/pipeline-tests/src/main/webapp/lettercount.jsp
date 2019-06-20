@@ -1,4 +1,4 @@
-<%@ page import="com.google.appengine.tools.pipeline.JobInfo" %>
+<%@ page import="com.google.appengine.tools.pipeline.PipelineInfo" %>
 <%@ page import="com.google.appengine.tools.pipeline.PipelineService" %>
 <%@ page import="com.google.appengine.tools.pipeline.demo.LetterCountExample.LetterCounter" %>
 <%@ page import="com.google.inject.Injector" %>
@@ -54,7 +54,7 @@
   if(null == pipelineId){
     pipelineId = service.startNewPipeline(new LetterCounter(), text);
   }
-  JobInfo jobInfo = service.getJobInfo(pipelineId);
+  PipelineInfo jobInfo = service.getPipelineInfo(pipelineId);
   switch(jobInfo.getJobState()){
         case COMPLETED_SUCCESSFULLY:
 %>

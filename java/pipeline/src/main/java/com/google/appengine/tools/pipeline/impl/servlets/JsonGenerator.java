@@ -15,6 +15,7 @@
 package com.google.appengine.tools.pipeline.impl.servlets;
 
 import com.google.appengine.tools.pipeline.impl.model.Barrier;
+import com.google.appengine.tools.pipeline.impl.model.JobInstanceRecord;
 import com.google.appengine.tools.pipeline.impl.model.JobRecord;
 import com.google.appengine.tools.pipeline.impl.model.PipelineObjects;
 import com.google.appengine.tools.pipeline.impl.model.PipelineRecord;
@@ -158,12 +159,12 @@ public final class JsonGenerator {
         String jobClass = pipeline.getRootJobDisplayName();
         if (jobClass == null) {
             //TODO: think abrout returning this feature
-//            final JobInstanceRecord jobInstanceInflated = pipeline.getJobInstanceInflated();
-//            if (null != jobInstanceInflated) {
-//                jobClass = jobInstanceInflated.getJobDisplayName();
-//            } else {
+            final JobInstanceRecord jobInstanceInflated = pipeline.getRootJob().getJobInstanceInflated();
+            if (null != jobInstanceInflated) {
+                jobClass = jobInstanceInflated.getJobDisplayName();
+            } else {
             jobClass = "";
-//            }
+            }
         }
         map.put(JOB_CLASS, jobClass);
         return map;
@@ -171,6 +172,15 @@ public final class JsonGenerator {
 
     private static Map<String, Object> buildMapRepresentation(final JobRecord jobRecord) {
         final Map<String, Object> map = new HashMap<>(5);
+        //TODO: think abrout returning this feature
+        final String jobClass;
+        final JobInstanceRecord jobInstanceInflated = jobRecord.getJobInstanceInflated();
+        if (null != jobInstanceInflated) {
+            jobClass = jobInstanceInflated.getJobDisplayName();
+        } else {
+            jobClass = "";
+        }
+        map.put(JOB_CLASS, jobClass);
         String statusString = null;
         switch (jobRecord.getState()) {
             case WAITING_TO_RUN:

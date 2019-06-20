@@ -16,8 +16,8 @@ package com.google.appengine.tools.pipeline.impl.servlets;
 
 import com.google.appengine.tools.pipeline.NoSuchObjectException;
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
-import com.google.appengine.tools.pipeline.impl.model.JobRecord;
 import com.google.appengine.tools.pipeline.impl.model.PipelineObjects;
+import com.google.appengine.tools.pipeline.impl.model.PipelineRecord;
 
 import javax.inject.Inject;
 import javax.servlet.ServletException;
@@ -49,9 +49,9 @@ public final class JsonTreeHandler {
             throw new ServletException(ROOT_PIPELINE_ID + " parameter not found.");
         }
         try {
-            final JobRecord jobInfo;
+            final PipelineRecord jobInfo;
             try {
-                jobInfo = pipelineManager.getJob(rootJobHandle, rootJobHandle);
+                jobInfo = pipelineManager.getPipeline(rootJobHandle);
             } catch (NoSuchObjectException nsoe) {
                 resp.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;

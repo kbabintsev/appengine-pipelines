@@ -123,6 +123,9 @@ function countChildren(pipelineId) {
 
 // Create the readable name for the pipeline name.
 function prettyName(name, sidebar) {
+    if (!name) {
+        name = '[unnamed]';
+    }
     var adjustedName = name;
     if (sidebar) {
         var adjustedName = name;
