@@ -57,13 +57,13 @@ public class OrphanedJobGraphTest extends PipelineTest {
 
     /**
      * Tests that the method
-     * {@link PipelineService#submitPromisedValue(UUID, Object)} behaves
+     * {@link PipelineService#submitPromisedValue(UUID, UUID, Object)} behaves
      * properly if the promise handle has been orphaned.
      * <p>
      * This test is similar to {@link #testOrphanedJobGraph()} except that this
      * time the child job graph is supposed to be activated asynchronously vai a
      * promised value. We test that
-     * {@link PipelineService#submitPromisedValue(UUID, Object)} will throw a
+     * {@link PipelineService#submitPromisedValue(UUID, UUID, Object)} will throw a
      * {@link OrphanedObjectException} when {@code submitPromisedValue()} is
      * invoked on an orphaned promise handle.
      */
@@ -149,7 +149,7 @@ public class OrphanedJobGraphTest extends PipelineTest {
         // Check that all jobs have been deleted
         AppEngineBackEnd backend = (AppEngineBackEnd) pipelineManager.getBackEnd();
         AtomicInteger numJobs2 = new AtomicInteger(0);
-        backend.queryAll(JobRecord.DATA_STORE_KIND, JobRecord.PROPERTIES, rootJobKey, (struct) -> {
+        backend.queryAll(null, JobRecord.DATA_STORE_KIND, JobRecord.PROPERTIES, rootJobKey, (struct) -> {
             numJobs2.addAndGet(1);
         });
         assertEquals(0, numJobs2.get());
@@ -209,7 +209,7 @@ public class OrphanedJobGraphTest extends PipelineTest {
 
     /**
      * A {@code Runnable} for invoking the method
-     * {@link PipelineService#submitPromisedValue(UUID, Object)}.
+     * {@link PipelineService#submitPromisedValue(UUID, UUID, Object)}.
      */
     private static class SupplyPromisedValueRunnable implements Runnable {
 

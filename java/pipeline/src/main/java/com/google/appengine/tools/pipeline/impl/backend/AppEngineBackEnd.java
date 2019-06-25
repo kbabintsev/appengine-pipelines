@@ -52,6 +52,7 @@ import com.google.cloud.spanner.DatabaseId;
 import com.google.cloud.spanner.Key;
 import com.google.cloud.spanner.KeySet;
 import com.google.cloud.spanner.Mutation;
+import com.google.cloud.spanner.ReadContext;
 import com.google.cloud.spanner.ResultSet;
 import com.google.cloud.spanner.Spanner;
 import com.google.cloud.spanner.SpannerOptions;
@@ -598,8 +599,8 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
         taskQueue.enqueue(FanoutTask.decodeTasks(encodedBytes));
     }
 
-    public void queryAll(final String tableName, final List<String> columns, final UUID pipelineKey, final Consumer<StructReader> consumer) {
-        try (ResultSet rs = databaseClient.singleUse().executeQuery(
+    public void queryAll(@Nullable final ReadContext transaction, final String tableName, final List<String> columns, final UUID pipelineKey, final Consumer<StructReader> consumer) {
+        try (ResultSet rs = (transaction == null ? databaseClient.singleUse() : transaction).executeQuery(
                 Statement.newBuilder(
                         "SELECT " + String.join(", ", columns) + " "
                                 + "FROM " + tableName + " "
@@ -678,27 +679,29 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
         final Map<UUID, ExceptionRecord> failureRecords = new HashMap<>();
 
         final PipelineRecord pipeline = new PipelineRecord(null, databaseClient.singleUse().readRow(PipelineRecord.DATA_STORE_KIND, Key.of(pipelineKey.toString()), PipelineRecord.PROPERTIES));
-        queryAll(Barrier.DATA_STORE_KIND, Barrier.PROPERTIES, pipelineKey, (struct) -> {
-            barriers.put(
-                    new RecordKey(UUID.fromString(struct.getString(Barrier.PIPELINE_KEY_PROPERTY)), UUID.fromString(struct.getString(Barrier.KEY_PROPERTY))),
-                    new Barrier(null, struct)
-            );
-        });
-        queryAll(Slot.DATA_STORE_KIND, Slot.PROPERTIES, pipelineKey, (struct) -> {
-            slots.put(
-                    new RecordKey(UUID.fromString(struct.getString(Slot.PIPELINE_KEY_PROPERTY)), UUID.fromString(struct.getString(Slot.KEY_PROPERTY))),
-                    new Slot(pipelineManager.get(), null, struct, true)
-            );
-        });
-        queryAll(JobRecord.DATA_STORE_KIND, JobRecord.PROPERTIES, pipelineKey, (struct) -> {
-            jobs.put(UUID.fromString(struct.getString(JobRecord.KEY_PROPERTY)), new JobRecord(null, struct));
-        });
-        queryAll(JobInstanceRecord.DATA_STORE_KIND, JobInstanceRecord.PROPERTIES, pipelineKey, (struct) -> {
-            jobInstanceRecords.put(UUID.fromString(struct.getString(JobInstanceRecord.KEY_PROPERTY)), new JobInstanceRecord(pipelineManager.get(), null, struct));
-        });
-        queryAll(ExceptionRecord.DATA_STORE_KIND, ExceptionRecord.PROPERTIES, pipelineKey, (struct) -> {
-            failureRecords.put(UUID.fromString(struct.getString(ExceptionRecord.KEY_PROPERTY)), new ExceptionRecord(pipelineManager.get(), null, struct));
-        });
+        try (ReadContext transaction = databaseClient.readOnlyTransaction()) {
+            queryAll(transaction, Barrier.DATA_STORE_KIND, Barrier.PROPERTIES, pipelineKey, (struct) -> {
+                barriers.put(
+                        new RecordKey(UUID.fromString(struct.getString(Barrier.PIPELINE_KEY_PROPERTY)), UUID.fromString(struct.getString(Barrier.KEY_PROPERTY))),
+                        new Barrier(null, struct)
+                );
+            });
+            queryAll(transaction, Slot.DATA_STORE_KIND, Slot.PROPERTIES, pipelineKey, (struct) -> {
+                slots.put(
+                        new RecordKey(UUID.fromString(struct.getString(Slot.PIPELINE_KEY_PROPERTY)), UUID.fromString(struct.getString(Slot.KEY_PROPERTY))),
+                        new Slot(pipelineManager.get(), null, struct, true)
+                );
+            });
+            queryAll(transaction, JobRecord.DATA_STORE_KIND, JobRecord.PROPERTIES, pipelineKey, (struct) -> {
+                jobs.put(UUID.fromString(struct.getString(JobRecord.KEY_PROPERTY)), new JobRecord(null, struct));
+            });
+            queryAll(transaction, JobInstanceRecord.DATA_STORE_KIND, JobInstanceRecord.PROPERTIES, pipelineKey, (struct) -> {
+                jobInstanceRecords.put(UUID.fromString(struct.getString(JobInstanceRecord.KEY_PROPERTY)), new JobInstanceRecord(pipelineManager.get(), null, struct));
+            });
+            queryAll(transaction, ExceptionRecord.DATA_STORE_KIND, ExceptionRecord.PROPERTIES, pipelineKey, (struct) -> {
+                failureRecords.put(UUID.fromString(struct.getString(ExceptionRecord.KEY_PROPERTY)), new ExceptionRecord(pipelineManager.get(), null, struct));
+            });
+        }
         return new PipelineObjects(pipelineKey, pipeline, jobs, slots, barriers, jobInstanceRecords, failureRecords);
     }
 
@@ -706,13 +709,13 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
      * Delete all datastore entities corresponding to the given pipeline.
      *
      * @param pipelineKey The root job key identifying the pipeline
-     * @param force      If this parameter is not {@code true} then this method will
-     *                   throw an {@link IllegalStateException} if the specified pipeline is not in the
-     *                   {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#FINALIZED} or
-     *                   {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#STOPPED} state.
-     * @param async      If this parameter is {@code true} then instead of performing
-     *                   the delete operation synchronously, this method will enqueue a task
-     *                   to perform the operation.
+     * @param force       If this parameter is not {@code true} then this method will
+     *                    throw an {@link IllegalStateException} if the specified pipeline is not in the
+     *                    {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#FINALIZED} or
+     *                    {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#STOPPED} state.
+     * @param async       If this parameter is {@code true} then instead of performing
+     *                    the delete operation synchronously, this method will enqueue a task
+     *                    to perform the operation.
      * @throws IllegalStateException If {@code force = false} and the specified
      *                               pipeline is not in the
      *                               {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#FINALIZED} or

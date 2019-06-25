@@ -145,7 +145,7 @@ public final class PipelineManager {
      *                    created objects. All objects will be added to the
      *                    {@link UpdateSpec#newTransaction(String) new transaction}
      *                    of the {@code UpdateSpec}.
-     * @param transaction
+     * @param transaction The current transaction of {@code UpdateSpec}
      * @param settings    Array of {@code JobSetting} to apply to the newly created
      *                    JobRecord.
      * @param jobInstance The user-supplied instance of {@code Job} that
@@ -425,7 +425,7 @@ public final class PipelineManager {
      * will be only partially inflated. The run and finalize barriers will not be
      * available but the output slot will be.
      *
-     * @param pipelineKey
+     * @param pipelineKey The key of the pipeline
      * @param jobKey  The handle of a job.
      * @return The corresponding JobRecord
      * @throws NoSuchObjectException If a JobRecord with the given handle cannot

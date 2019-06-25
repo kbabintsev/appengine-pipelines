@@ -21,7 +21,7 @@ import java.util.UUID;
 /**
  * A record about a job that has been registered with the framework. A {@code
  * JobInfo} is obtained via the method
- * {@link PipelineService#getJobInfo(java.util.UUID)}.
+ * {@link PipelineService#getJobInfo(java.util.UUID, java.util.UUID)}.
  *
  * @author rudominer@google.com (Mitch Rudominer)
  */

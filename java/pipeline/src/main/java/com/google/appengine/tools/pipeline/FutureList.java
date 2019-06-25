@@ -34,7 +34,7 @@ import java.util.UUID;
  * for(int i = 0; i < n; i++) {
  *   listOfFutures.add(futureCall(new MyJob(), immediate(i), immediate(n));
  * }
- * FutureList<Integer> futureList = new FutureList(listOfFutures);
+ * FutureList<java.lang.Integer> futureList = new FutureList(listOfFutures);
  * futureCall(new MyCombinerJob(), futureList);
  * </code>
  * </pre>
@@ -57,7 +57,7 @@ public final class FutureList<E> implements Value<List<E>> {
     /**
      * Constructs a {@code FutureList} from a {@code List} of {@code Values}.
      *
-     * @param pipelineHandle
+     * @param pipelineHandle pipelineKey
      * @param listOfValues a {@code List} of {@code Values}. This object takes
      *                     ownership of the list. The client should not continue to hold a
      */

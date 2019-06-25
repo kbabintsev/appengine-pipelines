@@ -711,8 +711,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
 
     /**
      * This enum serves as an input parameter to the method
-     * {@link com.google.appengine.tools.pipeline.impl.backend.PipelineBackEnd#queryJob(
-     *UUID, InflationType)}. When fetching an
+     * {@link com.google.appengine.tools.pipeline.impl.backend.PipelineBackEnd#queryJob(UUID, UUID, InflationType)}. When fetching an
      * instance of {@code JobRecord} from the data store this enum specifies how
      * much auxiliary data should also be queried and used to inflate the instance
      * of {@code JobRecord}.

@@ -27,12 +27,12 @@ import java.util.UUID;
  * handle} of a promised value is an opaque identifier that uniquely represents
  * the value slot to the framework. This handle should be passed to the external
  * agent who will use the handle to supply the promised value via the method
- * {@link PipelineService#submitPromisedValue(UUID, Object)}. For example the
+ * {@link PipelineService#submitPromisedValue(UUID, UUID, Object)}. For example the
  * following code might appear inside of the {@code run()} method of a Job.
  * <blockquote>
  *
  * <pre>
- * PromisedValue<Integer> x = newPromise()
+ * PromisedValue<java.lang.Integer> x = newPromise()
  * String xHandle = x.getHandle();
  * invokeExternalAgent(xHandle)
  * futureCall(new UsesIntegerJob(), x);

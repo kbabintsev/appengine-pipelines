@@ -81,8 +81,6 @@ public interface PipelineBackEnd {
      * also get some of the Barriers and Slots associated with it.
      *
      * @param pipelineKey   The key of the JobRecord to be fetched
-     * @param inflationType Specifies the manner in which the returned JobRecord
-     *                      should be inflated.
      * @return A {@code JobRecord}, possibly with a partially-inflated associated
      * graph of objects.
      * @throws NoSuchObjectException If Either the JobRecord or any of the

@@ -51,7 +51,7 @@ public interface FutureValue<E> extends Value<E> {
     /**
      * Returns a String uniquely identifying the Job whose output will fill the
      * value slot represented by this {@code FutureValue}. This String may be
-     * passed to {@link PipelineService#getJobInfo(java.util.UUID)} in order to query the
+     * passed to {@link PipelineService#getJobInfo(java.util.UUID, java.util.UUID)} in order to query the
      * state of the Job.
      *
      * @return a String uniquely identifying the source job.

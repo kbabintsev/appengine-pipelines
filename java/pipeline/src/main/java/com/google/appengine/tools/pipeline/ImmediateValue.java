@@ -41,7 +41,7 @@ import java.util.UUID;
  * <p>
  * As some syntactic sugar the framework provides the method
  * {@link Job#immediate(Object)}. Thus the above code could instead be written
- * as follows: blockquote>
+ * as follows: <blockquote>
  *
  * <pre>
  * FutureValue&lt;String&gt; name = futureCall(new GetNameJob());

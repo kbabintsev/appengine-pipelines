@@ -33,7 +33,7 @@ public interface PipelineService {
      * @return The pipeline handle. This String uniquely identifies the newly
      * started Pipeline. It also uniquely identifies the root job of the
      * Pipeline. The String may be used as an argument to
-     * {@link #getJobInfo(UUID)}, {@link #stopPipeline(UUID)}, and
+     * {@link #getJobInfo(UUID, UUID)}, {@link #stopPipeline(UUID)}, and
      * {@link #deletePipelineRecords(UUID, boolean, boolean)}
      */
     UUID startNewPipeline(Job0<?> jobInstance, JobSetting... settings);
@@ -49,7 +49,7 @@ public interface PipelineService {
      * @return The pipeline handle. This String uniquely identifies the newly
      * started Pipeline. It also uniquely identifies the root job of the
      * Pipeline. The String may be used as an argument to
-     * {@link #getJobInfo(UUID)}, {@link #stopPipeline(UUID)}, and
+     * {@link #getJobInfo(UUID, UUID)}, {@link #stopPipeline(UUID)}, and
      * {@link #deletePipelineRecords(UUID, boolean, boolean)}
      */
     <T1> UUID startNewPipeline(Job1<?, T1> jobInstance, T1 arg1, JobSetting... settings);
@@ -67,7 +67,7 @@ public interface PipelineService {
      * @return The pipeline handle. This String uniquely identifies the newly
      * started Pipeline. It also uniquely identifies the root job of the
      * Pipeline. The String may be used as an argument to
-     * {@link #getJobInfo(UUID)}, {@link #stopPipeline(UUID)}, and
+     * {@link #getJobInfo(UUID, UUID)}, {@link #stopPipeline(UUID)}, and
      * {@link #deletePipelineRecords(UUID, boolean, boolean)}
      */
     <T1, T2> UUID startNewPipeline(Job2<?, T1, T2> jobInstance, T1 arg1, T2 arg2,
@@ -88,7 +88,7 @@ public interface PipelineService {
      * @return The pipeline handle. This String uniquely identifies the newly
      * started Pipeline. It also uniquely identifies the root job of the
      * Pipeline. The String may be used as an argument to
-     * {@link #getJobInfo(UUID)}, {@link #stopPipeline(UUID)}, and
+     * {@link #getJobInfo(UUID, UUID)}, {@link #stopPipeline(UUID)}, and
      * {@link #deletePipelineRecords(UUID, boolean, boolean)}
      */
     <T1, T2, T3> UUID startNewPipeline(Job3<?, T1, T2, T3> jobInstance, T1 arg1, T2 arg2, T3 arg3,
@@ -111,7 +111,7 @@ public interface PipelineService {
      * @return The pipeline handle. This String uniquely identifies the newly
      * started Pipeline. It also uniquely identifies the root job of the
      * Pipeline. The String may be used as an argument to
-     * {@link #getJobInfo(UUID)}, {@link #stopPipeline(UUID)}, and
+     * {@link #getJobInfo(UUID, UUID)}, {@link #stopPipeline(UUID)}, and
      * {@link #deletePipelineRecords(UUID, boolean, boolean)}
      */
     <T1, T2, T3, T4> UUID startNewPipeline(Job4<?, T1, T2, T3, T4> jobInstance, T1 arg1, T2 arg2,
@@ -136,7 +136,7 @@ public interface PipelineService {
      * @return The pipeline handle. This String uniquely identifies the newly
      * started Pipeline. It also uniquely identifies the root job of the
      * Pipeline. The String may be used as an argument to
-     * {@link #getJobInfo(UUID)}, {@link #stopPipeline(UUID)}, and
+     * {@link #getJobInfo(UUID, UUID)}, {@link #stopPipeline(UUID)}, and
      * {@link #deletePipelineRecords(UUID, boolean, boolean)}
      */
     <T1, T2, T3, T4, T5> UUID startNewPipeline(Job5<?, T1, T2, T3, T4, T5> jobInstance, T1 arg1,
@@ -163,7 +163,7 @@ public interface PipelineService {
      * @return The pipeline handle. This String uniquely identifies the newly
      * started Pipeline. It also uniquely identifies the root job of the
      * Pipeline. The String may be used as an argument to
-     * {@link #getJobInfo(UUID)}, {@link #stopPipeline(UUID)}, and
+     * {@link #getJobInfo(UUID, UUID)}, {@link #stopPipeline(UUID)}, and
      * {@link #deletePipelineRecords(UUID, boolean, boolean)},
      */
     <T1, T2, T3, T4, T5, T6> UUID startNewPipeline(Job6<?, T1, T2, T3, T4, T5, T6> jobInstance,
@@ -184,7 +184,7 @@ public interface PipelineService {
      * @return The pipeline handle. This String uniquely identifies the newly
      * started Pipeline. It also uniquely identifies the root job of the
      * Pipeline. The String may be used as an argument to
-     * {@link #getJobInfo(UUID)}, {@link #stopPipeline(UUID)}, and
+     * {@link #getJobInfo(UUID, UUID)}, {@link #stopPipeline(UUID)}, and
      * {@link #deletePipelineRecords(UUID, boolean, boolean)}
      */
     UUID startNewPipelineUnchecked(Job<?> jobInstance, Object[] arguments, JobSetting... settings);
