@@ -56,5 +56,5 @@ public interface FutureValue<E> extends Value<E> {
      *
      * @return a String uniquely identifying the source job.
      */
-    UUID getSourceJobHandle();
+    UUID getSourceJobKey();
 }

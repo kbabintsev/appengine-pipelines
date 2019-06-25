@@ -130,9 +130,9 @@ public class PipelineServiceImpl implements PipelineService {
     }
 
     @Override
-    public void submitPromisedValue(final UUID pipelineKey, final UUID promiseHandle, final Object value)
+    public void submitPromisedValue(final UUID pipelineKey, final UUID promiseKey, final Object value)
             throws NoSuchObjectException, OrphanedObjectException {
-        pipelineManager.acceptPromisedValue(pipelineKey, promiseHandle, value);
+        pipelineManager.acceptPromisedValue(pipelineKey, promiseKey, value);
     }
 
     @Override

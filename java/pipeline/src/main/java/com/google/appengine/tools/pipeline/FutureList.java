@@ -51,18 +51,18 @@ import java.util.UUID;
  * @author rudominer@google.com (Mitch Rudominer)
  */
 public final class FutureList<E> implements Value<List<E>> {
-    private final UUID pipelineHandle;
+    private final UUID pipelineKey;
     private final List<? extends Value<E>> listOfValues;
 
     /**
      * Constructs a {@code FutureList} from a {@code List} of {@code Values}.
      *
-     * @param pipelineHandle pipelineKey
+     * @param pipelineKey  pipelineKey
      * @param listOfValues a {@code List} of {@code Values}. This object takes
      *                     ownership of the list. The client should not continue to hold a
      */
-    public FutureList(final UUID pipelineHandle, final List<? extends Value<E>> listOfValues) {
-        this.pipelineHandle = pipelineHandle;
+    public FutureList(final UUID pipelineKey, final List<? extends Value<E>> listOfValues) {
+        this.pipelineKey = pipelineKey;
         if (null == listOfValues) {
             throw new IllegalArgumentException("lisOfValues is null");
         }
@@ -70,8 +70,8 @@ public final class FutureList<E> implements Value<List<E>> {
     }
 
     @SafeVarargs
-    public FutureList(final UUID pipelineHandle, final Value<E> first, final Value<E>... rest) {
-        this(pipelineHandle, ImmutableList.<Value<E>>builder().add(first).add(rest).build());
+    public FutureList(final UUID pipelineKey, final Value<E> first, final Value<E>... rest) {
+        this(pipelineKey, ImmutableList.<Value<E>>builder().add(first).add(rest).build());
     }
 
     /**
@@ -83,7 +83,7 @@ public final class FutureList<E> implements Value<List<E>> {
     }
 
     @Override
-    public UUID getPipelineHandle() {
-        return pipelineHandle;
+    public UUID getPipelineKey() {
+        return pipelineKey;
     }
 }

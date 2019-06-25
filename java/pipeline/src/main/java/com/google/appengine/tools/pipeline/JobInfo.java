@@ -27,6 +27,28 @@ import java.util.UUID;
  */
 public interface JobInfo {
 
+    static State convertState(final JobRecord.State jobState, final UUID exceptionKey) {
+        switch (jobState) {
+            case WAITING_TO_RUN:
+            case WAITING_TO_FINALIZE:
+                return JobInfo.State.RUNNING;
+            case FINALIZED:
+                return JobInfo.State.COMPLETED_SUCCESSFULLY;
+            case CANCELED:
+                return JobInfo.State.CANCELED_BY_REQUEST;
+            case STOPPED:
+                if (null == exceptionKey) {
+                    return JobInfo.State.STOPPED_BY_REQUEST;
+                } else {
+                    return JobInfo.State.STOPPED_BY_ERROR;
+                }
+            case RETRY:
+                return JobInfo.State.WAITING_TO_RETRY;
+            default:
+                throw new RuntimeException("Unrecognized state: " + jobState);
+        }
+    }
+
     /**
      * Get the job's {@link State}.
      */
@@ -83,27 +105,5 @@ public interface JobInfo {
          * failure in a sibling job.
          */
         CANCELED_BY_REQUEST
-    }
-
-    static State convertState(final JobRecord.State jobState, final UUID exceptionKey) {
-        switch (jobState) {
-            case WAITING_TO_RUN:
-            case WAITING_TO_FINALIZE:
-                return JobInfo.State.RUNNING;
-            case FINALIZED:
-                return JobInfo.State.COMPLETED_SUCCESSFULLY;
-            case CANCELED:
-                return JobInfo.State.CANCELED_BY_REQUEST;
-            case STOPPED:
-                if (null == exceptionKey) {
-                    return JobInfo.State.STOPPED_BY_REQUEST;
-                } else {
-                    return JobInfo.State.STOPPED_BY_ERROR;
-                }
-            case RETRY:
-                return JobInfo.State.WAITING_TO_RETRY;
-            default:
-                throw new RuntimeException("Unrecognized state: " + jobState);
-        }
     }
 }

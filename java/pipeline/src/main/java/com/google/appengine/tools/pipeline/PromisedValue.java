@@ -23,25 +23,25 @@ import java.util.UUID;
  * An instance of {@code PromisedValue} is obtained from within the {@code
  * run()} method of a Job via the method {@link Job#newPromise()}. Once
  * obtained in this way, an instance of {@code PromisedValue} may be used in the
- * same way that any {@link FutureValue} may be used. The {@link #getHandle()
- * handle} of a promised value is an opaque identifier that uniquely represents
- * the value slot to the framework. This handle should be passed to the external
- * agent who will use the handle to supply the promised value via the method
+ * same way that any {@link FutureValue} may be used. The {@link #getKey()
+ * key} of a promised value is an opaque identifier that uniquely represents
+ * the value slot to the framework. This key should be passed to the external
+ * agent who will use the key to supply the promised value via the method
  * {@link PipelineService#submitPromisedValue(UUID, UUID, Object)}. For example the
  * following code might appear inside of the {@code run()} method of a Job.
  * <blockquote>
  *
  * <pre>
  * PromisedValue<java.lang.Integer> x = newPromise()
- * String xHandle = x.getHandle();
- * invokeExternalAgent(xHandle)
+ * UUID xKey = x.getKey();
+ * invokeExternalAgent(xKey)
  * futureCall(new UsesIntegerJob(), x);
  * </pre>
  *
  * </blockquote> The external agent will provide the promised integer value at
  * some point in the future by invoking {@code
- * pipelineService.acceptPromisedValue(handle, value)}, where {@code handle} is
- * a String equal to {@code xHandle} and {@code value} is some integer value.
+ * pipelineService.acceptPromisedValue(key, value)}, where {@code key} is
+ * a String equal to {@code xKey} and {@code value} is some integer value.
  * The framework will then invoke the {@code run()} method of the {@code
  * UsesIntegerJob} passing in {@code value}.
  * Note that if the run method of the Job that created the promisedValue failed
@@ -53,5 +53,5 @@ import java.util.UUID;
  * @author rudominer@google.com (Mitch Rudominer)
  */
 public interface PromisedValue<E> extends FutureValue<E> {
-    UUID getHandle();
+    UUID getKey();
 }

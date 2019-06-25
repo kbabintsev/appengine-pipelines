@@ -239,7 +239,7 @@ public final class PipelineManager {
                     transaction,
                     updateSpec.getFinalTransaction(),
                     value,
-                    value.getPipelineHandle(),
+                    value.getPipelineKey(),
                     generatorKey,
                     jobRecord.getQueueSettings(),
                     graphKey,
@@ -295,7 +295,7 @@ public final class PipelineManager {
      *                         to updateSpec. That must be done by the caller.
      * @param value            A {@code Value}. {@code Null} is interpreted as an
      *                         {@code ImmediateValue} with a value of {@code Null}.
-     * @param pipelineKey       The pipelineKey of the Pipeline in which the given Barrier
+     * @param pipelineKey      The pipelineKey of the Pipeline in which the given Barrier
      *                         lives.
      * @param generatorJobKey  The key of the generator Job of the local graph in
      *                         which the given barrier lives, or {@code null} if the barrier lives
@@ -421,14 +421,14 @@ public final class PipelineManager {
     }
 
     /**
-     * Retrieves a JobRecord for the specified job handle. The returned instance
+     * Retrieves a JobRecord for the specified job key. The returned instance
      * will be only partially inflated. The run and finalize barriers will not be
      * available but the output slot will be.
      *
      * @param pipelineKey The key of the pipeline
-     * @param jobKey  The handle of a job.
+     * @param jobKey      The key of a job.
      * @return The corresponding JobRecord
-     * @throws NoSuchObjectException If a JobRecord with the given handle cannot
+     * @throws NoSuchObjectException If a JobRecord with the given key cannot
      *                               be found in the data store.
      */
     public JobRecord getJob(final UUID pipelineKey, final UUID jobKey) throws NoSuchObjectException {
@@ -446,8 +446,8 @@ public final class PipelineManager {
     /**
      * Changes the state of the specified job to STOPPED.
      *
-     * @param jobKey The handle of a job
-     * @throws NoSuchObjectException If a JobRecord with the given handle cannot
+     * @param jobKey The key of a job
+     * @throws NoSuchObjectException If a JobRecord with the given key cannot
      *                               be found in the data store.
      */
     public void stopJob(final UUID pipelineKey, final UUID jobKey) throws NoSuchObjectException {
@@ -462,8 +462,8 @@ public final class PipelineManager {
     /**
      * Sends cancellation request to the root job.
      *
-     * @param jobKey The handle of a job
-     * @throws NoSuchObjectException If a JobRecord with the given handle cannot
+     * @param jobKey The key of a job
+     * @throws NoSuchObjectException If a JobRecord with the given key cannot
      *                               be found in the data store.
      */
     public void cancelJob(final UUID pipelineKey, final UUID jobKey) throws NoSuchObjectException {
@@ -480,27 +480,27 @@ public final class PipelineManager {
     /**
      * Delete all data store entities corresponding to the given pipeline.
      *
-     * @param pipelineHandle The handle of the pipeline to be deleted
-     * @param force          If this parameter is not {@code true} then this method will
-     *                       throw an {@link IllegalStateException} if the specified pipeline is
-     *                       not in the {@link State#FINALIZED} or {@link State#STOPPED} state.
-     * @param async          If this parameter is {@code true} then instead of performing
-     *                       the delete operation synchronously, this method will enqueue a task
-     *                       to perform the operation.
+     * @param pipelineKey The key of the pipeline to be deleted
+     * @param force       If this parameter is not {@code true} then this method will
+     *                    throw an {@link IllegalStateException} if the specified pipeline is
+     *                    not in the {@link State#FINALIZED} or {@link State#STOPPED} state.
+     * @param async       If this parameter is {@code true} then instead of performing
+     *                    the delete operation synchronously, this method will enqueue a task
+     *                    to perform the operation.
      * @throws NoSuchObjectException If there is no Job with the given key.
      * @throws IllegalStateException If {@code force = false} and the specified
      *                               pipeline is not in the {@link State#FINALIZED} or
      *                               {@link State#STOPPED} state.
      */
-    public void deletePipelineRecords(final UUID pipelineHandle, final boolean force, final boolean async)
+    public void deletePipelineRecords(final UUID pipelineKey, final boolean force, final boolean async)
             throws NoSuchObjectException, IllegalStateException {
-        checkNonEmpty(pipelineHandle, "pipelineHandle");
-        backEnd.deletePipeline(pipelineHandle, force, async);
+        checkNonEmpty(pipelineKey, "pipelineKey");
+        backEnd.deletePipeline(pipelineKey, force, async);
     }
 
-    public void acceptPromisedValue(final UUID pipelineKey, final UUID promiseHandle, final Object value)
+    public void acceptPromisedValue(final UUID pipelineKey, final UUID promiseKey, final Object value)
             throws NoSuchObjectException, OrphanedObjectException {
-        checkNonEmpty(promiseHandle, "promiseHandle");
+        checkNonEmpty(promiseKey, "promiseKey");
         Slot slot = null;
         // It is possible, though unlikely, that we might be asked to accept a
         // promise before the slot to hold the promise has been saved. We will try 5
@@ -511,10 +511,10 @@ public final class PipelineManager {
             while (slot == null) {
                 attempts++;
                 try {
-                    slot = backEnd.querySlot(pipelineKey, promiseHandle, false);
+                    slot = backEnd.querySlot(pipelineKey, promiseKey, false);
                 } catch (NoSuchObjectException e) {
                     if (attempts >= 5) {
-                        throw new NoSuchObjectException("There is no promise with handle " + promiseHandle);
+                        throw new NoSuchObjectException("There is no promise with key " + promiseKey);
                     }
                     try {
                         Thread.sleep(Duration.ofSeconds((long) Math.pow(2.0, attempts - 1)).toMillis());
@@ -543,18 +543,18 @@ public final class PipelineManager {
         final UUID childGraphKey = generatorJob.getChildGraphKey();
         if (null == childGraphKey) {
             // The generator job has not been saved with a childGraphKey yet. This can happen if the
-            // promise handle leaked out to an external thread before the job that generated it
+            // promise key leaked out to an external thread before the job that generated it
             // had finished.
             throw new NoSuchObjectException(
                     "The framework is not ready to accept the promised value yet. "
-                            + "Please try again after the job that generated the promis handle has completed.");
+                            + "Please try again after the job that generated the promis key has completed.");
         }
         if (!childGraphKey.equals(slot.getGraphKey())) {
             // The slot has been orphaned
-            throw new OrphanedObjectException(promiseHandle);
+            throw new OrphanedObjectException(promiseKey);
         }
         final UpdateSpec updateSpec = new UpdateSpec(slot.getPipelineKey());
-        registerSlotFilled(updateSpec.newTransaction("acceptPromisedValue:" + promiseHandle), updateSpec.getFinalTransaction(), generatorJob.getQueueSettings(), slot, value);
+        registerSlotFilled(updateSpec.newTransaction("acceptPromisedValue:" + promiseKey), updateSpec.getFinalTransaction(), generatorJob.getQueueSettings(), slot, value);
         backEnd.save(updateSpec, generatorJob.getQueueSettings());
     }
 

@@ -69,11 +69,11 @@ import java.util.UUID;
  */
 public final class ImmediateValue<E> implements Value<E> {
 
-    private final UUID pipelineHandle;
+    private final UUID pipelineKey;
     private final E value;
 
-    public ImmediateValue(final UUID pipelineHandle, final E val) {
-        this.pipelineHandle = pipelineHandle;
+    public ImmediateValue(final UUID pipelineKey, final E val) {
+        this.pipelineKey = pipelineKey;
         this.value = val;
     }
 
@@ -87,7 +87,7 @@ public final class ImmediateValue<E> implements Value<E> {
     }
 
     @Override
-    public UUID getPipelineHandle() {
-        return pipelineHandle;
+    public UUID getPipelineKey() {
+        return pipelineKey;
     }
 }

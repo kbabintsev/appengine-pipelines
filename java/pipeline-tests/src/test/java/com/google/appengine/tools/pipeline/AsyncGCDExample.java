@@ -50,7 +50,7 @@ public class AsyncGCDExample {
         public Value<Void> run() {
             PromisedValue<Integer> a = newPromise();
             PromisedValue<Integer> b = newPromise();
-            asyncAskUserForTwoIntegers(a.getHandle(), b.getHandle());
+            asyncAskUserForTwoIntegers(a.getKey(), b.getKey());
             FutureValue<Integer> gcd = futureCall(new GCDExample.GCDJob(), a, b);
             // Don't ask the user for his name until after he has already
             // answered the first prompt asking for two integers.
@@ -59,7 +59,7 @@ public class AsyncGCDExample {
             return null;
         }
 
-        private void asyncAskUserForTwoIntegers(final UUID aHandle, final UUID bHandle) {
+        private void asyncAskUserForTwoIntegers(final UUID aKey, final UUID bKey) {
             Thread thread = new Thread() {
                 @Override
                 public void run() {
@@ -71,8 +71,8 @@ public class AsyncGCDExample {
                     int a = callback.getFirstInt();
                     int b = callback.getSecondInt();
                     try {
-                        service.submitPromisedValue(getPipelineKey(), aHandle, a);
-                        service.submitPromisedValue(getPipelineKey(), bHandle, b);
+                        service.submitPromisedValue(getPipelineKey(), aKey, a);
+                        service.submitPromisedValue(getPipelineKey(), bKey, b);
                     } catch (NoSuchObjectException e) {
                         throw new RuntimeException(e);
                     } catch (OrphanedObjectException f) {
@@ -93,11 +93,11 @@ public class AsyncGCDExample {
         @Override
         public Value<String> run() {
             PromisedValue<String> userName = newPromise();
-            asyncAskUserForName(userName.getHandle());
+            asyncAskUserForName(userName.getKey());
             return userName;
         }
 
-        private void asyncAskUserForName(final UUID handle) {
+        private void asyncAskUserForName(final UUID key) {
             Thread thread = new Thread() {
                 @Override
                 public void run() {
@@ -108,7 +108,7 @@ public class AsyncGCDExample {
                     }
                     String name = callback.getUserName();
                     try {
-                        service.submitPromisedValue(getPipelineKey(), handle, name);
+                        service.submitPromisedValue(getPipelineKey(), key, name);
                     } catch (NoSuchObjectException e) {
                         throw new RuntimeException(e);
                     } catch (OrphanedObjectException f) {

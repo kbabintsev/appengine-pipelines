@@ -58,14 +58,14 @@ public class OrphanedJobGraphTest extends PipelineTest {
     /**
      * Tests that the method
      * {@link PipelineService#submitPromisedValue(UUID, UUID, Object)} behaves
-     * properly if the promise handle has been orphaned.
+     * properly if the promise key has been orphaned.
      * <p>
      * This test is similar to {@link #testOrphanedJobGraph()} except that this
      * time the child job graph is supposed to be activated asynchronously vai a
      * promised value. We test that
      * {@link PipelineService#submitPromisedValue(UUID, UUID, Object)} will throw a
      * {@link OrphanedObjectException} when {@code submitPromisedValue()} is
-     * invoked on an orphaned promise handle.
+     * invoked on an orphaned promise key.
      */
     public void testOrphanedJobGraphWithPromisedValue() throws Exception {
         doOrphanedJobGraphTest(true);
@@ -82,8 +82,8 @@ public class OrphanedJobGraphTest extends PipelineTest {
     private void doOrphanedJobGraphTest(boolean usePromisedValue) throws Exception {
 
         // Run GeneratorJob
-        UUID pipelineHandle = service.startNewPipeline(new GeneratorJob(usePromisedValue));
-        waitForJobToComplete(pipelineHandle);
+        UUID pipelineKey = service.startNewPipeline(new GeneratorJob(usePromisedValue));
+        waitForJobToComplete(pipelineKey);
 
         // and wait for thread to finish too
         Thread.sleep(SUPPLY_VALUE_DELAY);
@@ -98,8 +98,8 @@ public class OrphanedJobGraphTest extends PipelineTest {
 
         // Get all of the Pipeline objects so we can confirm the orphaned jobs are
         // really there
-        PipelineObjects allObjects = pipelineManager.queryFullPipeline(pipelineHandle);
-        UUID rootJobKey = pipelineHandle;
+        PipelineObjects allObjects = pipelineManager.queryFullPipeline(pipelineKey);
+        UUID rootJobKey = pipelineKey;
         JobRecord rootJob = allObjects.getJobs().get(rootJobKey);
         assertNotNull(rootJob);
         UUID graphKey = rootJob.getChildGraphKey();
@@ -144,7 +144,7 @@ public class OrphanedJobGraphTest extends PipelineTest {
         }
 
         // Now delete the whole Pipeline
-        service.deletePipelineRecords(pipelineHandle);
+        service.deletePipelineRecords(pipelineKey);
 
         // Check that all jobs have been deleted
         AppEngineBackEnd backend = (AppEngineBackEnd) pipelineManager.getBackEnd();
@@ -182,7 +182,7 @@ public class OrphanedJobGraphTest extends PipelineTest {
             if (usePromise) {
                 PromisedValue<Integer> promisedValue = newPromise();
                 (new Thread(new SupplyPromisedValueRunnable(service, ApiProxy.getCurrentEnvironment(),
-                        getPipelineKey(), promisedValue.getHandle(), runCount.get()))).start();
+                        getPipelineKey(), promisedValue.getKey(), runCount.get()))).start();
                 logger.info("Starting SupplyPromisedValueRunnable for run " + runCount);
                 dummyValue = promisedValue;
             } else {
@@ -216,14 +216,14 @@ public class OrphanedJobGraphTest extends PipelineTest {
         public static AtomicInteger orphanedObjectExcetionCount = new AtomicInteger(0);
         private final PipelineService service;
         private final UUID pipelineKey;
-        private UUID promiseHandle;
+        private UUID promiseKey;
         private ApiProxy.Environment apiProxyEnvironment;
         private int runNum;
 
-        public SupplyPromisedValueRunnable(final PipelineService service, ApiProxy.Environment environment, final UUID pipelineId, UUID promiseHandle, int runNum) {
+        public SupplyPromisedValueRunnable(final PipelineService service, ApiProxy.Environment environment, final UUID pipelineKey, UUID promiseKey, int runNum) {
             this.service = service;
-            this.pipelineKey = pipelineId;
-            this.promiseHandle = promiseHandle;
+            this.pipelineKey = pipelineKey;
+            this.promiseKey = promiseKey;
             this.apiProxyEnvironment = environment;
             this.runNum = runNum;
         }
@@ -233,20 +233,20 @@ public class OrphanedJobGraphTest extends PipelineTest {
             ApiProxy.setEnvironmentForCurrentThread(apiProxyEnvironment);
             // TODO(user): Try something better than sleep to make sure
             // this happens after the processing the caller's runTask
-            logger.info("SupplyPromisedValueRunnable for run " + runNum + " and handle " + promiseHandle + " going asleep");
+            logger.info("SupplyPromisedValueRunnable for run " + runNum + " and key " + promiseKey + " going asleep");
             try {
                 Thread.sleep(SUPPLY_VALUE_DELAY);
             } catch (InterruptedException e1) {
                 // ignore - use uninterruptables
             }
-            logger.info("SupplyPromisedValueRunnable for run " + runNum + " and handle " + promiseHandle + " awake");
+            logger.info("SupplyPromisedValueRunnable for run " + runNum + " and key " + promiseKey + " awake");
             try {
-                service.submitPromisedValue(pipelineKey, promiseHandle, 0);
+                service.submitPromisedValue(pipelineKey, promiseKey, 0);
             } catch (NoSuchObjectException e) {
                 throw new RuntimeException(e);
             } catch (OrphanedObjectException f) {
                 orphanedObjectExcetionCount.incrementAndGet();
-                logger.info("SupplyPromisedValueRunnable for run " + runNum + " and handle " + promiseHandle + " gon OrphanedObjectException");
+                logger.info("SupplyPromisedValueRunnable for run " + runNum + " and key " + promiseKey + " gon OrphanedObjectException");
             }
         }
     }

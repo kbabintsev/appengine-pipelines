@@ -424,9 +424,9 @@ public class MiscPipelineTest extends PipelineTest {
         public Value<String> run() throws Exception {
             PromisedValue<String> promise = newPromise();
             FutureValue<Void> child1 = futureCall(
-                    new FillPromiseJob(), immediate("1"), immediate(promise.getHandle()));
+                    new FillPromiseJob(), immediate("1"), immediate(promise.getKey()));
             FutureValue<Void> child2 = futureCall(
-                    new FillPromiseJob(), immediate("2"), immediate(promise.getHandle()), waitFor(child1));
+                    new FillPromiseJob(), immediate("2"), immediate(promise.getKey()), waitFor(child1));
             FutureValue<String> child3 = futureCall(new ReadPromiseJob(), promise, waitFor(child2));
             // If we return promise directly then the value would be "1" rather than "2", see b/12216307
             //return promise;
@@ -446,8 +446,8 @@ public class MiscPipelineTest extends PipelineTest {
     private static class FillPromiseJob extends Job2<Void, String, UUID> {
 
         @Override
-        public Value<Void> run(String value, UUID handle) throws Exception {
-            service.submitPromisedValue(getPipelineKey(), handle, value);
+        public Value<Void> run(String value, UUID key) throws Exception {
+            service.submitPromisedValue(getPipelineKey(), key, value);
             return null;
         }
     }
@@ -587,7 +587,7 @@ public class MiscPipelineTest extends PipelineTest {
         @Override
         public Value<String> run() {
             PromisedValue<List<Temp<String>>> ps = newPromise();
-            futureCall(new PopulatePromisedValueJob(), immediate(ps.getHandle()));
+            futureCall(new PopulatePromisedValueJob(), immediate(ps.getKey()));
             return futureCall(new ConsumePromisedValueJob(), ps);
         }
     }
@@ -596,12 +596,12 @@ public class MiscPipelineTest extends PipelineTest {
     private static class PopulatePromisedValueJob extends Job1<Void, UUID> {
 
         @Override
-        public Value<Void> run(UUID handle) throws NoSuchObjectException, OrphanedObjectException {
+        public Value<Void> run(UUID key) throws NoSuchObjectException, OrphanedObjectException {
             List<Temp<String>> list = new ArrayList<>();
             list.add(new Temp<>("hello"));
             list.add(new Temp<>(" "));
             list.add(new Temp<>("world"));
-            pipelineManager.acceptPromisedValue(getPipelineKey(), handle, list);
+            pipelineManager.acceptPromisedValue(getPipelineKey(), key, list);
             return null;
         }
     }
@@ -702,6 +702,7 @@ public class MiscPipelineTest extends PipelineTest {
             throw new IllegalStateException("simulated");
         }
     }
+
     @SuppressWarnings("serial")
     private static class StatusLinesLoggerJob extends Job0<Void> {
         @Override

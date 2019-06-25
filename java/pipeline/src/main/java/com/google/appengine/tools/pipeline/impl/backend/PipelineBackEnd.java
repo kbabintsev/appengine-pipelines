@@ -80,7 +80,7 @@ public interface PipelineBackEnd {
      * Get the JobRecord with the given Key from the data store, and optionally
      * also get some of the Barriers and Slots associated with it.
      *
-     * @param pipelineKey   The key of the JobRecord to be fetched
+     * @param pipelineKey The key of the JobRecord to be fetched
      * @return A {@code JobRecord}, possibly with a partially-inflated associated
      * graph of objects.
      * @throws NoSuchObjectException If Either the JobRecord or any of the
@@ -145,16 +145,16 @@ public interface PipelineBackEnd {
      * Delete all datastore entities corresponding to the given pipeline.
      *
      * @param pipelineKey The root job key identifying the pipeline
-     * @param force      If this parameter is not {@code true} then this method will
-     *                   throw an {@link IllegalStateException} if the specified pipeline is
-     *                   not in the
-     *                   {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#FINALIZED}
-     *                   or
-     *                   {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#STOPPED}
-     *                   state.
-     * @param async      If this parameter is {@code true} then instead of performing
-     *                   the delete operation synchronously, this method will enqueue a task
-     *                   to perform the operation.
+     * @param force       If this parameter is not {@code true} then this method will
+     *                    throw an {@link IllegalStateException} if the specified pipeline is
+     *                    not in the
+     *                    {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#FINALIZED}
+     *                    or
+     *                    {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#STOPPED}
+     *                    state.
+     * @param async       If this parameter is {@code true} then instead of performing
+     *                    the delete operation synchronously, this method will enqueue a task
+     *                    to perform the operation.
      * @throws IllegalStateException If {@code force = false} and the specified
      *                               pipeline is not in the
      *                               {@link com.google.appengine.tools.pipeline.impl.model.JobRecord.State#FINALIZED}

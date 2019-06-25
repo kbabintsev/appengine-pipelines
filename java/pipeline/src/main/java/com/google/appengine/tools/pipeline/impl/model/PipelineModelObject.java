@@ -82,7 +82,7 @@ public abstract class PipelineModelObject implements Record {
      * Construct a new PipelineModelObject from the provided data.
      *
      * @param tableName       The name of the table where entity is stored
-     * @param pipelineKey      The key of the root job for this pipeline. This must be
+     * @param pipelineKey     The key of the root job for this pipeline. This must be
      *                        non-null, except in the case that we are currently constructing the
      *                        root job. In that case {@code thisKey} and {@code egParentKey} must
      *                        both be null and this must be a {@link JobRecord}.
@@ -128,7 +128,7 @@ public abstract class PipelineModelObject implements Record {
      * parent.
      *
      * @param tableName       The name of the table where entity is stored
-     * @param pipelineKey      The key of the root job for this pipeline. This must be
+     * @param pipelineKey     The key of the root job for this pipeline. This must be
      *                        non-null, except in the case that we are currently constructing the
      *                        root job. In that case this must be a {@link JobRecord}.
      * @param generatorJobKey The key of the job whose run() method created this

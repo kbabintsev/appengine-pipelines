@@ -30,7 +30,7 @@ public interface PipelineService {
      *
      * @param jobInstance A job instance to use as the root job of the Pipeline
      * @param settings    Optional one or more {@code JobSetting}
-     * @return The pipeline handle. This String uniquely identifies the newly
+     * @return The pipeline key. This String uniquely identifies the newly
      * started Pipeline. It also uniquely identifies the root job of the
      * Pipeline. The String may be used as an argument to
      * {@link #getJobInfo(UUID, UUID)}, {@link #stopPipeline(UUID)}, and
@@ -46,7 +46,7 @@ public interface PipelineService {
      * @param jobInstance A job instance to use as the root job of the Pipeline
      * @param arg1        The first argument to the root job
      * @param settings    Optional one or more {@code JobSetting}
-     * @return The pipeline handle. This String uniquely identifies the newly
+     * @return The pipeline key. This String uniquely identifies the newly
      * started Pipeline. It also uniquely identifies the root job of the
      * Pipeline. The String may be used as an argument to
      * {@link #getJobInfo(UUID, UUID)}, {@link #stopPipeline(UUID)}, and
@@ -64,7 +64,7 @@ public interface PipelineService {
      * @param arg1        The first argument to the root job
      * @param arg2        The second argument to the root job
      * @param settings    Optional one or more {@code JobSetting}
-     * @return The pipeline handle. This String uniquely identifies the newly
+     * @return The pipeline key. This String uniquely identifies the newly
      * started Pipeline. It also uniquely identifies the root job of the
      * Pipeline. The String may be used as an argument to
      * {@link #getJobInfo(UUID, UUID)}, {@link #stopPipeline(UUID)}, and
@@ -85,7 +85,7 @@ public interface PipelineService {
      * @param arg2        The second argument to the root job
      * @param arg3        The third argument to the root job
      * @param settings    Optional one or more {@code JobSetting}
-     * @return The pipeline handle. This String uniquely identifies the newly
+     * @return The pipeline key. This String uniquely identifies the newly
      * started Pipeline. It also uniquely identifies the root job of the
      * Pipeline. The String may be used as an argument to
      * {@link #getJobInfo(UUID, UUID)}, {@link #stopPipeline(UUID)}, and
@@ -108,7 +108,7 @@ public interface PipelineService {
      * @param arg3        The third argument to the root job
      * @param arg4        The fourth argument to the root job
      * @param settings    Optional one or more {@code JobSetting}
-     * @return The pipeline handle. This String uniquely identifies the newly
+     * @return The pipeline key. This String uniquely identifies the newly
      * started Pipeline. It also uniquely identifies the root job of the
      * Pipeline. The String may be used as an argument to
      * {@link #getJobInfo(UUID, UUID)}, {@link #stopPipeline(UUID)}, and
@@ -133,7 +133,7 @@ public interface PipelineService {
      * @param arg4        The fourth argument to the root job
      * @param arg5        The fifth argument to the root job
      * @param settings    Optional one or more {@code JobSetting}
-     * @return The pipeline handle. This String uniquely identifies the newly
+     * @return The pipeline key. This String uniquely identifies the newly
      * started Pipeline. It also uniquely identifies the root job of the
      * Pipeline. The String may be used as an argument to
      * {@link #getJobInfo(UUID, UUID)}, {@link #stopPipeline(UUID)}, and
@@ -160,7 +160,7 @@ public interface PipelineService {
      * @param arg5        The fifth argument to the root job
      * @param arg6        The sixth argument to the root job
      * @param settings    Optional one or more {@code JobSetting}
-     * @return The pipeline handle. This String uniquely identifies the newly
+     * @return The pipeline key. This String uniquely identifies the newly
      * started Pipeline. It also uniquely identifies the root job of the
      * Pipeline. The String may be used as an argument to
      * {@link #getJobInfo(UUID, UUID)}, {@link #stopPipeline(UUID)}, and
@@ -181,7 +181,7 @@ public interface PipelineService {
      *                    preferable to use one of the type-safe versions of
      *                    {@code startNewPipeline()} instead of using this method.
      * @param settings    Optional one or more {@code JobSetting}
-     * @return The pipeline handle. This String uniquely identifies the newly
+     * @return The pipeline key. This String uniquely identifies the newly
      * started Pipeline. It also uniquely identifies the root job of the
      * Pipeline. The String may be used as an argument to
      * {@link #getJobInfo(UUID, UUID)}, {@link #stopPipeline(UUID)}, and
@@ -195,7 +195,7 @@ public interface PipelineService {
      * termination.
      *
      * @param pipelineKey The unique identifier returned from one of the
-     *                       {@code startNewPipeline()} methods
+     *                    {@code startNewPipeline()} methods
      * @throws NoSuchObjectException If the framework cannot find a Pipeline with
      *                               the given identifier.
      */
@@ -208,7 +208,7 @@ public interface PipelineService {
      * perform necessary cleanup.
      *
      * @param pipelineKey The unique identifier returned from one of the
-     *                       {@code startNewPipeline()} methods
+     *                    {@code startNewPipeline()} methods
      * @throws NoSuchObjectException If the framework cannot find a Pipeline with
      *                               the given identifier.
      */
@@ -217,8 +217,8 @@ public interface PipelineService {
     /**
      * Delete all the records associated with a pipeline from the Datastore.
      *
-     * @param pipelineKey The handle of the pipeline to be deleted. The
-     *                       specified pipeline must exist and it must not be currently running.
+     * @param pipelineKey The key of the pipeline to be deleted. The
+     *                    specified pipeline must exist and it must not be currently running.
      * @throws NoSuchObjectException If the framework cannot find a Pipeline with
      *                               the given identifier.
      * @throws IllegalStateException If the specified Pipeline is still running
@@ -229,17 +229,17 @@ public interface PipelineService {
     /**
      * Delete all the records associated with a pipeline from the datastore.
      *
-     * @param pipelineKey The handle of the pipeline to be deleted
-     * @param force          If this parameter is not {@code true} then this method will
-     *                       throw an {@link IllegalStateException} if the specified pipeline is
-     *                       has not already completed or been stopped or aborted. Invoking this
-     *                       method with {@code force = true} should only be done in unusual
-     *                       circumstances. There may still be tasks on the task queue
-     *                       corresponding to a non-completed pipeline. These tasks must be
-     *                       manually deleted through the App Engine admin console.
-     * @param async          If this parameter is {@code true} then instead of performing
-     *                       the delete operation synchronously, this method will enqueue a task
-     *                       to perform the operation.
+     * @param pipelineKey The key of the pipeline to be deleted
+     * @param force       If this parameter is not {@code true} then this method will
+     *                    throw an {@link IllegalStateException} if the specified pipeline is
+     *                    has not already completed or been stopped or aborted. Invoking this
+     *                    method with {@code force = true} should only be done in unusual
+     *                    circumstances. There may still be tasks on the task queue
+     *                    corresponding to a non-completed pipeline. These tasks must be
+     *                    manually deleted through the App Engine admin console.
+     * @param async       If this parameter is {@code true} then instead of performing
+     *                    the delete operation synchronously, this method will enqueue a task
+     *                    to perform the operation.
      * @throws NoSuchObjectException If {@code force = false} and the framework
      *                               cannot find a pipeline with the given identifier. Set {@code force
      *                               = true} in order to clean up a corrupt datastore.
@@ -255,7 +255,7 @@ public interface PipelineService {
      * the {@link #startNewPipeline(Job0, JobSetting...)} family of methods. But
      * it is also possible to query for the {@code JobInfo} of a non-root job by
      * passing in the String returned from
-     * {@link FutureValue#getSourceJobHandle()}.
+     * {@link FutureValue#getSourceJobKey()}.
      *
      * @param jobKey The unique identifier of a job
      * @return A {@link JobInfo} representing the specified job
@@ -271,33 +271,33 @@ public interface PipelineService {
      * asynchronously by some external agent and that some job is currently
      * waiting on. We call such a value a {@link PromisedValue}.
      *
-     * @param promiseHandle The unique identifier for the {@link PromisedValue}
-     *                      obtained during the execution of some job via the method
-     *                      {@link PromisedValue#getHandle()}.
-     * @param value         The value being submitted to the framework. The type of the
-     *                      value must match the type of the {@link PromisedValue}.
+     * @param promiseKey The unique identifier for the {@link PromisedValue}
+     *                   obtained during the execution of some job via the method
+     *                   {@link PromisedValue#getKey()}.
+     * @param value      The value being submitted to the framework. The type of the
+     *                   value must match the type of the {@link PromisedValue}.
      * @throws NoSuchObjectException   If the framework cannot find a
      *                                 {@link PromisedValue} identified by {@code promiseHandel}. This
      *                                 exception may indicate that this method is being invoked too soon.
      *                                 The thread that created the {@link PromisedValue} referenced by
-     *                                 {@code promiseHandle} may not have finished running the associated
+     *                                 {@code promiseKey} may not have finished running the associated
      *                                 job and saving the {@link PromisedValue} yet and this would explain
      *                                 why the framework does not yet have an object with the given
-     *                                 handle. For this reason, this exception should be caught by the
+     *                                 key. For this reason, this exception should be caught by the
      *                                 caller and this method should be attempted again after waiting some
      *                                 time. If the caller has good reason to believe that he has waited
      *                                 long enough for the other thread to have completed its work, then
      *                                 this method may indicate that the Pipeline has somehow become
      *                                 corrupted and the caller should give up.
      * @throws OrphanedObjectException If the {@link PromisedValue} reference by
-     *                                 {@code promiseHandle} has been orphaned during some failed
+     *                                 {@code promiseKey} has been orphaned during some failed
      *                                 execution of a job. In this case the caller should not attempt to
-     *                                 use {@code promiseHandle} again. Most likely a different successful
-     *                                 execution of the same job generated a different promise handle, and
+     *                                 use {@code promiseKey} again. Most likely a different successful
+     *                                 execution of the same job generated a different promise key, and
      *                                 some other thread will be submitting the promised value via that
-     *                                 non-orphaned handle.
+     *                                 non-orphaned key.
      */
-    void submitPromisedValue(UUID pipelineKey, UUID promiseHandle, Object value) throws NoSuchObjectException,
+    void submitPromisedValue(UUID pipelineKey, UUID promiseKey, Object value) throws NoSuchObjectException,
             OrphanedObjectException;
 
     void cleanBobs(String prefix);

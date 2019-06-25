@@ -490,10 +490,10 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
     static class ParentOfJobToCancel extends Job1<Integer, UUID> {
 
         @Override
-        public Value<Integer> run(UUID unblockTheAngryOneHandle) throws Exception {
+        public Value<Integer> run(UUID unblockTheAngryOneKey) throws Exception {
             trace("ParentOfJobToCancel.run");
             // Unblocks a sibling that is going to throw an exception
-            pipelineManager.acceptPromisedValue(getPipelineKey(), unblockTheAngryOneHandle, EXPECTED_RESULT1);
+            pipelineManager.acceptPromisedValue(getPipelineKey(), unblockTheAngryOneKey, EXPECTED_RESULT1);
             PromisedValue<Integer> neverReady = newPromise();
             return futureCall(new JobToCancel(), neverReady);
         }
@@ -516,7 +516,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
         public Value<Void> run() {
             trace("ParentOfGrandchildToCancelAndAngryChildJob.run");
             PromisedValue<Integer> unblockTheAngryOne = newPromise();
-            futureCall(new ParentOfJobToCancel(), immediate(unblockTheAngryOne.getHandle()),
+            futureCall(new ParentOfJobToCancel(), immediate(unblockTheAngryOne.getKey()),
                     new JobSetting.MaxAttempts(1));
             // This one failing should cause cancellation of the first job, which
             // should execute its error handling job (SimpleCatchJob);
@@ -619,10 +619,10 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
     static class JobToGetCancellationInHandleException extends Job1<Integer, UUID> {
 
         @Override
-        public Value<Integer> run(UUID unblockTheAngryOneHandle) throws Exception {
+        public Value<Integer> run(UUID unblockTheAngryOneKey) throws Exception {
             trace("JobToGetCancellationInHandleException.run");
             // Unblocks a sibling that is going to throw an exception
-            pipelineManager.acceptPromisedValue(getPipelineKey(), unblockTheAngryOneHandle, EXPECTED_RESULT1);
+            pipelineManager.acceptPromisedValue(getPipelineKey(), unblockTheAngryOneKey, EXPECTED_RESULT1);
             throw new IllegalStateException("simulated");
         }
 
@@ -670,7 +670,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
             trace("TestCancellationOfHandleExceptionJob.run");
             PromisedValue<Integer> unblockTheAngryOne = newPromise();
             futureCall(new JobToGetCancellationInHandleException(),
-                    immediate(unblockTheAngryOne.getHandle()), new JobSetting.MaxAttempts(1));
+                    immediate(unblockTheAngryOne.getKey()), new JobSetting.MaxAttempts(1));
             // This one failing should cause cancellation of the first job, which
             // should execute its error handling job (CleanupJob);
             // Delaying for a second to make sure that CleanupJob.run executes
@@ -716,7 +716,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
         public Value<Integer> run() {
             trace("TestCancellationOfReadyToRunJob.run");
             PromisedValue<Integer> unblockTheSecondOne = newPromise();
-            futureCall(new UnblockAndThrowJob(), immediate(unblockTheSecondOne.getHandle()),
+            futureCall(new UnblockAndThrowJob(), immediate(unblockTheSecondOne.getKey()),
                     new JobSetting.MaxAttempts(1));
 
             return futureCall(new PassThroughJob1<Integer>(), unblockTheSecondOne);
@@ -733,12 +733,12 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
     static class UnblockAndThrowJob extends Job1<Integer, UUID> {
 
         @Override
-        public Value<Integer> run(UUID unblockHandle) throws Exception {
+        public Value<Integer> run(UUID unblockKey) throws Exception {
             trace("UnblockAndThrowJob.run");
             // TODO(user): uncomment once b/12249138 is fixed, which will be a good test to verify
             // that a job should never return a value before all its children completed and first
             // exception if happens will override possible already filled value.
-            // PipelineManager.acceptPromisedValue(unblockHandle, EXPECTED_RESULT1);
+            // PipelineManager.acceptPromisedValue(unblockKey, EXPECTED_RESULT1);
             throw new IllegalStateException("simulated");
         }
     }

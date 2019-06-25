@@ -163,7 +163,7 @@ public final class JsonGenerator {
             if (null != jobInstanceInflated) {
                 jobClass = jobInstanceInflated.getJobDisplayName();
             } else {
-            jobClass = "";
+                jobClass = "";
             }
         }
         map.put(JOB_CLASS, jobClass);

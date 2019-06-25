@@ -33,7 +33,7 @@ public final class PromisedValueImpl<E> extends FutureValueImpl<E> implements Pr
     }
 
     @Override
-    public UUID getHandle() {
+    public UUID getKey() {
         return slot.getKey();
     }
 

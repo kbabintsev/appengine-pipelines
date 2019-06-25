@@ -73,11 +73,11 @@ public class UserGuideExamples {
 
         @SuppressWarnings("unused")
         public static void getIntFromUser(
-                final String prompt, final String userEmail, final UUID promiseHandle) {
+                final String prompt, final String userEmail, final UUID promiseKey) {
             // 1. Send the user an e-mail containing the prompt.
             // 2. Ask user to submit one more integer on some web page.
-            // 3. promiseHandle is a query string argument
-            // 4. Handler for submit invokes submitPromisedValue(promiseHandle, value)
+            // 3. promiseKey is a query string argument
+            // 4. Handler for submit invokes submitPromisedValue(promiseKey, value)
         }
 
         @Override
@@ -89,9 +89,9 @@ public class UserGuideExamples {
             final FutureValue<Integer> intermediate = futureCall(new ComplexJob(), x, y, z);
 
             // Kick off the process of retrieving the data from the external agent
-            getIntFromUser("Please give 1st int", userEmail, x.getHandle());
-            getIntFromUser("Please give 2nd int", userEmail, y.getHandle());
-            getIntFromUser("Please give 3rd int", userEmail, z.getHandle());
+            getIntFromUser("Please give 1st int", userEmail, x.getKey());
+            getIntFromUser("Please give 2nd int", userEmail, y.getKey());
+            getIntFromUser("Please give 3rd int", userEmail, z.getKey());
 
             // Send the user the intermediate result and ask for one more integer
             final FutureValue<Integer> oneMoreInt =
@@ -115,7 +115,7 @@ public class UserGuideExamples {
                     "The intermediate result is " + intermediate + "."
                             + " Please give one more int";
             final PromisedValue<Integer> oneMoreInt = newPromise();
-            ExternalAgentJob.getIntFromUser(prompt, userEmail, oneMoreInt.getHandle());
+            ExternalAgentJob.getIntFromUser(prompt, userEmail, oneMoreInt.getKey());
             return oneMoreInt;
         }
     }
