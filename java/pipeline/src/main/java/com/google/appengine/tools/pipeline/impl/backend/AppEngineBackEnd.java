@@ -406,7 +406,8 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
                 + String.join(",", fields.build()) + " "
                 + "FROM " + PipelineRecord.DATA_STORE_KIND + " "
                 + "JOIN " + JobRecord.DATA_STORE_KIND + " "
-                + "ON " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.PIPELINE_KEY_PROPERTY + " = " + JobRecord.DATA_STORE_KIND + "." + JobRecord.KEY_PROPERTY + " ");
+                + "ON " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.PIPELINE_KEY_PROPERTY + " = " + JobRecord.DATA_STORE_KIND + "." + JobRecord.PIPELINE_KEY_PROPERTY + " "
+                + "AND " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.PIPELINE_KEY_PROPERTY + " = " + JobRecord.DATA_STORE_KIND + "." + JobRecord.KEY_PROPERTY + " ");
         if (queryOutputSlot) {
             statement.append("FULL JOIN " + Slot.DATA_STORE_KIND + " "
                     + "ON " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.PIPELINE_KEY_PROPERTY + " = " + Slot.DATA_STORE_KIND + "." + Slot.PIPELINE_KEY_PROPERTY + " "
