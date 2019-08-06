@@ -21,6 +21,7 @@ public final class PipelineRecord implements Record, PipelineInfo {
     public static final List<String> PROPERTIES = ImmutableList.<String>builder()
             .add(PIPELINE_KEY_PROPERTY)
             .add(ROOT_JOB_DISPLAY_NAME)
+            .add(START_TIME)
             .build();
     private final UUID pipelineKey;
     private final String rootJobDisplayName;
