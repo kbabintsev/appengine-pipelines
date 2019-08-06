@@ -109,7 +109,7 @@ public final class PipelineManager {
             final Object... parameters
     ) {
         final UUID pipelineKey = UuidGenerator.nextUuid();
-        final PipelineRecord pipeline = new PipelineRecord(pipelineKey, jobInstance.getJobDisplayName());
+        final PipelineRecord pipeline = new PipelineRecord(pipelineKey, jobInstance.getJobDisplayName(), new Date());
         final UpdateSpec updateSpec = new UpdateSpec(pipelineKey);
         final UpdateSpec.Transaction transaction = updateSpec.newTransaction("startNewPipeline:" + pipelineKey);
         transaction.includePipeline(pipeline);

@@ -167,6 +167,10 @@ public final class JsonGenerator {
             }
         }
         map.put(JOB_CLASS, jobClass);
+        final Date startTime = pipeline.getStartTime();
+        if (null != startTime) {
+            map.put(JOB_START_TIME, startTime.getTime());
+        }
         return map;
     }
 
