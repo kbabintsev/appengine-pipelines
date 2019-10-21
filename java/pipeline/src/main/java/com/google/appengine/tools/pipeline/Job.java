@@ -597,6 +597,14 @@ public abstract class Job<E> implements Serializable {
         return thisJobRecord.getQueueSettings().getRoute();
     }
 
+    protected final int getAttemptNumber() {
+        return thisJobRecord.getAttemptNumber();
+    }
+
+    protected final int getMaxAttempts() {
+        return thisJobRecord.getMaxAttempts();
+    }
+
     /**
      * Returns the job's display name. Used for presentation purpose only.
      */

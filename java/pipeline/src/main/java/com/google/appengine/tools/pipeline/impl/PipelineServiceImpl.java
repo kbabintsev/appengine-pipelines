@@ -136,6 +136,11 @@ public class PipelineServiceImpl implements PipelineService {
     }
 
     @Override
+    public void addStatusMessages(final UUID pipelineKey, final UUID jobKey, final int attemptNumber, final String message) throws NoSuchObjectException {
+        pipelineManager.addStatusMessages(pipelineKey, jobKey, attemptNumber, message);
+    }
+
+    @Override
     public void cleanBobs(final String prefix) {
         pipelineManager.getBackEnd().cleanBlobs(prefix);
     }

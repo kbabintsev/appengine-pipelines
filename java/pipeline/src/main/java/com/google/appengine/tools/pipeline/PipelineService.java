@@ -300,6 +300,18 @@ public interface PipelineService {
     void submitPromisedValue(UUID pipelineKey, UUID promiseKey, Object value) throws NoSuchObjectException,
             OrphanedObjectException;
 
+    /**
+     * Adds a status message to job. This message wil be added to a specific job under the specific pipeline.
+     * This message will also be marked as "External".
+     *
+     * @param pipelineKey   the unique identifier of the pipeline
+     * @param jobKey        the unique identifier of the job
+     * @param attemptNumber attempt number you want this message to be assicated to
+     * @param message       the message itself
+     * @throws NoSuchObjectException If the framework can't find the pipelin or job specified
+     */
+    void addStatusMessages(UUID pipelineKey, UUID jobKey, int attemptNumber, String message) throws NoSuchObjectException;
+
     void cleanBobs(String prefix);
 
     void shutdown();

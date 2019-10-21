@@ -1,7 +1,18 @@
 CREATE TABLE Pipeline (
 	pipelineKey STRING(36) NOT NULL,
+	rootJobClassName STRING(255),
 	rootJobDisplayName STRING(255),
 ) PRIMARY KEY (pipelineKey);
+
+CREATE NULL_FILTERED INDEX PipelineClassName
+ON Pipeline (
+	rootJobClassName
+);
+
+CREATE NULL_FILTERED INDEX PipelineDisplayName
+ON Pipeline (
+	rootJobDisplayName
+);
 
 CREATE TABLE Barrier (
 	pipelineKey STRING(36) NOT NULL,

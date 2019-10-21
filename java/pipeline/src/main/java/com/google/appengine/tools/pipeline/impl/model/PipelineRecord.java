@@ -1,5 +1,6 @@
 package com.google.appengine.tools.pipeline.impl.model;
 
+import com.google.appengine.tools.pipeline.Job;
 import com.google.appengine.tools.pipeline.PipelineInfo;
 import com.google.appengine.tools.pipeline.impl.backend.PipelineMutation;
 import com.google.cloud.Timestamp;
@@ -16,27 +17,34 @@ import java.util.UUID;
 public final class PipelineRecord implements Record, PipelineInfo {
     public static final String DATA_STORE_KIND = "Pipeline";
     public static final String PIPELINE_KEY_PROPERTY = "pipelineKey";
+    public static final String ROOT_JOB_CLASS_NAME = "rootJobClassName";
     public static final String ROOT_JOB_DISPLAY_NAME = "rootJobDisplayName";
     public static final String START_TIME = "startTime";
     public static final List<String> PROPERTIES = ImmutableList.<String>builder()
             .add(PIPELINE_KEY_PROPERTY)
+            .add(ROOT_JOB_CLASS_NAME)
             .add(ROOT_JOB_DISPLAY_NAME)
             .add(START_TIME)
             .build();
     private final UUID pipelineKey;
+    private final String rootJobClassName;
     private final String rootJobDisplayName;
     private final Date startTime;
     // transient
     private JobRecord rootJob;
 
-    public PipelineRecord(final UUID pipelineKey, final String rootJobDisplayName, final Date startTime) {
+    public PipelineRecord(final UUID pipelineKey, final Class<? extends Job> rootJobClass, final String rootJobDisplayName, final Date startTime) {
         this.pipelineKey = pipelineKey;
+        this.rootJobClassName = rootJobClass.getName();
         this.rootJobDisplayName = rootJobDisplayName;
         this.startTime = startTime;
     }
 
     public PipelineRecord(@Nullable final String prefix, @Nonnull final StructReader entity) {
         pipelineKey = UUID.fromString(entity.getString(Record.property(prefix, PIPELINE_KEY_PROPERTY)));
+        rootJobClassName = entity.isNull(Record.property(prefix, ROOT_JOB_CLASS_NAME))
+                ? null
+                : entity.getString(Record.property(prefix, ROOT_JOB_CLASS_NAME));
         rootJobDisplayName = entity.isNull(Record.property(prefix, ROOT_JOB_DISPLAY_NAME))
                 ? null
                 : entity.getString(Record.property(prefix, ROOT_JOB_DISPLAY_NAME));
@@ -78,6 +86,7 @@ public final class PipelineRecord implements Record, PipelineInfo {
     public PipelineMutation toEntity() {
         final Mutation.WriteBuilder writeBuilder = Mutation.newInsertOrUpdateBuilder(DATA_STORE_KIND);
         writeBuilder.set(PIPELINE_KEY_PROPERTY).to(pipelineKey.toString());
+        writeBuilder.set(ROOT_JOB_CLASS_NAME).to(rootJobClassName);
         writeBuilder.set(ROOT_JOB_DISPLAY_NAME).to(rootJobDisplayName);
         writeBuilder.set(START_TIME).to(startTime == null ? null : Timestamp.of(startTime));
         return new PipelineMutation(writeBuilder);

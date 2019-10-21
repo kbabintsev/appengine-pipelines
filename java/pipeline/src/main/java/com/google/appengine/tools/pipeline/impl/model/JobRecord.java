@@ -39,7 +39,6 @@ import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.StructReader;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
@@ -144,7 +143,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
     private long backoffSeconds = JobSetting.BackoffSeconds.DEFAULT;
     private long backoffFactor = JobSetting.BackoffFactor.DEFAULT;
     private String statusConsoleUrl;
-    private List<String> statusMessages;
+    private StatusMessages statusMessages = new StatusMessages(STATUS_MESSAGES_MAX_COUNT, STATUS_MESSAGES_MAX_LENGTH, Lists.newArrayList());
     // transient fields
     private Barrier runBarrierInflated;
     private Barrier finalizeBarrierInflated;
@@ -210,9 +209,12 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
         statusConsoleUrl = entity.isNull(Record.property(prefix, STATUS_CONSOLE_URL))
                 ? null
                 : entity.getString(Record.property(prefix, STATUS_CONSOLE_URL));
-        statusMessages = entity.isNull(Record.property(prefix, STATUS_MESSAGES))
-                ? Lists.newArrayList()
-                : Lists.newArrayList(entity.getStringList(Record.property(prefix, STATUS_MESSAGES)));
+        statusMessages = new StatusMessages(
+                STATUS_MESSAGES_MAX_COUNT, STATUS_MESSAGES_MAX_LENGTH,
+                entity.isNull(Record.property(prefix, STATUS_MESSAGES))
+                        ? Lists.newArrayList()
+                        : Lists.newArrayList(entity.getStringList(Record.property(prefix, STATUS_MESSAGES)))
+        );
     }
 
     /**
@@ -409,12 +411,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
         }
         entity.set(ON_QUEUE_PROPERTY).to(queueSettings.getOnQueue());
         entity.set(STATUS_CONSOLE_URL).to(statusConsoleUrl);
-        List<String> messages = statusMessages;
-        if (messages != null && messages.size() > STATUS_MESSAGES_MAX_COUNT) {
-            messages = messages.subList(messages.size() - STATUS_MESSAGES_MAX_COUNT, messages.size());
-            messages.set(0, "[Truncated]");
-        }
-        entity.set(STATUS_MESSAGES).toStringArray(messages);
+        entity.set(STATUS_MESSAGES).toStringArray(statusMessages.getAll());
         return mutation;
     }
 
@@ -531,6 +528,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
     }
 
     public void setState(final State state) {
+        addStatusMessageByFramework("Updating job status to: " + state);
         this.state = state;
     }
 
@@ -618,11 +616,11 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
     }
 
     public void addStatusMessage(final String text) {
-        if (statusMessages == null) {
-            statusMessages = Lists.newArrayList();
-        }
-        final String line = "[" + attemptNumber + "] " + DateTime.now().toString() + ": " + text;
-        statusMessages.add(line.length() > STATUS_MESSAGES_MAX_LENGTH ? line.substring(0, STATUS_MESSAGES_MAX_LENGTH - 3) + "..." : line);
+        statusMessages.add(attemptNumber, "Usr", text);
+    }
+
+    public void addStatusMessageByFramework(final String text) {
+        statusMessages.add(attemptNumber, "Sys", text);
     }
 
     public Logger getStatusLogger() {
@@ -630,7 +628,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
     }
 
     public List<String> getStatusMessages() {
-        return statusMessages;
+        return statusMessages.getAll();
     }
 
     public void appendChildKey(final UUID key) {

@@ -37,6 +37,7 @@ import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -239,7 +240,7 @@ public class MiscPipelineTest extends PipelineTest {
     public void testStatusMessagesAttempts() throws Exception {
         UUID pipelineId = service.startNewPipeline(new StatusLinesAttemptsJob(), Job.maxAttempts(10), Job.backOffFactor(1), Job.backOffSeconds(1));
         final JobRecord jobInfo = (JobRecord) waitUntilJobComplete(pipelineId);
-        final List<String> statusMessages = jobInfo.getStatusMessages();
+        final List<String> statusMessages = jobInfo.getStatusMessages().stream().filter(msg -> msg.contains(" Usr")).collect(Collectors.toList());
         assertEquals(10, statusMessages.size());
         for (int i = 0; i < 10; i++) {
             assertTrue(statusMessages.get(i).indexOf("[" + (i + 1) + "]") == 0);
@@ -249,7 +250,7 @@ public class MiscPipelineTest extends PipelineTest {
     public void testStatusMessagesLogger() throws Exception {
         UUID pipelineId = service.startNewPipeline(new StatusLinesLoggerJob());
         final JobRecord jobInfo = (JobRecord) waitUntilJobComplete(pipelineId);
-        final List<String> statusMessages = jobInfo.getStatusMessages();
+        final List<String> statusMessages = jobInfo.getStatusMessages().stream().filter(msg -> msg.contains(" Usr")).collect(Collectors.toList());
         assertEquals(6, statusMessages.size());
         assertTrue(statusMessages.get(0).endsWith("INFO test END"));
         assertTrue(statusMessages.get(1).endsWith("INFO test a END"));

@@ -39,6 +39,7 @@ import com.google.appengine.tools.pipeline.impl.model.PipelineRecord;
 import com.google.appengine.tools.pipeline.impl.model.Record;
 import com.google.appengine.tools.pipeline.impl.model.RecordKey;
 import com.google.appengine.tools.pipeline.impl.model.Slot;
+import com.google.appengine.tools.pipeline.impl.model.StatusMessages;
 import com.google.appengine.tools.pipeline.impl.tasks.DeletePipelineTask;
 import com.google.appengine.tools.pipeline.impl.tasks.FanoutTask;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
@@ -381,6 +382,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
     private List<PipelineRecord> queryPipelines(
             @Nullable final UUID pipelineKey,
             @Nullable final String classFilter,
+            @Nullable final String displayNameFilter,
             @Nullable final Set<JobRecord.State> inStates,
             final int limit,
             final int offset,
@@ -421,13 +423,14 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
         if (pipelineKey != null) {
             statement.append("WHERE " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.PIPELINE_KEY_PROPERTY + " = @pipelineKey ")
                     .bind("pipelineKey").to(pipelineKey.toString());
+        } else if (classFilter != null) {
+            statement.append("WHERE " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.ROOT_JOB_CLASS_NAME + " = @classFilter ")
+                    .bind("classFilter").to(classFilter);
+        } else if (displayNameFilter != null) {
+            statement.append("WHERE " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.ROOT_JOB_DISPLAY_NAME + " = @displayNameFilter ")
+                    .bind("displayNameFilter").to(displayNameFilter);
         } else {
-            if (classFilter == null) {
-                statement.append("WHERE true ");
-            } else {
-                statement.append("WHERE " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.ROOT_JOB_DISPLAY_NAME + " = @classFilter ")
-                        .bind("classFilter").to(classFilter);
-            }
+            statement.append("WHERE true ");
         }
         if (inStates != null && !inStates.isEmpty()) {
             statement.append("AND " + JobRecord.DATA_STORE_KIND + "." + JobRecord.STATE_PROPERTY + " IN UNNEST(@states) ")
@@ -437,7 +440,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
             statement.append("AND " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.PIPELINE_KEY_PROPERTY + " LIKE @prefix ")
                     .bind("prefix").to(UuidGenerator.getTestPrefix() + "%");
         }
-        statement.append("ORDER BY " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.ROOT_JOB_DISPLAY_NAME + " ");
+        statement.append("ORDER BY " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.ROOT_JOB_CLASS_NAME + " ");
         if (limit > 0) {
             statement.append("LIMIT @limit ")
                     .bind("limit").to(limit);
@@ -466,7 +469,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
 
     @Override
     public PipelineRecord queryPipeline(final UUID pipelineKey) throws NoSuchObjectException {
-        final List<PipelineRecord> pipelineRecords = queryPipelines(pipelineKey, null, null, 1, 0, true, true);
+        final List<PipelineRecord> pipelineRecords = queryPipelines(pipelineKey, null, null, null, 1, 0, true, true);
         if (pipelineRecords.isEmpty()) {
             throw new NoSuchObjectException(PipelineRecord.DATA_STORE_KIND, pipelineKey, pipelineKey);
         }
@@ -623,7 +626,31 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
             final int limit,
             final int offset
     ) {
-        return queryPipelines(null, classFilter, inStates, limit, offset, false, false);
+        return queryPipelines(null, classFilter, null, inStates, limit, offset, false, false);
+    }
+
+    @Override
+    public Set<String> getRootPipelinesClassName() {
+        final Set<String> pipelines = new LinkedHashSet<>();
+        final Statement.Builder builder = Statement.newBuilder(
+                "SELECT DISTINCT " + PipelineRecord.ROOT_JOB_CLASS_NAME + " "
+                        + "FROM " + PipelineRecord.DATA_STORE_KIND + " "
+                        + "WHERE " + PipelineRecord.ROOT_JOB_CLASS_NAME + " IS NOT null "
+
+        );
+        if (UuidGenerator.isTest()) {
+            builder.append("AND " + PipelineRecord.PIPELINE_KEY_PROPERTY + " LIKE @prefix ")
+                    .bind("prefix").to(UuidGenerator.getTestPrefix() + "%");
+        }
+        builder.append("ORDER BY " + PipelineRecord.ROOT_JOB_CLASS_NAME);
+        try (ResultSet rs = databaseClient.singleUse().executeQuery(builder.build())) {
+            {
+                while (rs.next()) {
+                    pipelines.add(rs.getString(PipelineRecord.ROOT_JOB_CLASS_NAME));
+                }
+            }
+        }
+        return pipelines;
     }
 
     @Override
@@ -757,6 +784,39 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
                 return null;
             }
         });
+    }
+
+    @Override
+    public void addStatusMessage(final UUID pipelineKey, final UUID jobKey, final int attemptNumber, final String message) throws NoSuchObjectException {
+        final NoSuchObjectException ex = databaseClient.readWriteTransaction().run(new TransactionRunner.TransactionCallable<NoSuchObjectException>() {
+            @Nullable
+            @Override
+            public NoSuchObjectException run(final TransactionContext transaction) throws Exception {
+                final Struct entity = transaction.readRow(JobRecord.DATA_STORE_KIND, Key.of(pipelineKey.toString(), jobKey.toString()), ImmutableList.of(JobRecord.STATUS_MESSAGES));
+                if (entity == null) {
+                    return new NoSuchObjectException(JobRecord.DATA_STORE_KIND, pipelineKey, jobKey);
+                }
+                final StatusMessages statusMessages = new StatusMessages(
+                        JobRecord.STATUS_MESSAGES_MAX_COUNT,
+                        JobRecord.STATUS_MESSAGES_MAX_LENGTH,
+                        entity.isNull(JobRecord.STATUS_MESSAGES)
+                                ? Lists.newArrayList()
+                                : entity.getStringList(JobRecord.STATUS_MESSAGES)
+                );
+                statusMessages.add(attemptNumber, "Ext", message);
+                transaction.buffer(
+                        Mutation.newUpdateBuilder(JobRecord.DATA_STORE_KIND)
+                                .set(JobRecord.PIPELINE_KEY_PROPERTY).to(pipelineKey.toString())
+                                .set(JobRecord.KEY_PROPERTY).to(jobKey.toString())
+                                .set(JobRecord.STATUS_MESSAGES).toStringArray(statusMessages.getAll())
+                                .build()
+                );
+                return null;
+            }
+        });
+        if (ex != null) {
+            throw ex;
+        }
     }
 
     private final class Mutations {

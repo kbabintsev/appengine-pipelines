@@ -198,10 +198,27 @@ public interface PipelineBackEnd {
     );
 
     /**
+     * Returns the set of all root pipelines classe name.
+     */
+    Set<String> getRootPipelinesClassName();
+
+    /**
      * Returns the set of all root pipelines display name.
      */
     Set<String> getRootPipelinesDisplayName();
 
     void shutdown();
+
+    /**
+     * Adds a status message to job. This message wil be added to a specific job under the specific pipeline.
+     * This message will also be marked as "External".
+     *
+     * @param pipelineKey   the unique identifier of the pipeline
+     * @param jobKey        the unique identifier of the job
+     * @param attemptNumber attempt number you want this message to be assicated to
+     * @param message       the message itself
+     * @throws NoSuchObjectException If the framework can't find the pipelin or job specified
+     */
+    void addStatusMessage(UUID pipelineKey, UUID jobKey, int attemptNumber, String message) throws NoSuchObjectException;
 }
 

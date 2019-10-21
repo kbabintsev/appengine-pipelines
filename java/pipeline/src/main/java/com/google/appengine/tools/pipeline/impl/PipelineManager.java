@@ -109,7 +109,7 @@ public final class PipelineManager {
             final Object... parameters
     ) {
         final UUID pipelineKey = UuidGenerator.nextUuid();
-        final PipelineRecord pipeline = new PipelineRecord(pipelineKey, jobInstance.getJobDisplayName(), new Date());
+        final PipelineRecord pipeline = new PipelineRecord(pipelineKey, jobInstance.getClass(), jobInstance.getJobDisplayName(), new Date());
         final UpdateSpec updateSpec = new UpdateSpec(pipelineKey);
         final UpdateSpec.Transaction transaction = updateSpec.newTransaction("startNewPipeline:" + pipelineKey);
         transaction.includePipeline(pipeline);
@@ -558,6 +558,12 @@ public final class PipelineManager {
         backEnd.save(updateSpec, generatorJob.getQueueSettings());
     }
 
+    public void addStatusMessages(final UUID pipelineKey, final UUID jobKey, final int attemptNumber, final String message) throws NoSuchObjectException {
+        checkNonEmpty(pipelineKey, "pipelineKey");
+        checkNonEmpty(jobKey, "jobKey");
+        backEnd.addStatusMessage(pipelineKey, jobKey, attemptNumber, message);
+    }
+
     public void shutdown() {
         backEnd.shutdown();
     }
@@ -841,7 +847,9 @@ public final class PipelineManager {
         Throwable caughtException = null;
         try {
             methodToExecute.setAccessible(true);
+            jobRecord.addStatusMessageByFramework("run(...): Executing...");
             returnValue = (Value<?>) methodToExecute.invoke(job, params);
+            jobRecord.addStatusMessageByFramework("run(...): Complete");
         } catch (InvocationTargetException e) {
             caughtException = e.getCause();
         } catch (Throwable e) {
@@ -955,6 +963,7 @@ public final class PipelineManager {
 
     private void handleExceptionDuringRun(final JobRecord jobRecord, final JobRecord rootJobRecord,
                                           final UUID currentRunKey, final Throwable caughtException) {
+        jobRecord.addStatusMessageByFramework("Handling exception: " + caughtException);
         final int attemptNumber = jobRecord.getAttemptNumber();
         final int maxAttempts = jobRecord.getMaxAttempts();
         if (jobRecord.isCallExceptionHandler()) {
@@ -992,6 +1001,7 @@ public final class PipelineManager {
                     cancelChildren(jobRecord, null);
                     // current job doesn't have an error handler. So just delegate it to the
                     // nearest ancestor that has one.
+                    jobRecord.addStatusMessageByFramework("Current job doesn't have an error handler, delegating to nearest ancestor that has one.");
                     final Task handleChildExceptionTask = new HandleChildExceptionTask(
                             jobRecord.getPipelineKey(),
                             jobRecord.getExceptionHandlingAncestorKey(),
@@ -1028,6 +1038,7 @@ public final class PipelineManager {
      */
     private void executeExceptionHandler(final UpdateSpec updateSpec, final JobRecord jobRecord,
                                          final Throwable caughtException, final boolean ignoreException) {
+        jobRecord.addStatusMessageByFramework("Executing exception handler");
         final UpdateSpec.Transaction transaction = updateSpec.newTransaction("executeExceptionHandler:" + jobRecord.getKey());
         transaction.includeJob(jobRecord);
         final UUID errorHandlingGraphKey = UuidGenerator.nextUuid();
@@ -1040,6 +1051,7 @@ public final class PipelineManager {
     }
 
     private void cancelChildren(final JobRecord jobRecord, final UUID failedChildKey) {
+        jobRecord.addStatusMessageByFramework("Canceling children");
         for (final UUID childKey : jobRecord.getChildKeys()) {
             if (!childKey.equals(failedChildKey)) {
                 final CancelJobTask cancelJobTask = new CancelJobTask(jobRecord.getPipelineKey(), childKey, jobRecord.getQueueSettings());
