@@ -47,6 +47,7 @@ public final class JsonGenerator {
     private static final String SLOT_STATUS = "status";
     private static final String FILLED_STATUS = "filled";
     private static final String WAITING_STATUS = "waiting";
+    private static final String RUNNING_STATUS = "running";
     private static final String SLOT_VALUE = "value";
     private static final String SLOT_FILL_TIME = "fillTimeMs";
     private static final String SLOT_SOURCE_JOB = "fillerPipelineId";
@@ -189,6 +190,9 @@ public final class JsonGenerator {
         switch (jobRecord.getState()) {
             case WAITING_TO_RUN:
                 statusString = WAITING_STATUS;
+                break;
+            case RUNNING:
+                statusString = RUNNING_STATUS;
                 break;
             case WAITING_TO_FINALIZE:
                 statusString = RUN_STATUS;

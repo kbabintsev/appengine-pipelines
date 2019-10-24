@@ -2,7 +2,8 @@ CREATE TABLE Pipeline (
 	pipelineKey STRING(36) NOT NULL,
 	rootJobClassName STRING(255),
 	rootJobDisplayName STRING(255),
-) PRIMARY KEY (pipelineKey);
+	startTime TIMESTAMP NOT NULL,
+) PRIMARY KEY (pipelineKey)
 
 CREATE NULL_FILTERED INDEX PipelineClassName
 ON Pipeline (

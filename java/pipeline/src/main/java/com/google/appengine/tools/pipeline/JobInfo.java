@@ -30,6 +30,7 @@ public interface JobInfo {
     static State convertState(final JobRecord.State jobState, final UUID exceptionKey) {
         switch (jobState) {
             case WAITING_TO_RUN:
+            case RUNNING:
             case WAITING_TO_FINALIZE:
                 return JobInfo.State.RUNNING;
             case FINALIZED:

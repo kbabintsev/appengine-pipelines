@@ -704,7 +704,13 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
      */
     public enum State {
         // TODO(user): document states (including valid transitions) and relation to JobInfo.State
-        WAITING_TO_RUN, WAITING_TO_FINALIZE, FINALIZED, STOPPED, CANCELED, RETRY
+        WAITING_TO_RUN,
+        RUNNING, // almost synonym to WAITING_TO_RUN, except indicates that job' run() has been actually called. Otherwise works exactly like WAITING_TO_RUN
+        WAITING_TO_FINALIZE,
+        FINALIZED,
+        STOPPED,
+        CANCELED,
+        RETRY
     }
 
     /**

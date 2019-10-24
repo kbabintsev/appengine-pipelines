@@ -33,6 +33,7 @@ public class AllTests {
         suite.addTestSuite(LetterCounterTest.class);
         suite.addTestSuite(FutureListTest.class);
         suite.addTestSuite(RetryTest.class);
+        suite.addTestSuite(DeferredUsingJobsTest.class);
         suite.addTestSuite(PipelinesErrorHandlingTest.class);
         suite.addTestSuite(DelayedValueTest.class);
         suite.addTestSuite(ConcurrencyTest.class);

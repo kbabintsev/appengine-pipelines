@@ -22,6 +22,7 @@ import com.google.appengine.tools.pipeline.Job0;
 import com.google.appengine.tools.pipeline.JobSetting;
 import com.google.appengine.tools.pipeline.NoSuchObjectException;
 import com.google.appengine.tools.pipeline.OrphanedObjectException;
+import com.google.appengine.tools.pipeline.Retry;
 import com.google.appengine.tools.pipeline.Value;
 import com.google.appengine.tools.pipeline.impl.backend.PipelineBackEnd;
 import com.google.appengine.tools.pipeline.impl.backend.PipelineTaskQueue;
@@ -48,6 +49,7 @@ import com.google.appengine.tools.pipeline.impl.tasks.RunJobTask;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
 import com.google.appengine.tools.pipeline.impl.util.StringUtils;
 import com.google.appengine.tools.pipeline.impl.util.UuidGenerator;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.inject.Injector;
 
@@ -768,6 +770,7 @@ public final class PipelineManager {
         final State jobState = jobRecord.getState();
         switch (jobState) {
             case WAITING_TO_RUN:
+            case RUNNING:
             case RETRY:
                 // OK, proceed
                 break;
@@ -826,10 +829,12 @@ public final class PipelineManager {
         // run(). The start time will be displayed in the UI.
         jobRecord.incrementAttemptNumber();
         jobRecord.setStartTime(new Date());
+        jobRecord.addStatusMessageByFramework("run(...): Executing...");
+        jobRecord.setState(State.RUNNING);
         tempSpec = new UpdateSpec(jobRecord.getPipelineKey());
         tempSpec.newTransaction("runJob:setStartTime:" + jobRecord.getKey()).includeJob(jobRecord);
         if (!backEnd.saveWithJobStateCheck(
-                tempSpec, jobRecord.getQueueSettings(), jobKey, State.WAITING_TO_RUN, State.RETRY)) {
+                tempSpec, jobRecord.getQueueSettings(), jobKey, State.WAITING_TO_RUN, State.RUNNING, State.RETRY)) {
             LOGGER.info("Ignoring runJob request for job " + jobRecord + " which is not in a"
                     + " WAITING_TO_RUN or a RETRY state");
             return;
@@ -847,13 +852,13 @@ public final class PipelineManager {
         Throwable caughtException = null;
         try {
             methodToExecute.setAccessible(true);
-            jobRecord.addStatusMessageByFramework("run(...): Executing...");
             returnValue = (Value<?>) methodToExecute.invoke(job, params);
-            jobRecord.addStatusMessageByFramework("run(...): Complete");
         } catch (InvocationTargetException e) {
             caughtException = e.getCause();
         } catch (Throwable e) {
             caughtException = e;
+        } finally {
+            jobRecord.addStatusMessageByFramework("run(...): Complete");
         }
         if (null != caughtException) {
             //TODO(user): use the following condition to keep original exception trace
@@ -904,7 +909,7 @@ public final class PipelineManager {
         updateSpec.getFinalTransaction().includeJob(jobRecord);
         updateSpec.getFinalTransaction().includeBarrier(finalizeBarrier);
         backEnd.saveWithJobStateCheck(
-                updateSpec, jobRecord.getQueueSettings(), jobKey, State.WAITING_TO_RUN, State.RETRY);
+                updateSpec, jobRecord.getQueueSettings(), jobKey, State.WAITING_TO_RUN, State.RUNNING, State.RETRY);
     }
 
     private void cancelJobInternal(final CancelJobTask cancelJobTask) {
@@ -926,6 +931,7 @@ public final class PipelineManager {
 
         switch (jobRecord.getState()) {
             case WAITING_TO_RUN:
+            case RUNNING:
             case RETRY:
             case WAITING_TO_FINALIZE:
                 // OK, proceed
@@ -963,17 +969,22 @@ public final class PipelineManager {
 
     private void handleExceptionDuringRun(final JobRecord jobRecord, final JobRecord rootJobRecord,
                                           final UUID currentRunKey, final Throwable caughtException) {
-        jobRecord.addStatusMessageByFramework("Handling exception: " + caughtException);
         final int attemptNumber = jobRecord.getAttemptNumber();
         final int maxAttempts = jobRecord.getMaxAttempts();
-        if (jobRecord.isCallExceptionHandler()) {
-            LOGGER.log(Level.INFO,
-                    "An exception occurred when attempting to execute exception hander job " + jobRecord
-                            + ". ", caughtException);
+        if (caughtException instanceof Retry) {
+            jobRecord.addStatusMessageByFramework("RETRY requested by user" + (Strings.isNullOrEmpty(caughtException.getMessage()) ? "" : ": " + caughtException.getMessage()));
+            LOGGER.log(Level.INFO, "User requeseted RETRY during run " + jobRecord + ". " + "This was attempt number " + attemptNumber + " of " + maxAttempts + ".");
         } else {
-            LOGGER.log(Level.INFO, "An exception occurred when attempting to run " + jobRecord + ". "
-                            + "This was attempt number " + attemptNumber + " of " + maxAttempts + ".",
-                    caughtException);
+            jobRecord.addStatusMessageByFramework("Handling exception: " + caughtException);
+            if (jobRecord.isCallExceptionHandler()) {
+                LOGGER.log(Level.INFO,
+                        "An exception occurred when attempting to execute exception hander job " + jobRecord
+                                + ". ", caughtException);
+            } else {
+                LOGGER.log(Level.INFO, "An exception occurred when attempting to run " + jobRecord + ". "
+                                + "This was attempt number " + attemptNumber + " of " + maxAttempts + ".",
+                        caughtException);
+            }
         }
         if (jobRecord.isIgnoreException()) {
             return;
@@ -1026,7 +1037,7 @@ public final class PipelineManager {
             updateSpec.getFinalTransaction().includeJob(jobRecord);
             updateSpec.getFinalTransaction().registerTask(task);
             backEnd.saveWithJobStateCheck(updateSpec, jobRecord.getQueueSettings(), jobRecord.getKey(),
-                    State.WAITING_TO_RUN, State.RETRY);
+                    State.WAITING_TO_RUN, State.RUNNING, State.RETRY);
         }
     }
 
@@ -1116,6 +1127,7 @@ public final class PipelineManager {
                 // OK, proceed
                 break;
             case WAITING_TO_RUN:
+            case RUNNING:
             case RETRY:
                 throw new RuntimeException("" + jobRecord + " is in RETRY state");
             case STOPPED:

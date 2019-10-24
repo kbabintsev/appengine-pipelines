@@ -235,6 +235,24 @@ public abstract class Job<E> implements Serializable {
     }
 
     /**
+     * User requested job retry. This method is only
+     * syntactic sugar. {@code retry()} is equivalent to
+     * {@code throw new RetryException()}.
+     */
+    public static void retry() throws Retry {
+        throw new Retry();
+    }
+
+    /**
+     * User requested job retry. This method is only
+     * syntactic sugar. {@code retry(message)} is equivalent to
+     * {@code throw new RetryException(message)}.
+     */
+    public static void retry(final String message) throws Retry {
+        throw new Retry(message);
+    }
+
+    /**
      * Constructs a new {@code JobSetting.StatusConsoleUrl}. This method is only
      * syntactic sugar. {@code statusConsoleUrl(x)} is equivalent to
      * {@code new JobSetting.StatusConsoleUrl(x)}.

@@ -29,8 +29,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class RetryTest extends PipelineTest {
 
-    public static final int ACCEPTABLE_LAG_SECONDS = 5;
     private static volatile CountDownLatch countdownLatch;
+    public static final int ACCEPTABLE_LAG_SECONDS = 5;
 
     public RetryTest() {
         LocalTaskQueueTestConfig taskQueueConfig = new LocalTaskQueueTestConfig();
