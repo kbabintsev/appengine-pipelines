@@ -416,6 +416,10 @@ public final class PipelineManager {
         return backEnd.getRootPipelinesDisplayName();
     }
 
+    public Set<String> getRootPipelinesClassName() {
+        return backEnd.getRootPipelinesClassName();
+    }
+
     private void checkNonEmpty(final UUID s, final String name) {
         if (null == s) {
             throw new IllegalArgumentException(name + " is empty.");

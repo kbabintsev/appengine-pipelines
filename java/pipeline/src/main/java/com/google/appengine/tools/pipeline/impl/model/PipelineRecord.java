@@ -61,6 +61,10 @@ public final class PipelineRecord implements Record, PipelineInfo {
         return pipelineKey;
     }
 
+    public String getPipelineClassName() {
+        return rootJobClassName;
+    }
+
     public String getPipelineDisplayName() {
         return rootJobDisplayName;
     }
