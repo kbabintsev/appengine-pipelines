@@ -440,7 +440,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
             statement.append("AND " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.PIPELINE_KEY_PROPERTY + " LIKE @prefix ")
                     .bind("prefix").to(UuidGenerator.getTestPrefix() + "%");
         }
-        statement.append("ORDER BY " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.ROOT_JOB_CLASS_NAME + " ");
+        statement.append("ORDER BY " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.ROOT_JOB_CLASS_NAME + ", " + PipelineRecord.DATA_STORE_KIND + "." + PipelineRecord.START_TIME + " DESC ");
         if (limit > 0) {
             statement.append("LIMIT @limit ")
                     .bind("limit").to(limit);

@@ -5,10 +5,11 @@ CREATE TABLE Pipeline (
 	startTime TIMESTAMP NOT NULL,
 ) PRIMARY KEY (pipelineKey)
 
-CREATE NULL_FILTERED INDEX PipelineClassName
+CREATE INDEX PipelineClassNameStartTime
 ON Pipeline (
-	rootJobClassName
-);
+	rootJobClassName,
+	startTime DESC
+)
 
 CREATE NULL_FILTERED INDEX PipelineDisplayName
 ON Pipeline (
