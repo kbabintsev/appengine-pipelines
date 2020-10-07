@@ -7,6 +7,7 @@ import com.google.cloud.Timestamp;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.StructReader;
 import com.google.common.collect.ImmutableList;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -18,6 +19,7 @@ public final class PipelineRecord implements Record, PipelineInfo {
     public static final String DATA_STORE_KIND = "Pipeline";
     public static final String PIPELINE_KEY_PROPERTY = "pipelineKey";
     public static final String ROOT_JOB_CLASS_NAME = "rootJobClassName";
+    public static final int ROOT_JOB_DISPLAY_NAME_LENGTH = 255;
     public static final String ROOT_JOB_DISPLAY_NAME = "rootJobDisplayName";
     public static final String START_TIME = "startTime";
     public static final List<String> PROPERTIES = ImmutableList.<String>builder()
@@ -91,7 +93,7 @@ public final class PipelineRecord implements Record, PipelineInfo {
         final Mutation.WriteBuilder writeBuilder = Mutation.newInsertOrUpdateBuilder(DATA_STORE_KIND);
         writeBuilder.set(PIPELINE_KEY_PROPERTY).to(pipelineKey.toString());
         writeBuilder.set(ROOT_JOB_CLASS_NAME).to(rootJobClassName);
-        writeBuilder.set(ROOT_JOB_DISPLAY_NAME).to(rootJobDisplayName);
+        writeBuilder.set(ROOT_JOB_DISPLAY_NAME).to(StringUtils.abbreviate(rootJobDisplayName, ROOT_JOB_DISPLAY_NAME_LENGTH));
         writeBuilder.set(START_TIME).to(startTime == null ? null : Timestamp.of(startTime));
         return new PipelineMutation(writeBuilder);
     }

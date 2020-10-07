@@ -627,6 +627,6 @@ public abstract class Job<E> implements Serializable {
      * Returns the job's display name. Used for presentation purpose only.
      */
     public String getJobDisplayName() {
-        return getClass().getName();
+        return getClass().getSimpleName();
     }
 }

@@ -23,6 +23,7 @@ import com.google.appengine.tools.pipeline.impl.util.ValueStoragePath;
 import com.google.cloud.spanner.Mutation;
 import com.google.cloud.spanner.StructReader;
 import com.google.common.collect.ImmutableList;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -36,6 +37,7 @@ import java.util.UUID;
 public final class JobInstanceRecord extends PipelineModelObject {
 
     public static final String DATA_STORE_KIND = "JobInstance";
+    public static final int JOB_DISPLAY_NAME_LENGTH = 255;
     public static final String JOB_DISPLAY_NAME_PROPERTY = "jobDisplayName";
     private static final String JOB_KEY_PROPERTY = "jobKey";
     private static final String JOB_CLASS_NAME_PROPERTY = "jobClassName";
@@ -96,7 +98,7 @@ public final class JobInstanceRecord extends PipelineModelObject {
         final Mutation.WriteBuilder entity = mutation.getDatabaseMutation();
         entity.set(JOB_KEY_PROPERTY).to(jobKey.toString());
         entity.set(JOB_CLASS_NAME_PROPERTY).to(jobClassName);
-        entity.set(JOB_DISPLAY_NAME_PROPERTY).to(jobDisplayName);
+        entity.set(JOB_DISPLAY_NAME_PROPERTY).to(StringUtils.abbreviate(jobDisplayName, JOB_DISPLAY_NAME_LENGTH));
         valueProxy.updateStorage(
                 location -> entity.set(VALUE_LOCATION_PROPERTY).to(location.name()),
                 databaseBlob -> entity.set(DATABASE_VALUE_PROPERTY).to(databaseBlob),
