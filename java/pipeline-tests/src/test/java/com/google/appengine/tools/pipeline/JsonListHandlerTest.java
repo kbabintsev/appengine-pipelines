@@ -51,7 +51,7 @@ public class JsonListHandlerTest extends PipelineTest {
 
     public void testHandlerNoResults() throws Exception {
         injector.getInstance(JsonListHandler.class).doGet(request, response);
-        assertEquals("{\"pipelines\": []}", output.toString());
+        assertEquals("{\n  \"pipelines\" : [ ]\n}", output.toString());
     }
 
     @SuppressWarnings("unchecked")

@@ -14,17 +14,12 @@
 
 package com.google.appengine.tools.pipeline.impl.util;
 
+import com.google.api.client.json.GenericJson;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -41,125 +36,18 @@ public final class JsonUtils {
 
     public static String mapToJson(final Map<?, ?> map) {
         try {
-            return (new JSONObject(map)).toString(2);
+            return JSON_FACTORY.toPrettyString(map); //new JSONObject(map)).toString(2);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    /**
-     * Convert an object into its JSON representation.
-     */
-    private static String toJson(final Object x) {
+    public static Map<String, Object> fromJson(final String json) {
         try {
-            if (x == null || x instanceof String || x instanceof Number || x instanceof Character
-                    || x.getClass().isArray() || x instanceof Iterable<?>) {
-                return new JSONObject().put("JSON", x).toString(2);
-            } else if (x instanceof Map<?, ?>) {
-                return (new JSONObject((Map<?, ?>) x)).toString(2);
-            } else if (x instanceof JSONObject) {
-                return ((JSONObject) x).toString(2);
-            } else {
-                return (new JSONObject(x)).toString(2);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("x=" + x, e);
-        }
-    }
-
-    /**
-     * Convert a JSON representation into an object
-     */
-    public static Object fromJson(final String json) {
-        try {
-            final JSONObject jsonObject = new JSONObject(json);
-            if (jsonObject.has("JSON")) {
-                return convert(jsonObject.get("JSON"));
-            } else {
-                return convert(jsonObject);
-            }
+            return JSON_FACTORY.fromString(json, GenericJson.class);
         } catch (Exception e) {
             throw new RuntimeException("json=" + json, e);
         }
-    }
-
-    /**
-     * Convert an {@code org.json.JSONObject} into a {@code Map} and an
-     * {@code org.json.JSONArray} into a {@code List}
-     */
-    private static Object convert(final Object x) throws JSONException {
-        if (x instanceof JSONObject) {
-            final JSONObject jsonObject = (JSONObject) x;
-            final String[] names = JSONObject.getNames(jsonObject);
-            if (names == null || names.length == 0) {
-                return new HashMap<>(0);
-            }
-            final Map<String, Object> map = new HashMap<>(names.length);
-            for (final String name : names) {
-                final Object value = jsonObject.get(name);
-                map.put(name, convert(value));
-            }
-            return map;
-        } else if (x instanceof JSONArray) {
-            final JSONArray jsonArray = (JSONArray) x;
-            final int length = jsonArray.length();
-            final List<Object> list = new ArrayList<>(length);
-            for (int i = 0; i < length; i++) {
-                list.add(convert(jsonArray.get(i)));
-            }
-            return list;
-        } else {
-            return x;
-        }
-    }
-
-    private static String recursiveToString(final Object y) {
-        final StringBuilder builder = new StringBuilder(512);
-        if (null == y) {
-            builder.append("null");
-        } else {
-            if (y instanceof List) {
-                final List<?> list = (List<?>) y;
-                builder.append("(");
-                boolean first = true;
-                for (final Object x : list) {
-                    if (!first) {
-                        builder.append(", ");
-                    }
-                    builder.append(recursiveToString(x));
-                    first = false;
-                }
-                builder.append(")");
-            } else if (y instanceof Map) {
-                final Map<?, ?> map = (Map<?, ?>) y;
-                builder.append("{");
-                boolean first = true;
-                for (final Object key : map.keySet()) {
-                    if (!first) {
-                        builder.append(", ");
-                    }
-                    builder.append(key);
-                    builder.append("=");
-                    builder.append(recursiveToString(map.get(key)));
-                    first = false;
-                }
-                builder.append("}");
-            } else if (y instanceof String) {
-                builder.append('"');
-                builder.append(y);
-                builder.append('"');
-            } else {
-                builder.append(y);
-            }
-        }
-        return builder.toString();
-    }
-
-    private static void debugPrint(final Object x) {
-        System.out.println();
-        final String json = toJson(x);
-        final Object y = fromJson(json);
-        System.out.println(x + " --> " + json + " --> " + recursiveToString(y));
     }
 
     @Nullable
