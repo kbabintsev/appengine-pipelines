@@ -19,6 +19,14 @@
     </licenses>
     <properties>
         <appengine.target.version>1.9.71</appengine.target.version>
+        <version.guice>4.2.2</version.guice>
+        <version.guava>29.0-jre</version.guava>
+        <version.google-spanner>2.0.2</version.google-spanner>
+        <version.google-api-client>1.25.0</version.google-api-client>
+        <version.google-oauth-client>1.25.0</version.google-oauth-client>
+        <version.google-api-services-storage>v1-rev139-${version.google-api-client}</version.google-api-services-storage>
+        <version.google-api-services-cloudtasks>v2-rev7-${version.google-api-client}</version.google-api-services-cloudtasks>
+        <version.joda-time>2.9.9</version.joda-time>
     </properties>
     <modules>
         <module>pipeline</module>
@@ -87,32 +95,32 @@
                 <artifactId>guava</artifactId>
                 <!-- version number of release candidates come before the ##.0 in maven,
                      use .99 to get latest release within the specified major version -->
-                <version>20.0</version>
+                <version>${version.guava}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.inject</groupId>
                 <artifactId>guice</artifactId>
-                <version>4.2.2</version>
+                <version>${version.guice}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.inject.extensions</groupId>
                 <artifactId>guice-servlet</artifactId>
-                <version>4.2.2</version>
+                <version>${version.guice}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.cloud</groupId>
                 <artifactId>google-cloud-spanner</artifactId>
-                <version>1.22.0</version>
+                <version>${version.google-spanner}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.apis</groupId>
                 <artifactId>google-api-services-storage</artifactId>
-                <version>v1-rev139-1.25.0</version>
+                <version>${version.google-api-services-storage}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.apis</groupId>
                 <artifactId>google-api-services-cloudtasks</artifactId>
-                <version>v2-rev7-1.25.0</version>
+                <version>${version.google-api-services-cloudtasks}</version>
             </dependency>
             <dependency>
                 <groupId>com.cloudaware</groupId>
@@ -122,7 +130,7 @@
             <dependency>
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
-                <version>2.9.5</version>
+                <version>${version.joda-time}</version>
             </dependency>
             <!-- test dependencies -->
             <dependency>

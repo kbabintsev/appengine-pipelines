@@ -49,6 +49,7 @@ import java.util.stream.Collectors;
 public final class CloudTasksQueue implements PipelineTaskQueue {
 
     private static final String CLOUDTASKS_API_ROOT_URL_PROPERTY = "cloudtasks.api.root.url";
+    private static final String CLOUDTASKS_GZIP_DISABLE = "cloudtasks.gzip.disable";
     private static final String CLOUDTASKS_API_KEY_PROPERTY = "cloudtasks.api.key";
     private static final String CLOUDTASKS_API_DEFAULT_PARENT = "cloudtasks.api.default.parent";
     private static final int HTTP_409 = 409;
@@ -56,10 +57,12 @@ public final class CloudTasksQueue implements PipelineTaskQueue {
     private static final Logger LOGGER = Logger.getLogger(CloudTasksQueue.class.getName());
     private final String apiKey;
     private final CloudTasks cloudTask;
+    private final boolean gzipDisable;
 
     public CloudTasksQueue() {
         final String rootUrl = System.getProperty(CLOUDTASKS_API_ROOT_URL_PROPERTY);
         this.apiKey = System.getProperty(CLOUDTASKS_API_KEY_PROPERTY);
+        this.gzipDisable = "true".equalsIgnoreCase(System.getProperty(CLOUDTASKS_GZIP_DISABLE));
         try {
             HttpRequestInitializer credential;
             try {
@@ -93,6 +96,7 @@ public final class CloudTasksQueue implements PipelineTaskQueue {
     public CloudTasksQueue(final CloudTasks cloudTask, final String apiKey) {
         this.apiKey = apiKey;
         this.cloudTask = cloudTask;
+        this.gzipDisable = false;
     }
 
     private static String getCurrentService() {
@@ -118,7 +122,10 @@ public final class CloudTasksQueue implements PipelineTaskQueue {
                     .create(
                             getQueueName(task.getQueueSettings().getOnQueue()),
                             new CreateTaskRequest().setTask(taskOptions)
-                    ).setKey(this.apiKey).execute();
+                    )
+                    .setKey(this.apiKey)
+                    .setDisableGZipContent(this.gzipDisable)
+                    .execute();
         } catch (IOException e) {
             if (e instanceof GoogleJsonResponseException && ((GoogleJsonResponseException) e).getStatusCode() == HTTP_409) {
                 //ignore TaskAlreadyExist

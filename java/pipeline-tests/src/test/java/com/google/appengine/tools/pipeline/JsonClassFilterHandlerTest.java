@@ -65,8 +65,8 @@ public class JsonClassFilterHandlerTest extends PipelineTest {
         System.out.println(output.toString());
         String expected = "{\n"
             + "  \"classPaths\" : ["
-                + " \"" + Main1Job.class.getName() + "\", "
-                + "\"" + Main2Job.class.getName() + "\" "
+                + " \"" + Main1Job.class.getSimpleName() + "\", "
+                + "\"" + Main2Job.class.getSimpleName() + "\" "
                 + "]\n}";
         assertEquals(expected, output.toString());
     }

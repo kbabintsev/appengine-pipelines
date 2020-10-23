@@ -76,9 +76,9 @@ public class JsonListHandlerTest extends PipelineTest {
             pipelineIdToClass.put(
                     (String) pipeline.get("pipelineId"), (String) pipeline.get("classPath"));
         }
-        assertEquals(Main1Job.class.getName(), pipelineIdToClass.get(pipelineId1.toString()));
-        assertEquals(Main2Job.class.getName(), pipelineIdToClass.get(pipelineId2.toString()));
-        assertEquals(Main2Job.class.getName(), pipelineIdToClass.get(pipelineId3.toString()));
+        assertEquals(Main1Job.class.getSimpleName(), pipelineIdToClass.get(pipelineId1.toString()));
+        assertEquals(Main2Job.class.getSimpleName(), pipelineIdToClass.get(pipelineId2.toString()));
+        assertEquals(Main2Job.class.getSimpleName(), pipelineIdToClass.get(pipelineId3.toString()));
     }
 
     @SuppressWarnings("serial")
