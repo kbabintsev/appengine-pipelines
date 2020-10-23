@@ -162,16 +162,20 @@ public final class CloudTasksQueue implements PipelineTaskQueue {
             String queueName = task.getQueueSettings().getOnQueue();
             queueName = queueName == null ? "default" : queueName;
             try {
-                final CloudTasks.Projects.Locations.Queues.Tasks.Create create = cloudTask
-                        .projects()
-                        .locations()
-                        .queues()
-                        .tasks()
-                        .create(
-                                getQueueName(queueName),
-                                new CreateTaskRequest().setTask(toTaskOptions(task))
-                        ).setKey(this.apiKey);
-                handles.add(create.execute());
+                handles.add(
+                        cloudTask
+                            .projects()
+                            .locations()
+                            .queues()
+                            .tasks()
+                            .create(
+                                    getQueueName(queueName),
+                                    new CreateTaskRequest().setTask(toTaskOptions(task))
+                            )
+                            .setDisableGZipContent(this.gzipDisable)
+                            .setKey(this.apiKey)
+                            .execute()
+                );
             } catch (IOException e) {
                 if (e instanceof GoogleJsonResponseException && ((GoogleJsonResponseException) e).getStatusCode() == HTTP_409) {
                     throw new TaskAlreadyExistsException(e);
