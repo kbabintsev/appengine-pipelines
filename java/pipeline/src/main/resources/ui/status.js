@@ -127,13 +127,13 @@ function prettyName(name, sidebar) {
         name = '[unnamed]';
     }
     var adjustedName = name;
-    if (sidebar) {
-        var adjustedName = name;
-        var parts = name.split('.');
-        if (parts.length > 0) {
-            adjustedName = parts[parts.length - 1];
-        }
-    }
+    // if (sidebar) {
+    //     var adjustedName = name;
+    //     var parts = name.split('.');
+    //     if (parts.length > 0) {
+    //         adjustedName = parts[parts.length - 1];
+    //     }
+    // }
     return adjustedName.replace(/\./, '.<wbr>');
 }
 

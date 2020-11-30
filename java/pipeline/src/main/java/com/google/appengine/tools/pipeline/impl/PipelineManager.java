@@ -50,6 +50,7 @@ import com.google.appengine.tools.pipeline.impl.tasks.Task;
 import com.google.appengine.tools.pipeline.impl.util.StringUtils;
 import com.google.appengine.tools.pipeline.impl.util.UuidGenerator;
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.inject.Injector;
 
@@ -979,7 +980,7 @@ public final class PipelineManager {
             jobRecord.addStatusMessageByFramework("RETRY requested by user" + (Strings.isNullOrEmpty(caughtException.getMessage()) ? "" : ": " + caughtException.getMessage()));
             LOGGER.log(Level.INFO, "User requeseted RETRY during run " + jobRecord + ". " + "This was attempt number " + attemptNumber + " of " + maxAttempts + ".");
         } else {
-            jobRecord.addStatusMessageByFramework("Handling exception: " + caughtException);
+            jobRecord.addStatusMessageByFramework("Handling exception: " + Throwables.getStackTraceAsString(caughtException));
             if (jobRecord.isCallExceptionHandler()) {
                 LOGGER.log(Level.INFO,
                         "An exception occurred when attempting to execute exception hander job " + jobRecord
