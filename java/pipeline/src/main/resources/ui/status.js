@@ -353,6 +353,10 @@ function constructStageNode(pipelineId, infoMap, sidebar) {
     }
 
     function renderCollapsableValue(value, container) {
+        if (value == null) {
+            container.append($('<span>').append($('<i>').text('null')));
+            return;
+        }
         var stringValue = $.toJSON(value);
         var SPLIT_LENGTH = 200;
         if (stringValue.length < SPLIT_LENGTH) {
