@@ -85,14 +85,19 @@ public final class ExceptionRecord extends PipelineModelObject {
 
     @Override
     public PipelineMutation toEntity() {
+        final PipelineMutation mutation = toProtoEntity();
+        final Mutation.WriteBuilder entity = mutation.getDatabaseMutation();
+        byte[] serializedException;
         try {
-            final PipelineMutation mutation = toProtoEntity();
-            final Mutation.WriteBuilder entity = mutation.getDatabaseMutation();
-            final byte[] serializedException = SerializationUtils.serialize(exception);
-            entity.set(EXCEPTION_PROPERTY).to(ByteArray.copyFrom(serializedException));
-            return mutation;
+            serializedException = SerializationUtils.serialize(exception);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to serialize exception for " + getKey(), e);
+            try {
+                serializedException = SerializationUtils.serialize(new SerializableException(exception));
+            } catch (IOException innerEx) {
+                throw new RuntimeException("Failed to serialize original exception and it's serializable wrapper for " + getKey(), innerEx);
+            }
         }
+        entity.set(EXCEPTION_PROPERTY).to(ByteArray.copyFrom(serializedException));
+        return mutation;
     }
 }
