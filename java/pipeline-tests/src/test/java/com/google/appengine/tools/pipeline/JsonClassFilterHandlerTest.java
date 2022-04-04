@@ -47,7 +47,7 @@ public class JsonClassFilterHandlerTest extends PipelineTest {
 
     public void testHandlerNoResults() throws Exception {
         injector.getInstance(JsonClassFilterHandler.class).doGet(request, response);
-        assertEquals("{\n  \"classPaths\" : [ ]\n}", output.toString());
+        assertEquals("{" + System.lineSeparator() + "  \"classPaths\" : [ ]" + System.lineSeparator() + "}", output.toString());
     }
 
     public void testHandlerWithResults() throws Exception {
@@ -63,11 +63,11 @@ public class JsonClassFilterHandlerTest extends PipelineTest {
         assertEquals("bla", bla);
         injector.getInstance(JsonClassFilterHandler.class).doGet(request, response);
         System.out.println(output.toString());
-        String expected = "{\n"
-            + "  \"classPaths\" : ["
+        String expected = "{" + System.lineSeparator()
+                + "  \"classPaths\" : ["
                 + " \"" + Main1Job.class.getSimpleName() + "\", "
                 + "\"" + Main2Job.class.getSimpleName() + "\" "
-                + "]\n}";
+                + "]" + System.lineSeparator() + "}";
         assertEquals(expected, output.toString());
     }
 

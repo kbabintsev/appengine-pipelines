@@ -123,7 +123,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
     @Inject
     public AppEngineBackEnd(final Provider<PipelineManager> pipelineManager, final PipelineTaskQueue pipelineTaskQueue) {
         this.pipelineManager = pipelineManager;
-        spanner = SpannerOptions.newBuilder().build().getService();
+        spanner = SpannerOptions.newBuilder().setEmulatorHost(Consts.SPANNER_EMULATOR_HOST).build().getService();
         final DatabaseId logsId = DatabaseId.of(Consts.SPANNER_PROJECT, Consts.SPANNER_INSTANCE, Consts.SPANNER_DATABASE);
         databaseClient = spanner.getDatabaseClient(logsId);
         taskQueue = pipelineTaskQueue;

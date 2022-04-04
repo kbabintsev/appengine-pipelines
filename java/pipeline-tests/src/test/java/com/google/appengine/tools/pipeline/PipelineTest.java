@@ -23,13 +23,29 @@ import com.google.appengine.tools.development.testing.LocalTaskQueueTestConfig;
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.appengine.tools.pipeline.impl.util.UuidGenerator;
 import com.google.apphosting.api.ApiProxy;
+import com.google.cloud.spanner.DatabaseAdminClient;
+import com.google.cloud.spanner.DatabaseId;
+import com.google.cloud.spanner.InstanceAdminClient;
+import com.google.cloud.spanner.InstanceConfigId;
+import com.google.cloud.spanner.InstanceId;
+import com.google.cloud.spanner.InstanceInfo;
+import com.google.cloud.spanner.Spanner;
+import com.google.cloud.spanner.SpannerOptions;
+import com.google.common.base.Charsets;
+import com.google.common.io.CharStreams;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import junit.framework.TestCase;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static com.google.appengine.tools.pipeline.impl.util.UuidGenerator.USE_SIMPLE_UUIDS_FOR_DEBUGGING;
 
@@ -44,6 +60,7 @@ public abstract class PipelineTest extends TestCase {
     protected Injector injector;
     protected PipelineService service;
     protected PipelineManager pipelineManager;
+    protected Spanner spanner;
     private LocalTaskQueue taskQueue;
 
     public PipelineTest() {
@@ -84,12 +101,16 @@ public abstract class PipelineTest extends TestCase {
     public void setUp() throws Exception {
         super.setUp();
         injector = Guice.createInjector(new TestModule());
-        pipelineManager = injector.getInstance(PipelineManager.class);
-        service = injector.getInstance(PipelineService.class);
         traceBuffer = new StringBuffer();
         helper.setUp();
         apiProxyEnvironment = ApiProxy.getCurrentEnvironment();
         System.setProperty(USE_SIMPLE_UUIDS_FOR_DEBUGGING, "true");
+        spanner = SpannerOptions.newBuilder().setEmulatorHost(Consts.SPANNER_EMULATOR_HOST).setProjectId(Consts.SPANNER_PROJECT).build().getService();
+        if (Consts.SPANNER_EMULATOR_HOST != null) {
+            createTestDatabase();
+        }
+        service = injector.getInstance(PipelineService.class);
+        pipelineManager = injector.getInstance(PipelineManager.class);
         taskQueue = LocalTaskQueueTestConfig.getLocalTaskQueue();
         cleanUp();
     }
@@ -97,8 +118,40 @@ public abstract class PipelineTest extends TestCase {
     @Override
     public void tearDown() throws Exception {
         cleanUp();
+        if (Consts.SPANNER_EMULATOR_HOST != null) {
+            removeTestDatabase();
+        }
         helper.tearDown();
         super.tearDown();
+    }
+
+    void createTestDatabase() throws IOException, ExecutionException, InterruptedException {
+        final InstanceAdminClient instanceAdminClient = spanner.getInstanceAdminClient();
+        final InstanceId instanceId = InstanceId.of(Consts.SPANNER_PROJECT, Consts.SPANNER_INSTANCE);
+        if (
+                StreamSupport.stream(instanceAdminClient.listInstances().iterateAll().spliterator(), false)
+                        .noneMatch(o -> o.getId().equals(instanceId))
+        ) {
+            instanceAdminClient.createInstance(
+                    InstanceInfo.newBuilder(instanceId)
+                            .setInstanceConfigId(InstanceConfigId.of(Consts.SPANNER_PROJECT, Consts.SPANNER_INSTANCE))
+                            .setDisplayName(Consts.SPANNER_INSTANCE)
+                            .setNodeCount(1)
+                            .build()
+            ).get();
+        }
+
+        removeTestDatabase();
+
+        final DatabaseAdminClient dbAdminClient = spanner.getDatabaseAdminClient();
+        final String databaseDdl = CharStreams.toString(new InputStreamReader(getClass().getClassLoader().getResourceAsStream("database.sql"), Charsets.UTF_8));
+        dbAdminClient.createDatabase(Consts.SPANNER_INSTANCE, Consts.SPANNER_DATABASE, Arrays.stream(databaseDdl.split(";")).collect(Collectors.toList())).get();
+        final DatabaseId databaseId = DatabaseId.of(Consts.SPANNER_PROJECT, Consts.SPANNER_INSTANCE, Consts.SPANNER_DATABASE);
+    }
+
+    void removeTestDatabase() {
+        final DatabaseAdminClient dbAdminClient = spanner.getDatabaseAdminClient();
+        dbAdminClient.dropDatabase(Consts.SPANNER_INSTANCE, Consts.SPANNER_DATABASE);
     }
 
     private void cleanUp() throws NoSuchObjectException {
