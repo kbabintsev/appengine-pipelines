@@ -32,7 +32,7 @@ import java.util.UUID;
  * <blockquote>
  *
  * <pre>
- * PromisedValue<java.lang.Integer> x = newPromise()
+ * PromisedValue&gt;java.lang.Integer&lt; x = newPromise()
  * UUID xKey = x.getKey();
  * invokeExternalAgent(xKey)
  * futureCall(new UsesIntegerJob(), x);

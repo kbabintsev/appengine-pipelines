@@ -27,13 +27,13 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class RetryTest extends PipelineTest {
+public final class RetryTest extends PipelineTest {
 
-    private static volatile CountDownLatch countdownLatch;
     public static final int ACCEPTABLE_LAG_SECONDS = 5;
+    private static volatile CountDownLatch countdownLatch;
 
     public RetryTest() {
-        LocalTaskQueueTestConfig taskQueueConfig = new LocalTaskQueueTestConfig();
+        final LocalTaskQueueTestConfig taskQueueConfig = new LocalTaskQueueTestConfig();
         taskQueueConfig.setCallbackClass(TestingTaskQueueCallback.class);
         taskQueueConfig.setDisableAutoTaskExecution(false);
         taskQueueConfig.setShouldCopyApiProxyEnvironment(true);
@@ -69,7 +69,7 @@ public class RetryTest extends PipelineTest {
         try {
             runJob(3, 3, 10, false);
             fail("Excepted exception");
-        } catch (AssertionFailedError e) {
+        } catch (AssertionFailedError ignore) {
             // expected;
         }
 
@@ -79,22 +79,22 @@ public class RetryTest extends PipelineTest {
         runJob(3, 3, 15, false);
     }
 
-    private void doMaxAttemptsTest(boolean succeedTheLastTime) throws Exception {
-        UUID pipelineId = runJob(1, 4, 10, succeedTheLastTime);
+    private void doMaxAttemptsTest(final boolean succeedTheLastTime) throws Exception {
+        final UUID pipelineId = runJob(1, 4, 10, succeedTheLastTime);
         // Wait for framework to save Job information
         Thread.sleep(1000L + ACCEPTABLE_LAG_SECONDS * 1000);
-        JobInfo jobInfo = service.getJobInfo(pipelineId, pipelineId);
-        JobInfo.State expectedState =
-                (succeedTheLastTime ? JobInfo.State.COMPLETED_SUCCESSFULLY
-                        : JobInfo.State.STOPPED_BY_ERROR);
+        final JobInfo jobInfo = service.getJobInfo(pipelineId, pipelineId);
+        final JobInfo.State expectedState = succeedTheLastTime
+                ? JobInfo.State.COMPLETED_SUCCESSFULLY
+                : JobInfo.State.STOPPED_BY_ERROR;
         assertEquals(expectedState, jobInfo.getJobState());
     }
 
-    private UUID runJob(int backoffFactor, int maxAttempts, int awaitSeconds,
-                        boolean succeedTheLastTime) throws Exception {
+    private UUID runJob(final int backoffFactor, final int maxAttempts, final int awaitSeconds,
+                        final boolean succeedTheLastTime) throws Exception {
         countdownLatch = new CountDownLatch(maxAttempts);
 
-        UUID pipelineId = service.startNewPipeline(
+        final UUID pipelineId = service.startNewPipeline(
                 new InvokesFailureJob(succeedTheLastTime, maxAttempts, backoffFactor));
         assertTrue(countdownLatch.await(awaitSeconds + ACCEPTABLE_LAG_SECONDS, TimeUnit.SECONDS));
         return pipelineId;
@@ -109,7 +109,7 @@ public class RetryTest extends PipelineTest {
         int backoffFactor;
         private boolean succeedTheLastTime;
 
-        public InvokesFailureJob(boolean succeedTheLastTime, int maxAttempts, int backoffFactor) {
+        public InvokesFailureJob(final boolean succeedTheLastTime, final int maxAttempts, final int backoffFactor) {
             this.succeedTheLastTime = succeedTheLastTime;
             this.maxAttempts = maxAttempts;
             this.backoffFactor = backoffFactor;
@@ -117,7 +117,7 @@ public class RetryTest extends PipelineTest {
 
         @Override
         public Value<Void> run() {
-            JobSetting[] jobSettings =
+            final JobSetting[] jobSettings =
                     new JobSetting[]{new MaxAttempts(maxAttempts), new BackoffSeconds(1),
                             new BackoffFactor(backoffFactor)};
             return futureCall(new FailureJob(succeedTheLastTime), jobSettings);
@@ -131,7 +131,7 @@ public class RetryTest extends PipelineTest {
     public static class FailureJob extends Job0<Void> {
         private boolean succeedTheLastTime;
 
-        public FailureJob(boolean succeedTheLastTime) {
+        public FailureJob(final boolean succeedTheLastTime) {
             this.succeedTheLastTime = succeedTheLastTime;
         }
 

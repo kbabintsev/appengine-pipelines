@@ -34,7 +34,7 @@ import java.util.UUID;
  * for(int i = 0; i < n; i++) {
  *   listOfFutures.add(futureCall(new MyJob(), immediate(i), immediate(n));
  * }
- * FutureList<java.lang.Integer> futureList = new FutureList(listOfFutures);
+ * FutureList&gt;java.lang.Integer&lt; futureList = new FutureList(listOfFutures);
  * futureCall(new MyCombinerJob(), futureList);
  * </code>
  * </pre>

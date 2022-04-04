@@ -65,7 +65,7 @@ public abstract class PipelineTest extends TestCase {
 
     public PipelineTest() {
         System.setProperty("java.util.logging.config.file", ClassLoader.getSystemResource("logging.properties").getPath());
-        LocalTaskQueueTestConfig taskQueueConfig = new LocalTaskQueueTestConfig();
+        final LocalTaskQueueTestConfig taskQueueConfig = new LocalTaskQueueTestConfig();
         taskQueueConfig.setCallbackClass(TestingTaskQueueCallback.class);
         taskQueueConfig.setDisableAutoTaskExecution(false);
         taskQueueConfig.setShouldCopyApiProxyEnvironment(true);
@@ -76,7 +76,7 @@ public abstract class PipelineTest extends TestCase {
                 taskQueueConfig, new LocalModulesServiceTestConfig());
     }
 
-    protected static void trace(String what) {
+    protected static void trace(final String what) {
         if (traceBuffer.length() > 0) {
             traceBuffer.append(' ');
         }
@@ -125,7 +125,7 @@ public abstract class PipelineTest extends TestCase {
         super.tearDown();
     }
 
-    void createTestDatabase() throws IOException, ExecutionException, InterruptedException {
+    final void createTestDatabase() throws IOException, ExecutionException, InterruptedException {
         final InstanceAdminClient instanceAdminClient = spanner.getInstanceAdminClient();
         final InstanceId instanceId = InstanceId.of(Consts.SPANNER_PROJECT, Consts.SPANNER_INSTANCE);
         if (
@@ -149,7 +149,7 @@ public abstract class PipelineTest extends TestCase {
         final DatabaseId databaseId = DatabaseId.of(Consts.SPANNER_PROJECT, Consts.SPANNER_INSTANCE, Consts.SPANNER_DATABASE);
     }
 
-    void removeTestDatabase() {
+    final void removeTestDatabase() {
         final DatabaseAdminClient dbAdminClient = spanner.getDatabaseAdminClient();
         dbAdminClient.dropDatabase(Consts.SPANNER_INSTANCE, Consts.SPANNER_DATABASE);
     }
@@ -157,17 +157,17 @@ public abstract class PipelineTest extends TestCase {
     private void cleanUp() throws NoSuchObjectException {
         service.cleanBobs(UuidGenerator.getTestPrefix());
         final Set<UUID> testPipelines = service.getTestPipelines();
-        for (UUID pipelineId : testPipelines) {
+        for (final UUID pipelineId : testPipelines) {
             service.deletePipelineRecords(pipelineId, true, false);
         }
     }
 
-    protected void waitUntilTaskQueueIsEmpty() throws InterruptedException {
+    protected final void waitUntilTaskQueueIsEmpty() throws InterruptedException {
         boolean hasMoreTasks = true;
         while (hasMoreTasks) {
-            Map<String, QueueStateInfo> taskInfoMap = taskQueue.getQueueStateInfo();
+            final Map<String, QueueStateInfo> taskInfoMap = taskQueue.getQueueStateInfo();
             hasMoreTasks = false;
-            for (QueueStateInfo taskQueueInfo : taskInfoMap.values()) {
+            for (final QueueStateInfo taskQueueInfo : taskInfoMap.values()) {
                 if (taskQueueInfo.getCountTasks() > 0) {
                     hasMoreTasks = true;
                     break;
@@ -179,10 +179,10 @@ public abstract class PipelineTest extends TestCase {
         }
     }
 
-    protected JobInfo waitUntilJobComplete(UUID pipelineId) throws Exception {
+    protected final JobInfo waitUntilJobComplete(final UUID pipelineId) throws Exception {
         while (true) {
             Thread.sleep(2000);
-            JobInfo jobInfo = service.getJobInfo(pipelineId, pipelineId);
+            final JobInfo jobInfo = service.getJobInfo(pipelineId, pipelineId);
             switch (jobInfo.getJobState()) {
                 case RUNNING:
                 case WAITING_TO_RETRY:
@@ -193,10 +193,10 @@ public abstract class PipelineTest extends TestCase {
         }
     }
 
-    protected PipelineInfo waitUntilPipelineComplete(UUID pipelineId) throws Exception {
+    protected final PipelineInfo waitUntilPipelineComplete(final UUID pipelineId) throws Exception {
         while (true) {
             Thread.sleep(2000);
-            PipelineInfo jobInfo = service.getPipelineInfo(pipelineId);
+            final PipelineInfo jobInfo = service.getPipelineInfo(pipelineId);
             switch (jobInfo.getJobState()) {
                 case RUNNING:
                 case WAITING_TO_RETRY:
@@ -208,7 +208,7 @@ public abstract class PipelineTest extends TestCase {
     }
 
     @SuppressWarnings("unchecked")
-    protected <T> T waitForJobToComplete(UUID pipelineId) throws Exception {
+    protected final <T> T waitForJobToComplete(final UUID pipelineId) throws Exception {
         JobInfo jobInfo = waitUntilJobComplete(pipelineId);
         switch (jobInfo.getJobState()) {
             case COMPLETED_SUCCESSFULLY:

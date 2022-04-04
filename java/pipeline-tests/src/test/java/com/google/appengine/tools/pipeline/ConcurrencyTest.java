@@ -2,12 +2,12 @@ package com.google.appengine.tools.pipeline;
 
 import java.util.UUID;
 
-public class ConcurrencyTest extends PipelineTest {
+public final class ConcurrencyTest extends PipelineTest {
     private static final int EXPECTED_RESULT = 123;
 
     public void testWaifForAllChildrenByDefault() throws Exception {
-        UUID pipelineId = service.startNewPipeline(new GeneratorImmediateReturn());
-        Integer result = waitForJobToComplete(pipelineId);
+        final UUID pipelineId = service.startNewPipeline(new GeneratorImmediateReturn());
+        final Integer result = waitForJobToComplete(pipelineId);
         assertEquals(EXPECTED_RESULT, result.intValue());
         assertEquals("TestSimpleCatchJob.run SimpleJob.run SimpleJob.run SimpleJob.run", trace());
         // Original framework would produce:

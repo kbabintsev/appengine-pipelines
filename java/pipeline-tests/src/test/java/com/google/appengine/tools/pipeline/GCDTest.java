@@ -26,9 +26,9 @@ import java.util.logging.Logger;
 /**
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class GCDTest extends PipelineTest {
+public final class GCDTest extends PipelineTest {
 
-    private static final transient Logger logger = Logger.getLogger(GCDTest.class.getName());
+    private static final transient Logger LOGGER = Logger.getLogger(GCDTest.class.getName());
 
     public void testGCDCalculation() throws Exception {
         doGcdTest(1, 1, 1);
@@ -41,10 +41,10 @@ public class GCDTest extends PipelineTest {
         doAsyncGcdTest("Biff", 2, 2, "Hello, Biff. The GCD of 2 and 2 is 2.");
     }
 
-    private void doGcdTest(int x, int y, int expectedGcd) throws Exception {
-        UUID pipelineId = service.startNewPipeline(new GCDJob(), x, y);
-        int calculatedGcd = waitForJobToComplete(pipelineId);
-        logger.info("The GCD of " + x + " and " + y + " is " + calculatedGcd);
+    private void doGcdTest(final int x, final int y, final int expectedGcd) throws Exception {
+        final UUID pipelineId = service.startNewPipeline(new GCDJob(), x, y);
+        final int calculatedGcd = waitForJobToComplete(pipelineId);
+        LOGGER.info("The GCD of " + x + " and " + y + " is " + calculatedGcd);
         assertEquals(expectedGcd, calculatedGcd);
         // PipelineObjects pipelineObjects =
         // PipelineManager.queryFullPipeline(pipelineId);
@@ -52,7 +52,7 @@ public class GCDTest extends PipelineTest {
     }
 
     private void doAsyncGcdTest(final String userName, final int x, final int y,
-                                String expectedMessage) throws Exception {
+                                final String expectedMessage) throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         final StringBuilder builder = new StringBuilder();
         AsyncGCDExample.callback = new AsyncGCDExample.Callback() {
@@ -75,12 +75,12 @@ public class GCDTest extends PipelineTest {
             }
 
             @Override
-            public void acceptOutput(String output) {
+            public void acceptOutput(final String output) {
                 builder.append(output);
                 latch.countDown();
             }
         };
-        UUID pipelineId = service.startNewPipeline(new PrintGCDJob());
+        final UUID pipelineId = service.startNewPipeline(new PrintGCDJob());
         assertTrue(latch.await(6, TimeUnit.MINUTES));
         assertEquals(expectedMessage, builder.toString());
         // Wait for job task thread to complete

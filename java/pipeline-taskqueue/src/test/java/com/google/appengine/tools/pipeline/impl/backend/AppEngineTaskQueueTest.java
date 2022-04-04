@@ -19,14 +19,14 @@ import java.util.UUID;
 /**
  * @author tkaitchuck
  */
-public class AppEngineTaskQueueTest extends TestCase {
+public final class AppEngineTaskQueueTest extends TestCase {
 
     private LocalServiceTestHelper helper;
 
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        LocalTaskQueueTestConfig taskQueueConfig = new LocalTaskQueueTestConfig();
+        final LocalTaskQueueTestConfig taskQueueConfig = new LocalTaskQueueTestConfig();
         taskQueueConfig.setDisableAutoTaskExecution(true);
         taskQueueConfig.setShouldCopyApiProxyEnvironment(true);
         helper = new LocalServiceTestHelper(taskQueueConfig, new LocalModulesServiceTestConfig());
@@ -40,8 +40,8 @@ public class AppEngineTaskQueueTest extends TestCase {
     }
 
     public void testEnqueueSingleTask() {
-        AppEngineTaskQueue queue = new AppEngineTaskQueue();
-        Task task = createTask();
+        final AppEngineTaskQueue queue = new AppEngineTaskQueue();
+        final Task task = createTask();
         List<TaskHandle> handles = queue.addToQueue(Collections.singletonList(task));
 
         assertEquals(1, handles.size());
@@ -52,10 +52,10 @@ public class AppEngineTaskQueueTest extends TestCase {
     }
 
     public void testEnqueueBatchTasks() {
-        AppEngineTaskQueue queue = new AppEngineTaskQueue();
-        List<Task> tasks = new ArrayList<>(AppEngineTaskQueue.MAX_TASKS_PER_ENQUEUE);
+        final AppEngineTaskQueue queue = new AppEngineTaskQueue();
+        final List<Task> tasks = new ArrayList<>(AppEngineTaskQueue.MAX_TASKS_PER_ENQUEUE);
         for (int i = 0; i < AppEngineTaskQueue.MAX_TASKS_PER_ENQUEUE; i++) {
-            Task task = createTask();
+            final Task task = createTask();
             tasks.add(task);
         }
         List<TaskHandle> handles = queue.addToQueue(tasks);
@@ -69,11 +69,11 @@ public class AppEngineTaskQueueTest extends TestCase {
     }
 
     public void testEnqueueLargeBatchTasks() {
-        AppEngineTaskQueue queue = new AppEngineTaskQueue();
-        int batchSize = AppEngineTaskQueue.MAX_TASKS_PER_ENQUEUE * 2 + 10;
-        List<Task> tasks = new ArrayList<>(batchSize);
+        final AppEngineTaskQueue queue = new AppEngineTaskQueue();
+        final int batchSize = AppEngineTaskQueue.MAX_TASKS_PER_ENQUEUE * 2 + 10;
+        final List<Task> tasks = new ArrayList<>(batchSize);
         for (int i = 0; i < batchSize; i++) {
-            Task task = createTask();
+            final Task task = createTask();
             tasks.add(task);
         }
         List<TaskHandle> handles = queue.addToQueue(tasks);
@@ -87,15 +87,15 @@ public class AppEngineTaskQueueTest extends TestCase {
     }
 
     public void testEnqueueBatchTwoStages() {
-        AppEngineTaskQueue queue = new AppEngineTaskQueue();
-        int batchSize = AppEngineTaskQueue.MAX_TASKS_PER_ENQUEUE * 2;
-        List<Task> tasks = new ArrayList<>(batchSize);
+        final AppEngineTaskQueue queue = new AppEngineTaskQueue();
+        final int batchSize = AppEngineTaskQueue.MAX_TASKS_PER_ENQUEUE * 2;
+        final List<Task> tasks = new ArrayList<>(batchSize);
         for (int i = 0; i < batchSize; i++) {
-            Task task = createTask();
+            final Task task = createTask();
             tasks.add(task);
         }
 
-        int firstBatchSize = AppEngineTaskQueue.MAX_TASKS_PER_ENQUEUE;
+        final int firstBatchSize = AppEngineTaskQueue.MAX_TASKS_PER_ENQUEUE;
         List<TaskHandle> handles = queue.addToQueue(tasks.subList(0, firstBatchSize));
 
         assertEquals(firstBatchSize, handles.size());
@@ -106,7 +106,7 @@ public class AppEngineTaskQueueTest extends TestCase {
         handles = queue.addToQueue(tasks);
 
         // Duplicate is rejected (not counted) per batch.
-        int expected = tasks.size() - firstBatchSize;
+        final int expected = tasks.size() - firstBatchSize;
         assertEquals(expected, handles.size());
         for (int i = 0; i < expected; i++) {
             assertEquals(tasks.get(firstBatchSize + i).getName(), handles.get(i).getName());
@@ -114,8 +114,8 @@ public class AppEngineTaskQueueTest extends TestCase {
     }
 
     private Task createTask() {
-        UUID key = UuidGenerator.nextUuid();
-        Task task = new RunJobTask(key, key, new QueueSettings().setRoute(new Route().setVersion("m1")));
+        final UUID key = UuidGenerator.nextUuid();
+        final Task task = new RunJobTask(key, key, new QueueSettings().setRoute(new Route().setVersion("m1")));
         return task;
     }
 }

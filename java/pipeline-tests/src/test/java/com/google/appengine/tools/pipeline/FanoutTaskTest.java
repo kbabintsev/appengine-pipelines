@@ -14,7 +14,6 @@
 
 package com.google.appengine.tools.pipeline;
 
-import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
@@ -50,13 +49,13 @@ public class FanoutTaskTest extends TestCase {
         helper.setUp();
         System.setProperty(USE_SIMPLE_UUIDS_FOR_DEBUGGING, "true");
         UUID key = UUID.fromString("00000000-0000-0000-0001-000000000001");
-        RunJobTask runJobTask = new RunJobTask(key, key, queueSettings1);
+        final RunJobTask runJobTask = new RunJobTask(key, key, queueSettings1);
         key = UUID.fromString("00000000-0000-0000-0001-000000000002");
-        RunJobTask runJobTask2 = new RunJobTask(key, key, queueSettings2);
+        final RunJobTask runJobTask2 = new RunJobTask(key, key, queueSettings2);
         key = UUID.fromString("00000000-0000-0000-0001-000000000003");
-        FinalizeJobTask finalizeJobTask = new FinalizeJobTask(key, key, queueSettings1);
+        final FinalizeJobTask finalizeJobTask = new FinalizeJobTask(key, key, queueSettings1);
         key = UUID.fromString("00000000-0000-0000-0002-000000000001");
-        HandleSlotFilledTask hsfTask = new HandleSlotFilledTask(key, key, queueSettings2);
+        final HandleSlotFilledTask hsfTask = new HandleSlotFilledTask(key, key, queueSettings2);
         listOfTasks = ImmutableList.of(runJobTask, runJobTask2, finalizeJobTask, hsfTask);
         encodedBytes = FanoutTask.encodeTasks(listOfTasks);
     }
@@ -76,28 +75,28 @@ public class FanoutTaskTest extends TestCase {
     }
 
     /**
-     * Tests conversion of {@link FanoutTaskRecord} to and from an {@link Entity}
+     * Tests conversion of {@link FanoutTaskRecord} to and from an Entity
      */
     public void testFanoutTaskRecord() throws Exception {
-        UUID rootJobKey = UUID.fromString("00000000-0000-0000-0001-000000000001");
-        FanoutTaskRecord record = new FanoutTaskRecord(rootJobKey, encodedBytes);
+        final UUID rootJobKey = UUID.fromString("00000000-0000-0000-0001-000000000001");
+        final FanoutTaskRecord record = new FanoutTaskRecord(rootJobKey, encodedBytes);
 //    Entity entity = record.toEntity();
 ////     reconstitute entity
 //    record = new FanoutTaskRecord(entity);
         checkBytes(record.getPayload());
     }
 
-    private void checkBytes(byte[] bytes) {
-        List<Task> reconstituted = FanoutTask.decodeTasks(bytes);
+    private void checkBytes(final byte[] bytes) {
+        final List<Task> reconstituted = FanoutTask.decodeTasks(bytes);
         assertEquals(listOfTasks.size(), reconstituted.size());
         for (int i = 0; i < listOfTasks.size(); i++) {
-            Task expected = listOfTasks.get(i);
-            Task actual = reconstituted.get(i);
+            final Task expected = listOfTasks.get(i);
+            final Task actual = reconstituted.get(i);
             assertEquals(i, expected, actual);
         }
     }
 
-    private void assertEquals(int i, Task expected, Task actual) {
+    private void assertEquals(final int i, final Task expected, final Task actual) {
         assertEquals("i=" + i, expected.getType(), actual.getType());
         assertEquals("i=" + i, expected.toProperties(), actual.toProperties());
     }

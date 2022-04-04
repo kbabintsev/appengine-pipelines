@@ -24,25 +24,25 @@ import java.util.UUID;
  * SumsListJob. In testReturnFutureList() the call to futureList() happens in
  * the child job, ReturnsListJob.
  */
-public class FutureListTest extends PipelineTest {
+public final class FutureListTest extends PipelineTest {
 
     public void testFutureList() throws Exception {
-        UUID pipelineId = service.startNewPipeline(new SumsListJob1());
-        Integer sum = waitForJobToComplete(pipelineId);
+        final UUID pipelineId = service.startNewPipeline(new SumsListJob1());
+        final Integer sum = waitForJobToComplete(pipelineId);
         assertEquals(21, sum.intValue());
     }
 
     public void testReturnFutureList() throws Exception {
-        UUID pipelineId = service.startNewPipeline(new SumsListJob2());
-        Integer sum = waitForJobToComplete(pipelineId);
+        final UUID pipelineId = service.startNewPipeline(new SumsListJob2());
+        final Integer sum = waitForJobToComplete(pipelineId);
         assertEquals(21, sum.intValue());
     }
 
     // Thanks to Ronoaldo José de Lana Pereira for
     // suggesting this.
     public void testEmptyFutureList() throws Exception {
-        UUID pipelineId = service.startNewPipeline(new SumsEmptyListJob());
-        Integer sum = waitForJobToComplete(pipelineId);
+        final UUID pipelineId = service.startNewPipeline(new SumsEmptyListJob());
+        final Integer sum = waitForJobToComplete(pipelineId);
         assertEquals(0, sum.intValue());
     }
 
@@ -55,9 +55,9 @@ public class FutureListTest extends PipelineTest {
     private static class SumsListJob1 extends Job0<Integer> {
         @Override
         public Value<Integer> run() {
-            Returns5Job returns5Job = new Returns5Job();
-            SumJob sumJob = new SumJob();
-            List<Value<Integer>> valueList = new ArrayList<>(4);
+            final Returns5Job returns5Job = new Returns5Job();
+            final SumJob sumJob = new SumJob();
+            final List<Value<Integer>> valueList = new ArrayList<>(4);
             valueList.add(futureCall(returns5Job));
             valueList.add(immediate(7));
             valueList.add(futureCall(returns5Job));
@@ -82,7 +82,7 @@ public class FutureListTest extends PipelineTest {
     private static class SumsEmptyListJob extends Job0<Integer> {
         @Override
         public Value<Integer> run() {
-            List<Value<Integer>> emptyValueList = new ArrayList<>(0);
+            final List<Value<Integer>> emptyValueList = new ArrayList<>(0);
             return futureCall(new SumJob(), futureList(emptyValueList));
         }
     }
@@ -91,7 +91,7 @@ public class FutureListTest extends PipelineTest {
     private static class ReturnsListJob extends Job0<List<Integer>> {
         @Override
         public Value<List<Integer>> run() {
-            Returns5Job returns5Job = new Returns5Job();
+            final Returns5Job returns5Job = new Returns5Job();
             return new FutureList<>(getPipelineKey(), futureCall(returns5Job), immediate(7), futureCall(returns5Job), immediate(4));
         }
     }
@@ -107,9 +107,9 @@ public class FutureListTest extends PipelineTest {
     @SuppressWarnings("serial")
     private static class SumJob extends Job1<Integer, List<Integer>> {
         @Override
-        public Value<Integer> run(List<Integer> list) {
+        public Value<Integer> run(final List<Integer> list) {
             int sum = 0;
-            for (int x : list) {
+            for (final int x : list) {
                 sum += x;
             }
             return immediate(sum);

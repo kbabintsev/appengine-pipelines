@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
 /**
  * Test for {@link JsonClassFilterHandler}.
  */
-public class JsonClassFilterHandlerTest extends PipelineTest {
+public final class JsonClassFilterHandlerTest extends PipelineTest {
 
     private final StringWriter output = new StringWriter();
     @Mock
@@ -51,19 +51,19 @@ public class JsonClassFilterHandlerTest extends PipelineTest {
     }
 
     public void testHandlerWithResults() throws Exception {
-        UUID pipelineId1 = service.startNewPipeline(new Main1Job());
-        UUID pipelineId2 = service.startNewPipeline(new Main2Job(false));
-        UUID pipelineId3 = service.startNewPipeline(new Main2Job(true),
+        final UUID pipelineId1 = service.startNewPipeline(new Main1Job());
+        final UUID pipelineId2 = service.startNewPipeline(new Main2Job(false));
+        final UUID pipelineId3 = service.startNewPipeline(new Main2Job(true),
                 new JobSetting.BackoffSeconds(0), new JobSetting.MaxAttempts(2));
-        String helloWorld = (String) waitForJobToComplete(pipelineId1);
+        final String helloWorld = (String) waitForJobToComplete(pipelineId1);
         assertEquals("hello world", helloWorld);
-        String hiThere = (String) waitForJobToComplete(pipelineId2);
+        final String hiThere = (String) waitForJobToComplete(pipelineId2);
         assertEquals("hi there", hiThere);
-        String bla = (String) waitForJobToComplete(pipelineId3);
+        final String bla = (String) waitForJobToComplete(pipelineId3);
         assertEquals("bla", bla);
         injector.getInstance(JsonClassFilterHandler.class).doGet(request, response);
         System.out.println(output.toString());
-        String expected = "{" + System.lineSeparator()
+        final String expected = "{" + System.lineSeparator()
                 + "  \"classPaths\" : ["
                 + " \"" + Main1Job.class.getSimpleName() + "\", "
                 + "\"" + Main2Job.class.getSimpleName() + "\" "
@@ -76,8 +76,8 @@ public class JsonClassFilterHandlerTest extends PipelineTest {
 
         @Override
         public Value<String> run() {
-            FutureValue<String> v1 = futureCall(new StrJob<String>(), immediate("hello"));
-            FutureValue<String> v2 = futureCall(new StrJob<String>(), immediate(" world"));
+            final FutureValue<String> v1 = futureCall(new StrJob<String>(), immediate("hello"));
+            final FutureValue<String> v2 = futureCall(new StrJob<String>(), immediate(" world"));
             return futureCall(new ConcatJob(), v1, v2);
         }
     }
@@ -87,7 +87,7 @@ public class JsonClassFilterHandlerTest extends PipelineTest {
 
         private final boolean shouldThrow;
 
-        public Main2Job(boolean shouldThrow) {
+        Main2Job(final boolean shouldThrow) {
             this.shouldThrow = shouldThrow;
         }
 
@@ -96,13 +96,13 @@ public class JsonClassFilterHandlerTest extends PipelineTest {
             if (shouldThrow) {
                 throw new RuntimeException("bla");
             }
-            FutureValue<String> v1 = futureCall(new StrJob<String>(), immediate("hi"));
-            FutureValue<String> v2 = futureCall(new StrJob<String>(), immediate(" there"));
+            final FutureValue<String> v1 = futureCall(new StrJob<String>(), immediate("hi"));
+            final FutureValue<String> v2 = futureCall(new StrJob<String>(), immediate(" there"));
             return futureCall(new ConcatJob(), v1, v2);
         }
 
         @SuppressWarnings("unused")
-        public Value<String> handleException(Throwable t) {
+        public Value<String> handleException(final Throwable t) {
             return immediate(t.getMessage());
         }
     }
@@ -111,7 +111,7 @@ public class JsonClassFilterHandlerTest extends PipelineTest {
     private static class ConcatJob extends Job2<String, String, String> {
 
         @Override
-        public Value<String> run(String value1, String value2) {
+        public Value<String> run(final String value1, final String value2) {
             return immediate(value1 + value2);
         }
     }
@@ -120,7 +120,7 @@ public class JsonClassFilterHandlerTest extends PipelineTest {
     private static class StrJob<T extends Serializable> extends Job1<String, T> {
 
         @Override
-        public Value<String> run(T obj) {
+        public Value<String> run(final T obj) {
             return immediate(obj == null ? "null" : obj.toString());
         }
     }

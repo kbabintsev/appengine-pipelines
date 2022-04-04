@@ -26,13 +26,13 @@ import java.util.UUID;
 /**
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class BarrierTest extends PipelineTest {
+public final class BarrierTest extends PipelineTest {
 
 //    private LocalServiceTestHelper helper =
 //            new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
 
     Slot createDummySlot() {
-        UUID dummyKey = UUID.fromString("00000000-0000-0000-0000-000000000bad");
+        final UUID dummyKey = UUID.fromString("00000000-0000-0000-0000-000000000bad");
         return new Slot(pipelineManager, dummyKey, dummyKey, dummyKey);
     }
 
@@ -68,36 +68,36 @@ public class BarrierTest extends PipelineTest {
                 new PhantomMarker("banana"), new ListMarker(7), Lists.newArrayList("red", "blue"));
     }
 
-    private void doArgumentBuildingTest(Object[] expectedArguments, Object... slotValues) {
-        Barrier barrier = Barrier.dummyInstanceForTesting();
-        for (Object value : slotValues) {
+    private void doArgumentBuildingTest(final Object[] expectedArguments, final Object... slotValues) {
+        final Barrier barrier = Barrier.dummyInstanceForTesting();
+        for (final Object value : slotValues) {
             if (value instanceof ListMarker) {
-                List<?> valueList = ((ListMarker) value).valueList;
-                List<Slot> slotList = new ArrayList<>(valueList.size());
-                Slot dummyListSlot = createDummySlot();
+                final List<?> valueList = ((ListMarker) value).valueList;
+                final List<Slot> slotList = new ArrayList<>(valueList.size());
+                final Slot dummyListSlot = createDummySlot();
                 dummyListSlot.fill(null);
-                for (Object v : valueList) {
-                    Slot slot = createDummySlot();
+                for (final Object v : valueList) {
+                    final Slot slot = createDummySlot();
                     slot.fill(v);
                     slotList.add(slot);
                 }
                 barrier.addListArgumentSlots(dummyListSlot, slotList);
             } else if (value instanceof PhantomMarker) {
-                Slot slot = createDummySlot();
+                final Slot slot = createDummySlot();
                 slot.fill(((PhantomMarker) value).value);
                 barrier.addPhantomArgumentSlot(slot);
             } else {
-                Slot slot = createDummySlot();
+                final Slot slot = createDummySlot();
                 slot.fill(value);
                 barrier.addRegularArgumentSlot(slot);
             }
 
         }
-        Object[] arguments = barrier.buildArgumentArray();
+        final Object[] arguments = barrier.buildArgumentArray();
         assertEqualArrays(expectedArguments, arguments);
     }
 
-    private void assertEqualArrays(Object[] expected, Object[] actual) {
+    private void assertEqualArrays(final Object[] expected, final Object[] actual) {
         assertEquals(expected.length, actual.length);
         for (int i = 0; i < expected.length; i++) {
             assertEquals("i=" + i, expected[i], actual[i]);
@@ -105,9 +105,9 @@ public class BarrierTest extends PipelineTest {
     }
 
     private static class ListMarker {
-        public List<?> valueList;
+        private List<?> valueList;
 
-        ListMarker(Object... elements) {
+        ListMarker(final Object... elements) {
             valueList = ImmutableList.copyOf(elements);
         }
     }
@@ -115,7 +115,7 @@ public class BarrierTest extends PipelineTest {
     private static class PhantomMarker {
         Object value;
 
-        PhantomMarker(Object v) {
+        PhantomMarker(final Object v) {
             value = v;
         }
     }

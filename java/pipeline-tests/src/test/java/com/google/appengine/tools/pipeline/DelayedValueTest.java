@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author maximf@google.com (Maxim Fateev)
  */
-public class DelayedValueTest extends PipelineTest {
+public final class DelayedValueTest extends PipelineTest {
 
     private static final int EXPECTED_RESULT = 5;
     private static final long DELAY_SECONDS = 10;
@@ -30,8 +30,8 @@ public class DelayedValueTest extends PipelineTest {
     private static AtomicLong duration2 = new AtomicLong();
 
     public void testDelayedValue() throws Exception {
-        UUID pipelineId = service.startNewPipeline(new TestDelayedValueJob());
-        Integer five = waitForJobToComplete(pipelineId);
+        final UUID pipelineId = service.startNewPipeline(new TestDelayedValueJob());
+        final Integer five = waitForJobToComplete(pipelineId);
         assertEquals(EXPECTED_RESULT, five.intValue());
         assertEquals("TestDelayedValueJob.run DelayedJob.run", trace());
         assertTrue(duration2.get() - duration1.get() >= DELAY_SECONDS * 1000);
@@ -55,7 +55,7 @@ public class DelayedValueTest extends PipelineTest {
         public Value<Integer> run() {
             trace("TestDelayedValueJob.run");
             duration1.set(System.currentTimeMillis());
-            Value<Void> delayedValue = newDelayedValue(DELAY_SECONDS);
+            final Value<Void> delayedValue = newDelayedValue(DELAY_SECONDS);
             return futureCall(new DelayedJob(), waitFor(delayedValue));
         }
     }

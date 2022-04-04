@@ -24,10 +24,10 @@ import java.util.UUID;
  *
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class UserGuideTest extends PipelineTest {
+public final class UserGuideTest extends PipelineTest {
 
     public UserGuideTest() {
-        LocalTaskQueueTestConfig taskQueueConfig = new LocalTaskQueueTestConfig();
+        final LocalTaskQueueTestConfig taskQueueConfig = new LocalTaskQueueTestConfig();
         taskQueueConfig.setCallbackClass(TestingTaskQueueCallback.class);
         taskQueueConfig.setDisableAutoTaskExecution(false);
         taskQueueConfig.setShouldCopyApiProxyEnvironment(true);
@@ -53,14 +53,14 @@ public class UserGuideTest extends PipelineTest {
         doComplexJobTest(-5, 71, 6);
     }
 
-    private void doComplexJobTest(int x, int y, int z) throws Exception {
-        UUID pipelineId = service.startNewPipeline(new ComplexJob(), x, y, z);
-        JobInfo jobInfo = service.getJobInfo(pipelineId, pipelineId);
-        JobInfo.State state = jobInfo.getJobState();
+    private void doComplexJobTest(final int x, final int y, final int z) throws Exception {
+        final UUID pipelineId = service.startNewPipeline(new ComplexJob(), x, y, z);
+        final JobInfo jobInfo = service.getJobInfo(pipelineId, pipelineId);
+        final JobInfo.State state = jobInfo.getJobState();
         if (JobInfo.State.COMPLETED_SUCCESSFULLY == state) {
             System.out.println("The output is " + jobInfo.getOutput());
         }
-        int output = (Integer) waitForJobToComplete(pipelineId);
+        final int output = (Integer) waitForJobToComplete(pipelineId);
         assertEquals(((x - y) * (x - z)) - 2, output);
     }
 

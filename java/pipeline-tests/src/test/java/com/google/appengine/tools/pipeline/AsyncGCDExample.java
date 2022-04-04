@@ -21,9 +21,12 @@ import java.util.UUID;
 /**
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class AsyncGCDExample {
+public final class AsyncGCDExample {
 
-    public static volatile Callback callback;
+    static volatile Callback callback;
+
+    private AsyncGCDExample() {
+    }
 
     /**
      * A Callback
@@ -48,19 +51,19 @@ public class AsyncGCDExample {
     public static class PrintGCDJob extends Job0<Void> {
         @Override
         public Value<Void> run() {
-            PromisedValue<Integer> a = newPromise();
-            PromisedValue<Integer> b = newPromise();
+            final PromisedValue<Integer> a = newPromise();
+            final PromisedValue<Integer> b = newPromise();
             asyncAskUserForTwoIntegers(a.getKey(), b.getKey());
-            FutureValue<Integer> gcd = futureCall(new GCDExample.GCDJob(), a, b);
+            final FutureValue<Integer> gcd = futureCall(new GCDExample.GCDJob(), a, b);
             // Don't ask the user for his name until after he has already
             // answered the first prompt asking for two integers.
-            FutureValue<String> userName = futureCall(new AskUserForNameJob(), waitFor(b));
+            final FutureValue<String> userName = futureCall(new AskUserForNameJob(), waitFor(b));
             futureCall(new PrintResultJob(), userName, a, b, gcd);
             return null;
         }
 
         private void asyncAskUserForTwoIntegers(final UUID aKey, final UUID bKey) {
-            Thread thread = new Thread() {
+            final Thread thread = new Thread() {
                 @Override
                 public void run() {
                     try {
@@ -68,14 +71,14 @@ public class AsyncGCDExample {
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
-                    int a = callback.getFirstInt();
-                    int b = callback.getSecondInt();
+                    final int a = callback.getFirstInt();
+                    final int b = callback.getSecondInt();
                     try {
                         service.submitPromisedValue(getPipelineKey(), aKey, a);
                         service.submitPromisedValue(getPipelineKey(), bKey, b);
                     } catch (NoSuchObjectException e) {
                         throw new RuntimeException(e);
-                    } catch (OrphanedObjectException f) {
+                    } catch (OrphanedObjectException e) {
                         return;
                     }
                 }
@@ -92,13 +95,13 @@ public class AsyncGCDExample {
     public static class AskUserForNameJob extends Job0<String> {
         @Override
         public Value<String> run() {
-            PromisedValue<String> userName = newPromise();
+            final PromisedValue<String> userName = newPromise();
             asyncAskUserForName(userName.getKey());
             return userName;
         }
 
         private void asyncAskUserForName(final UUID key) {
-            Thread thread = new Thread() {
+            final Thread thread = new Thread() {
                 @Override
                 public void run() {
                     try {
@@ -106,12 +109,12 @@ public class AsyncGCDExample {
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
-                    String name = callback.getUserName();
+                    final String name = callback.getUserName();
                     try {
                         service.submitPromisedValue(getPipelineKey(), key, name);
                     } catch (NoSuchObjectException e) {
                         throw new RuntimeException(e);
-                    } catch (OrphanedObjectException f) {
+                    } catch (OrphanedObjectException e) {
                         return;
                     }
                 }
@@ -126,8 +129,8 @@ public class AsyncGCDExample {
     @SuppressWarnings("serial")
     public static class PrintResultJob extends Job4<Void, String, Integer, Integer, Integer> {
         @Override
-        public Value<Void> run(String userName, Integer a, Integer b, Integer gcd) {
-            String output =
+        public Value<Void> run(final String userName, final Integer a, final Integer b, final Integer gcd) {
+            final String output =
                     "Hello, " + userName + ". The GCD of " + a + " and " + b + " is " + gcd + ".";
             callback.acceptOutput(output);
             return null;

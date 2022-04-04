@@ -25,7 +25,7 @@ import java.util.UUID;
 /**
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class LetterCounterTest extends PipelineTest {
+public final class LetterCounterTest extends PipelineTest {
 
     private static final String SSB =
             "Oh, say, can you see, by the dawn's early light, \n"
@@ -91,12 +91,12 @@ public class LetterCounterTest extends PipelineTest {
         doLetterCounterTest(SSB);
     }
 
-    private void doLetterCounterTest(String text) throws Exception {
-        UUID pipelineId = service.startNewPipeline(new LetterCounter(), text);
-        SortedMap<Character, Integer> counts = waitForJobToComplete(pipelineId);
-        SortedMap<Character, Integer> expectedCounts = LetterCountExample.countLetters(text);
-        SortedMap<Character, Integer> expectedCountsLettersOnly = new TreeMap<>();
-        for (Entry<Character, Integer> entry : expectedCounts.entrySet()) {
+    private void doLetterCounterTest(final String text) throws Exception {
+        final UUID pipelineId = service.startNewPipeline(new LetterCounter(), text);
+        final SortedMap<Character, Integer> counts = waitForJobToComplete(pipelineId);
+        final SortedMap<Character, Integer> expectedCounts = LetterCountExample.countLetters(text);
+        final SortedMap<Character, Integer> expectedCountsLettersOnly = new TreeMap<>();
+        for (final Entry<Character, Integer> entry : expectedCounts.entrySet()) {
             if (Character.isLetter(entry.getKey())) {
                 expectedCountsLettersOnly.put(entry.getKey(), entry.getValue());
             }

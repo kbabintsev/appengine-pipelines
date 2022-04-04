@@ -23,24 +23,24 @@ import java.util.concurrent.CancellationException;
  *
  * @author maximf@google.com (Maxim Fateev)
  */
-public class PipelinesErrorHandlingTest extends PipelineTest {
+public final class PipelinesErrorHandlingTest extends PipelineTest {
 
     private static final int EXPECTED_RESULT1 = 5;
     private static final int EXPECTED_RESULT2 = 522;
     private static final int EXPECTED_RESULT3 = 223;
-    static int catchCount;
+    private static int catchCount;
 
     public void testImmediateThrowCatchJob() throws Exception {
-        UUID pipelineId = service.startNewPipeline(new TestImmediateThrowCatchJob());
-        Integer result = waitForJobToComplete(pipelineId);
+        final UUID pipelineId = service.startNewPipeline(new TestImmediateThrowCatchJob());
+        final Integer result = waitForJobToComplete(pipelineId);
         assertEquals(EXPECTED_RESULT1, result.intValue());
         assertEquals("TestImmediateThrowCatchJob.run ImmediateThrowCatchJob.run "
                 + "ImmediateThrowCatchJob.handleException.IllegalStateException", trace());
     }
 
     public void testSimpleCatch() throws Exception {
-        UUID pipelineId = service.startNewPipeline(new TestSimpleCatchJob());
-        Integer result = waitForJobToComplete(pipelineId);
+        final UUID pipelineId = service.startNewPipeline(new TestSimpleCatchJob());
+        final Integer result = waitForJobToComplete(pipelineId);
         assertEquals(EXPECTED_RESULT1, result.intValue());
         assertEquals("TestSimpleCatchJob.run AngryJob.run AngryJob.run "
                 + "TestSimpleCatchJob.handleException.IllegalStateException", trace());
@@ -51,42 +51,42 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
      * catch
      */
     public void testCatchWithImmediateReturnJob() throws Exception {
-        UUID pipelineId = service.startNewPipeline(new TestCatchWithImmediateReturnJob());
+        final UUID pipelineId = service.startNewPipeline(new TestCatchWithImmediateReturnJob());
         waitForJobToComplete(pipelineId);
         assertEquals("TestSimpleCatchJob.run AngryJob.run "
                 + "TestSimpleCatchJob.handleException.IllegalStateException", trace());
     }
 
     public void testCatchRethrowing() throws Exception {
-        UUID pipelineId = service.startNewPipeline(new TestCatchRethrowingJob());
-        Integer result = waitForJobToComplete(pipelineId);
+        final UUID pipelineId = service.startNewPipeline(new TestCatchRethrowingJob());
+        final Integer result = waitForJobToComplete(pipelineId);
         assertEquals(EXPECTED_RESULT1, result.intValue());
         assertEquals("TestSimpleCatchJob.run AngryJob.run AngryJob.run AngryJob.handleException "
                 + "TestSimpleCatchJob.handleException", trace());
     }
 
     public void testCatchGenerator() throws Exception {
-        UUID pipelineId = service.startNewPipeline(new TestCatchGeneratorJob());
-        Integer result = waitForJobToComplete(pipelineId);
+        final UUID pipelineId = service.startNewPipeline(new TestCatchGeneratorJob());
+        final Integer result = waitForJobToComplete(pipelineId);
         assertEquals(EXPECTED_RESULT1, result.intValue());
     }
 
     public void testChildThrowing() throws Exception {
-        UUID pipelineId = service.startNewPipeline(new TestChildThrowingJob());
-        Integer result = waitForJobToComplete(pipelineId);
+        final UUID pipelineId = service.startNewPipeline(new TestChildThrowingJob());
+        final Integer result = waitForJobToComplete(pipelineId);
         assertEquals(EXPECTED_RESULT1, result.intValue());
     }
 
     public void testChildCancellation() throws Exception {
-        UUID pipelineId = service.startNewPipeline(new TestChildCancellationJob());
-        Integer result = waitForJobToComplete(pipelineId);
+        final UUID pipelineId = service.startNewPipeline(new TestChildCancellationJob());
+        final Integer result = waitForJobToComplete(pipelineId);
         assertEquals(EXPECTED_RESULT1, result.intValue());
         // TODO(user): After implementing handleFinally which requires child
         // reference counting the order of operations will be exactly defined.
-        boolean expectedTraceChildCancelledFirst = ("TestChildCancellationJob.run "
+        final boolean expectedTraceChildCancelledFirst = ("TestChildCancellationJob.run "
                 + "ParentOfAngryChildJob.run AngryJob.run "
                 + "JobToCancel.handleException TestChildCancellationJob.handleException").equals(trace());
-        boolean expectedTraceParentJobHandlerFirst = ("TestChildCancellationJob.run "
+        final boolean expectedTraceParentJobHandlerFirst = ("TestChildCancellationJob.run "
                 + "ParentOfAngryChildJob.run AngryJob.run "
                 + "TestChildCancellationJob.handleException JobToCancel.handleException").equals(trace());
         assertTrue(expectedTraceChildCancelledFirst || expectedTraceParentJobHandlerFirst);
@@ -96,17 +96,17 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
      * Test cancellation of a child of a generator job that had a failed sibling.
      */
     public void testGrandchildCancellation() throws Exception {
-        UUID pipelineId = service.startNewPipeline(new TestGrandchildCancellationJob());
+        final UUID pipelineId = service.startNewPipeline(new TestGrandchildCancellationJob());
         waitUntilTaskQueueIsEmpty();
-        Integer result = waitForJobToComplete(pipelineId);
+        final Integer result = waitForJobToComplete(pipelineId);
         assertEquals(EXPECTED_RESULT1, result.intValue());
 
-        boolean expectedTraceChildCancelledFirst = ("TestGrandchildCancellationJob.run "
+        final boolean expectedTraceChildCancelledFirst = ("TestGrandchildCancellationJob.run "
                 + "ParentOfGrandchildToCancelAndAngryChildJob.run ParentOfJobToCancel.run"
                 + "DelayedAngryJob.run AngryJob.run "
                 + "JobToCancel.handleException TestGrandchildCancellationJob.handleException").equals(
                 trace());
-        boolean expectedTraceParentJobHandlerFirst = ("TestGrandchildCancellationJob.run "
+        final boolean expectedTraceParentJobHandlerFirst = ("TestGrandchildCancellationJob.run "
                 + "ParentOfGrandchildToCancelAndAngryChildJob.run ParentOfJobToCancel.run "
                 + "DelayedAngryJob.run AngryJob.run "
                 + "TestGrandchildCancellationJob.handleException JobToCancel.handleException").equals(
@@ -115,28 +115,28 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
     }
 
     public void testChildCancellationFailure() throws Exception {
-        UUID pipelineId = service.startNewPipeline(new TestChildCancellationFailingJob());
-        Integer result = waitForJobToComplete(pipelineId);
+        final UUID pipelineId = service.startNewPipeline(new TestChildCancellationFailingJob());
+        final Integer result = waitForJobToComplete(pipelineId);
         assertEquals(EXPECTED_RESULT1, result.intValue());
         // TODO(user): After implementing handleFinally which requires child
         // reference counting the order of operations will be exactly defined.
-        boolean expectedTraceChildCancelledFirst =
+        final boolean expectedTraceChildCancelledFirst =
                 ("TestChildCancellationFailingJob.run "
                         + "ParentOfAngryChildJobWithJobToCancelThatFailsToCancel.run AngryJob.run "
-                        + "JobToCancelThatFailsToCancel.handleException " +
-                        "TestChildCancellationFailingJob.handleException")
+                        + "JobToCancelThatFailsToCancel.handleException "
+                        + "TestChildCancellationFailingJob.handleException")
                         .equals(trace());
-        boolean expectedTraceParentJobHandlerFirst =
+        final boolean expectedTraceParentJobHandlerFirst =
                 ("TestChildCancellationFailingJob.run "
                         + "ParentOfAngryChildJobWithJobToCancelThatFailsToCancel.run AngryJob.run "
-                        + "TestChildCancellationFailingJob.handleException " +
-                        "JobToCancelThatFailsToCancel.handleException")
+                        + "TestChildCancellationFailingJob.handleException "
+                        + "JobToCancelThatFailsToCancel.handleException")
                         .equals(trace());
         assertTrue(trace(), expectedTraceChildCancelledFirst || expectedTraceParentJobHandlerFirst);
     }
 
     public void testPipelineCancellation() throws Exception {
-        UUID pipelineId = service.startNewPipeline(new TestPipelineCancellationJob());
+        final UUID pipelineId = service.startNewPipeline(new TestPipelineCancellationJob());
         Thread.sleep(10000);
         service.cancelPipeline(pipelineId);
         try {
@@ -149,8 +149,8 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
         assertEquals(2, catchCount);
         assertEquals(
                 "TestPipelineCancellationJob.run JobToCancelWithFailureHandler.run "
-                        + "JobToCancelWithFailureHandler.handleException " +
-                        "JobToCancelWithFailureHandler.handleException",
+                        + "JobToCancelWithFailureHandler.handleException "
+                        + "JobToCancelWithFailureHandler.handleException",
                 trace());
     }
 
@@ -159,7 +159,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
      * used in absence of appropriate exceptionHandler.
      */
     public void testPipelineFailureWhenNoErrorHandlerPresent() {
-        UUID pipelineId = service.startNewPipeline(new AngryJobParent());
+        final UUID pipelineId = service.startNewPipeline(new AngryJobParent());
         try {
             waitForJobToComplete(pipelineId);
             fail("should throw");
@@ -174,8 +174,8 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
      * Test situation when job is cancelled when in handleException
      */
     public void testCancellationOfHandleExceptionJob() throws Exception {
-        UUID pipelineId = service.startNewPipeline(new TestCancellationOfHandleExceptionJob());
-        Integer result = waitForJobToComplete(pipelineId);
+        final UUID pipelineId = service.startNewPipeline(new TestCancellationOfHandleExceptionJob());
+        final Integer result = waitForJobToComplete(pipelineId);
         // Original order:
 //    assertEquals("TestCancellationOfHandleExceptionJob.run "
 //        + "JobToGetCancellationInHandleException.run "
@@ -195,14 +195,14 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
      * Test situation when job is cancelled when in handleException
      */
     public void testCancellationOfReadyToRunJob() throws Exception {
-        UUID pipelineId = service.startNewPipeline(new TestCancellationOfReadyToRunJob());
-        Integer result = waitForJobToComplete(pipelineId);
-        boolean cancellationFirst = ("TestCancellationOfReadyToRunJob.run "
+        final UUID pipelineId = service.startNewPipeline(new TestCancellationOfReadyToRunJob());
+        final Integer result = waitForJobToComplete(pipelineId);
+        final boolean cancellationFirst = ("TestCancellationOfReadyToRunJob.run "
                 + "UnblockAndThrowJob.run TestCancellationOfReadyToRunJob.handleException").equals(trace());
-        boolean cancelledRunFirst =
+        final boolean cancelledRunFirst =
                 ("TestCancellationOfReadyToRunJob.run "
-                        + "UnblockAndThrowJob.run PassThroughJob1.run " +
-                        "TestCancellationOfReadyToRunJob.handleException")
+                        + "UnblockAndThrowJob.run PassThroughJob1.run "
+                        + "TestCancellationOfReadyToRunJob.handleException")
                         .equals(trace());
 
         assertTrue(trace(), cancellationFirst || cancelledRunFirst);
@@ -229,26 +229,26 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
         }
 
         // Unrelated to IllegalStateException
-        public Value<Integer> handleException(NullPointerException e) {
+        public Value<Integer> handleException(final NullPointerException e) {
             assertNotNull(e);
             trace("ImmediateThrowCatchJob.handleException.NullPointerException");
             return immediate(EXPECTED_RESULT1);
         }
 
-        public Value<Integer> handleException(IllegalStateException e) {
+        public Value<Integer> handleException(final IllegalStateException e) {
             assertNotNull(e);
             trace("ImmediateThrowCatchJob.handleException.IllegalStateException");
             return immediate(EXPECTED_RESULT1);
         }
 
         // Subclass of IllegalStateException
-        public Value<Integer> handleException(AlreadyConnectedException e) {
+        public Value<Integer> handleException(final AlreadyConnectedException e) {
             assertNotNull(e);
             trace("ImmediateThrowCatchJob.handleException.AlreadyBoundException");
             return immediate(EXPECTED_RESULT1);
         }
 
-        public Value<Integer> handleException(Throwable e) {
+        public Value<Integer> handleException(final Throwable e) {
             assertNotNull(e);
             trace("ImmediateThrowCatchJob.handleException.Throwable");
             return immediate(EXPECTED_RESULT1);
@@ -276,26 +276,26 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
         }
 
         // Unrelated to IllegalStateException
-        public Value<Integer> handleException(NullPointerException e) {
+        public Value<Integer> handleException(final NullPointerException e) {
             assertNotNull(e);
             trace("TestSimpleCatchJob.handleException.NullPointerException");
             return immediate(EXPECTED_RESULT1);
         }
 
-        public Value<Integer> handleException(IllegalStateException e) {
+        public Value<Integer> handleException(final IllegalStateException e) {
             assertNotNull(e);
             trace("TestSimpleCatchJob.handleException.IllegalStateException");
             return immediate(EXPECTED_RESULT1);
         }
 
         // Subclass of IllegalStateException
-        public Value<Integer> handleException(AlreadyConnectedException e) {
+        public Value<Integer> handleException(final AlreadyConnectedException e) {
             assertNotNull(e);
             trace("TestSimpleCatchJob.handleException.AlreadyBoundException");
             return immediate(EXPECTED_RESULT1);
         }
 
-        public Value<Integer> handleException(Throwable e) {
+        public Value<Integer> handleException(final Throwable e) {
             assertNotNull(e);
             trace("TestSimpleCatchJob.handleException.Throwable");
             return immediate(EXPECTED_RESULT1);
@@ -307,7 +307,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
 
         @Override
         public Value<Integer> run() throws Exception {
-            FutureValue<Integer> result = futureCall(new CatchWithImmediateReturnJob());
+            final FutureValue<Integer> result = futureCall(new CatchWithImmediateReturnJob());
             return futureCall(new CheckResultJob(), result, waitFor(newDelayedValue(3)));
         }
     }
@@ -316,7 +316,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
     static class CheckResultJob extends Job1<Integer, Integer> {
 
         @Override
-        public Value<Integer> run(Integer toCheck) throws Exception {
+        public Value<Integer> run(final Integer toCheck) throws Exception {
             assertEquals(EXPECTED_RESULT2, toCheck.intValue());
             return immediate(toCheck);
         }
@@ -332,7 +332,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
             return immediate(EXPECTED_RESULT1);
         }
 
-        public Value<Integer> handleException(IllegalStateException e) {
+        public Value<Integer> handleException(final IllegalStateException e) {
             assertNotNull(e);
             trace("TestSimpleCatchJob.handleException.IllegalStateException");
             return immediate(EXPECTED_RESULT2);
@@ -349,7 +349,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
         }
 
         @SuppressWarnings("unused")
-        public Value<Integer> handleException(Throwable e) throws Throwable {
+        public Value<Integer> handleException(final Exception e) throws Exception {
             trace("AngryJob.handleException");
             throw e;
         }
@@ -365,7 +365,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
                     new JobSetting.BackoffSeconds(1));
         }
 
-        public Value<Integer> handleException(IllegalStateException e) throws Throwable {
+        public Value<Integer> handleException(final IllegalStateException e) throws Exception {
             assertNotNull(e);
             trace("TestSimpleCatchJob.handleException");
             return immediate(EXPECTED_RESULT1);
@@ -380,7 +380,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
             return futureCall(new AngryJob(), new JobSetting.MaxAttempts(1));
         }
 
-        public Value<Integer> handleException(Throwable e) throws Throwable {
+        public Value<Integer> handleException(final Exception e) throws Exception {
             return futureCall(new FailureHandlingJob(), immediate(e));
         }
     }
@@ -389,7 +389,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
     static class FailureHandlingJob extends Job1<Integer, Throwable> {
 
         @Override
-        public Value<Integer> run(Throwable e) {
+        public Value<Integer> run(final Throwable e) {
             assertNotNull(e);
             assertEquals(IllegalStateException.class, e.getClass());
             return immediate(EXPECTED_RESULT1);
@@ -404,7 +404,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
             return futureCall(new AngryChildJob(), new JobSetting.MaxAttempts(1));
         }
 
-        public Value<Integer> handleException(IllegalStateException e) {
+        public Value<Integer> handleException(final IllegalStateException e) {
             assertNotNull(e);
             return immediate(EXPECTED_RESULT1);
         }
@@ -428,7 +428,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
             return futureCall(new ParentOfAngryChildJob(), new JobSetting.MaxAttempts(1));
         }
 
-        public Value<Integer> handleException(IllegalStateException e) {
+        public Value<Integer> handleException(final IllegalStateException e) {
             trace("TestChildCancellationJob.handleException");
             assertNotNull(e);
             return immediate(EXPECTED_RESULT1);
@@ -439,12 +439,12 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
     static class JobToCancel extends Job1<Integer, Integer> {
 
         @Override
-        public Value<Integer> run(Integer param1) {
+        public Value<Integer> run(final Integer param1) {
             trace("JobToCancel.run");
             throw new IllegalStateException("should not execute");
         }
 
-        public Value<Integer> handleException(CancellationException e) throws Throwable {
+        public Value<Integer> handleException(final CancellationException e) throws Exception {
             trace("JobToCancel.handleException");
             assertNotNull(e);
             return immediate(EXPECTED_RESULT1);
@@ -459,8 +459,8 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
             trace("ParentOfAngryChildJob.run");
             // firstChild should never execute as it waits on the promise that is
             // never ready
-            PromisedValue<Integer> neverReady = newPromise();
-            FutureValue<Integer> firstChild =
+            final PromisedValue<Integer> neverReady = newPromise();
+            final FutureValue<Integer> firstChild =
                     futureCall(new JobToCancel(), neverReady, new JobSetting.MaxAttempts(1));
             // This one failing should cause cancellation of the first job, which
             // should execute its handleException(CancellationException);
@@ -479,7 +479,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
                     new ParentOfGrandchildToCancelAndAngryChildJob(), new JobSetting.MaxAttempts(1));
         }
 
-        public Value<Integer> handleException(IllegalStateException e) {
+        public Value<Integer> handleException(final IllegalStateException e) {
             trace("TestGrandchildCancellationJob.handleException");
             assertNotNull(e);
             return immediate(EXPECTED_RESULT1);
@@ -490,11 +490,11 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
     static class ParentOfJobToCancel extends Job1<Integer, UUID> {
 
         @Override
-        public Value<Integer> run(UUID unblockTheAngryOneKey) throws Exception {
+        public Value<Integer> run(final UUID unblockTheAngryOneKey) throws Exception {
             trace("ParentOfJobToCancel.run");
             // Unblocks a sibling that is going to throw an exception
             pipelineManager.acceptPromisedValue(getPipelineKey(), unblockTheAngryOneKey, EXPECTED_RESULT1);
-            PromisedValue<Integer> neverReady = newPromise();
+            final PromisedValue<Integer> neverReady = newPromise();
             return futureCall(new JobToCancel(), neverReady);
         }
     }
@@ -515,7 +515,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
         @Override
         public Value<Void> run() {
             trace("ParentOfGrandchildToCancelAndAngryChildJob.run");
-            PromisedValue<Integer> unblockTheAngryOne = newPromise();
+            final PromisedValue<Integer> unblockTheAngryOne = newPromise();
             futureCall(new ParentOfJobToCancel(), immediate(unblockTheAngryOne.getKey()),
                     new JobSetting.MaxAttempts(1));
             // This one failing should cause cancellation of the first job, which
@@ -535,7 +535,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
                     new JobSetting.MaxAttempts(1));
         }
 
-        public Value<Integer> handleException(IllegalStateException e) {
+        public Value<Integer> handleException(final IllegalStateException e) {
             trace("TestChildCancellationFailingJob.handleException");
             assertNotNull(e);
             return immediate(EXPECTED_RESULT1);
@@ -546,12 +546,12 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
     static class JobToCancelThatFailsToCancel extends Job1<Integer, Integer> {
 
         @Override
-        public Value<Integer> run(Integer param1) {
+        public Value<Integer> run(final Integer param1) {
             trace("JobToCancelThatFailsToCancel.run");
             throw new IllegalStateException("should not execute");
         }
 
-        public Value<Integer> handleException(CancellationException e) throws Throwable {
+        public Value<Integer> handleException(final CancellationException e) throws Exception {
             trace("JobToCancelThatFailsToCancel.handleException");
             assertNotNull(e);
             // this exception is ignored
@@ -567,8 +567,8 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
             trace("ParentOfAngryChildJobWithJobToCancelThatFailsToCancel.run");
             // firstChild should never execute as it waits on the promise that is
             // never ready
-            PromisedValue<Integer> neverReady = newPromise();
-            FutureValue<Integer> firstChild =
+            final PromisedValue<Integer> neverReady = newPromise();
+            final FutureValue<Integer> firstChild =
                     futureCall(new JobToCancelThatFailsToCancel(), neverReady, new JobSetting.MaxAttempts(1));
             // This one failing should cause cancellation of the first job, which
             // should execute its error handling job (SimpleCatchJob);
@@ -591,13 +591,13 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
     static class JobToCancelWithFailureHandler extends Job1<Integer, Integer> {
 
         @Override
-        public Value<Integer> run(Integer param1) {
+        public Value<Integer> run(final Integer param1) {
             trace("JobToCancelWithFailureHandler.run");
-            PromisedValue<Integer> neverReady = newPromise();
+            final PromisedValue<Integer> neverReady = newPromise();
             return futureCall(new JobToCancelWithFailureHandler(), neverReady);
         }
 
-        public Value<Integer> handleException(CancellationException e) throws Throwable {
+        public Value<Integer> handleException(final CancellationException e) throws Exception {
             trace("JobToCancelWithFailureHandler.handleException");
             assertNotNull(e);
             catchCount++;
@@ -619,7 +619,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
     static class JobToGetCancellationInHandleException extends Job1<Integer, UUID> {
 
         @Override
-        public Value<Integer> run(UUID unblockTheAngryOneKey) throws Exception {
+        public Value<Integer> run(final UUID unblockTheAngryOneKey) throws Exception {
             trace("JobToGetCancellationInHandleException.run");
             // Unblocks a sibling that is going to throw an exception
             pipelineManager.acceptPromisedValue(getPipelineKey(), unblockTheAngryOneKey, EXPECTED_RESULT1);
@@ -627,7 +627,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
         }
 
         @SuppressWarnings("unused")
-        public Value<Integer> handleException(IllegalStateException e) {
+        public Value<Integer> handleException(final IllegalStateException e) {
             trace("JobToGetCancellationInHandleException.handleException");
             return futureCall(new CleanupJob());
         }
@@ -650,7 +650,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
         }
 
         @SuppressWarnings("unused")
-        public Value<Integer> handleException(Throwable e) {
+        public Value<Integer> handleException(final Throwable e) {
             // should not be called as parent's handleException is not cancelable.
             // Not using assertion as control flow is checked through trace
             trace("CleanupJob.handleException");
@@ -668,7 +668,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
         @Override
         public Value<Integer> run() {
             trace("TestCancellationOfHandleExceptionJob.run");
-            PromisedValue<Integer> unblockTheAngryOne = newPromise();
+            final PromisedValue<Integer> unblockTheAngryOne = newPromise();
             futureCall(new JobToGetCancellationInHandleException(),
                     immediate(unblockTheAngryOne.getKey()), new JobSetting.MaxAttempts(1));
             // This one failing should cause cancellation of the first job, which
@@ -682,7 +682,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
         }
 
         @SuppressWarnings("unused")
-        public Value<Integer> handleException(Throwable e) {
+        public Value<Integer> handleException(final Throwable e) {
             trace("TestCancellationOfHandleExceptionJob.handleException");
             return futureCall(
                     new PassThroughJob2<Integer>(), immediate(EXPECTED_RESULT1), waitFor(newDelayedValue(4)));
@@ -693,7 +693,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
     static class PassThroughJob1<T> extends Job1<T, T> {
 
         @Override
-        public Value<T> run(T param) throws Exception {
+        public Value<T> run(final T param) throws Exception {
             trace("PassThroughJob1.run");
             return immediate(param);
         }
@@ -703,7 +703,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
     static class PassThroughJob2<T> extends Job1<T, T> {
 
         @Override
-        public Value<T> run(T param) throws Exception {
+        public Value<T> run(final T param) throws Exception {
             trace("PassThroughJob2.run");
             return immediate(param);
         }
@@ -715,7 +715,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
         @Override
         public Value<Integer> run() {
             trace("TestCancellationOfReadyToRunJob.run");
-            PromisedValue<Integer> unblockTheSecondOne = newPromise();
+            final PromisedValue<Integer> unblockTheSecondOne = newPromise();
             futureCall(new UnblockAndThrowJob(), immediate(unblockTheSecondOne.getKey()),
                     new JobSetting.MaxAttempts(1));
 
@@ -723,7 +723,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
         }
 
         @SuppressWarnings("unused")
-        public Value<Integer> handleException(IllegalStateException e) {
+        public Value<Integer> handleException(final IllegalStateException e) {
             trace("TestCancellationOfReadyToRunJob.handleException");
             return immediate(EXPECTED_RESULT2);
         }
@@ -733,7 +733,7 @@ public class PipelinesErrorHandlingTest extends PipelineTest {
     static class UnblockAndThrowJob extends Job1<Integer, UUID> {
 
         @Override
-        public Value<Integer> run(UUID unblockKey) throws Exception {
+        public Value<Integer> run(final UUID unblockKey) throws Exception {
             trace("UnblockAndThrowJob.run");
             // TODO(user): uncomment once b/12249138 is fixed, which will be a good test to verify
             // that a job should never return a value before all its children completed and first
