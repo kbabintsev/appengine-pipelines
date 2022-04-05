@@ -30,6 +30,7 @@ import com.google.appengine.tools.pipeline.Route;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 import com.google.appengine.tools.pipeline.impl.servlets.TaskHandler;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
+import org.apache.commons.lang3.RandomUtils;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -240,7 +241,8 @@ public final class CloudTasksQueue implements PipelineTaskQueue {
 
         final String taskName = task.getName();
         if (null != taskName && null != task.getQueueSettings().getOnQueue()) {
-            final String fullName = getQueueName(task.getQueueSettings().getOnQueue()) + "/tasks/" + taskName;
+            final String fullName = getQueueName(task.getQueueSettings().getOnQueue()) + "/tasks/" + taskName
+                    + "-rnd" + String.format("%04d", RandomUtils.nextInt(0, 10000));
             taskOptions.setName(fullName);
         }
         return taskOptions;
