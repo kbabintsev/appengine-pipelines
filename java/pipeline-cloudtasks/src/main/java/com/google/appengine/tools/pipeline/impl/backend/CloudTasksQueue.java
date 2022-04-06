@@ -178,7 +178,7 @@ public final class CloudTasksQueue implements PipelineTaskQueue {
                 );
             } catch (IOException e) {
                 if (e instanceof GoogleJsonResponseException && ((GoogleJsonResponseException) e).getStatusCode() == HTTP_409) {
-                    throw new TaskAlreadyExistsException(e);
+                    //ignore TaskAlreadyExist
                 } else {
                     throw new RuntimeException(e);
                 }
