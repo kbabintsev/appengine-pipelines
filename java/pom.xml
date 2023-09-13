@@ -9,7 +9,7 @@
     <organization>
         <name>Google</name>
     </organization>
-    <version>2.0.0-SNAPSHOT</version>
+    <version>3.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <licenses>
         <license>
@@ -19,8 +19,8 @@
     </licenses>
     <properties>
         <appengine.target.version>1.9.71</appengine.target.version>
-        <version.guice>4.2.2</version.guice>
-        <version.guava>29.0-jre</version.guava>
+        <version.guice>7.0.0</version.guice>
+        <version.guava>31.0.1-jre</version.guava>
         <version.google-spanner>2.0.2</version.google-spanner>
         <version.google-api-client>1.25.0</version.google-api-client>
         <version.google-oauth-client>1.25.0</version.google-oauth-client>
@@ -60,32 +60,171 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>2.17</version>
-                <inherited>true</inherited>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.1.0</version>
                 <configuration>
-                    <configLocation>https://raw.githubusercontent.com/cloudaware/checkstyle-config/master/checkstyle.xml</configLocation>
-                    <suppressionsLocation>${session.executionRootDirectory}/suppressions.xml</suppressionsLocation>
-                    <consoleOutput>true</consoleOutput>
-                    <failsOnError>true</failsOnError>
+                    <rules>
+                        <!--
+                           Requires that dependency version numbers converge.
+                           If a project has two dependencies, A and B, both depending on the same artifact, C,
+                           this rule will fail the build if A depends on a different version of C then the
+                           version of C depended on by B.
+                        -->
+                        <dependencyConvergence>
+                            <uniqueVersions>false</uniqueVersions>
+                        </dependencyConvergence>
+                        <requireUpperBoundDeps>
+                            <!-- 'uniqueVersions' (default:false) can be set to true if you want to compare the timestamped SNAPSHOTs  -->
+                            <!-- <uniqueVersions>true</uniqueVersions> -->
+                            <excludes>
+                                <!-- excluded because enforcer thinks that 1.0.0-pre3 > 1.0.0 :( -->
+                                <exclude>com.google.cloud.bigtable:bigtable-protos</exclude>
+                            </excludes>
+                        </requireUpperBoundDeps>
+                        <bannedDependencies>
+                            <excludes>
+                                <exclude>com.google.guava:guava-jdk5</exclude>
+                            </excludes>
+                        </bannedDependencies>
+                    </rules>
                 </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.puppycrawl.tools</groupId>
-                        <artifactId>checkstyle-backport-jre6</artifactId>
-                        <version>7.2</version>
-                    </dependency>
-                </dependencies>
                 <executions>
                     <execution>
-                        <id>validate</id>
-                        <phase>validate</phase>
+                        <id>enforce</id>
                         <goals>
-                            <goal>check</goal>
+                            <goal>enforce</goal>
                         </goals>
+                        <phase>validate</phase>
+                    </execution>
+                    <!--
+                      Checks the dependencies and fails if the groupId:artifactId combination exists in the
+                      list of direct or transitive dependencies.
+                    -->
+                    <execution>
+                        <id>enforce-ban-circular-dependencies</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <banCircularDependencies/>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </execution>
+                    <!--
+                      Checks the dependencies and fails if any class is present in more than one
+                      dependency.
+                    -->
+                    <execution>
+                        <id>enforce-ban-duplicate-classes</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <excludes>
+                                        <exclude>com.google.protobuf:protobuf-lite</exclude>
+                                    </excludes>
+                                </bannedDependencies>
+                                <banDuplicateClasses>
+                                    <ignoreClasses>
+                                        <!--
+                                               Don't just add classes here! add them as a last resort.
+                                               Before doing so try to:
+                                                   * exclude classes by excluding dependencies
+                                                   * update a library (if possible)
+                                                   * look for alternative splitted dependencies
+                                               If you add something make sure the ignored classes are binary
+                                               identical!
+                                        -->
+<!--                                        <ignoreClass>com.google.protobuf.*</ignoreClass>-->
+<!--                                        <ignoreClass>org.apache.beam.sdk.util.*</ignoreClass>-->
+<!--                                        <ignoreClass>org.apache.beam.vendor.*</ignoreClass>-->
+<!--                                        <ignoreClass>org.apache.beam.model.*</ignoreClass>-->
+<!--                                        <ignoreClass>-->
+<!--                                            org.apache.beam.repackaged.beam_runners_core_construction_java.com.google.common.*-->
+<!--                                        </ignoreClass>-->
+<!--                                        <ignoreClass>com.google.thirdparty.publicsuffix.*</ignoreClass>-->
+<!--                                        <ignoreClass>com.google.appengine.repackaged.*</ignoreClass>-->
+<!--                                        <ignoreClass>org.w3c.dom.events.*</ignoreClass>-->
+                                        <!--                                        <ignoreClass>org.codehaus.classworlds.*</ignoreClass>-->
+                                    </ignoreClasses>
+                                    <scopes>
+                                        <scope>compile</scope>
+                                        <scope>provided</scope>
+                                        <scope>runtime</scope>
+                                        <scope>system</scope>
+                                        <scope>import</scope>
+                                        <!-- Ignore test scope -->
+                                        <!--<scope>test</scope>-->
+                                    </scopes>
+                                    <findAllDuplicates>true</findAllDuplicates>
+                                    <ignoreWhenIdentical>true</ignoreWhenIdentical>
+                                </banDuplicateClasses>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </execution>
+                    <!--
+                      checks the dependencies transitively and fails if any class of any dependency is having
+                      its bytecode version higher than the one specified.
+                    -->
+                    <execution>
+                        <id>enforce-bytecode-version</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <enforceBytecodeVersion>
+                                    <ignoredScopes>
+                                        <scope>test</scope>
+                                    </ignoredScopes>
+                                    <maxJdkVersion>17</maxJdkVersion>
+                                </enforceBytecodeVersion>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
                     </execution>
                 </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>extra-enforcer-rules</artifactId>
+                        <version>1.5.1</version>
+                    </dependency>
+                </dependencies>
             </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-checkstyle-plugin</artifactId>-->
+<!--                <version>2.17</version>-->
+<!--                <inherited>true</inherited>-->
+<!--                <configuration>-->
+<!--                    <configLocation>https://raw.githubusercontent.com/cloudaware/checkstyle-config/master/checkstyle.xml</configLocation>-->
+<!--                    <suppressionsLocation>${session.executionRootDirectory}/suppressions.xml</suppressionsLocation>-->
+<!--                    <consoleOutput>true</consoleOutput>-->
+<!--                    <failsOnError>true</failsOnError>-->
+<!--                </configuration>-->
+<!--                <dependencies>-->
+<!--                    <dependency>-->
+<!--                        <groupId>com.puppycrawl.tools</groupId>-->
+<!--                        <artifactId>checkstyle-backport-jre6</artifactId>-->
+<!--                        <version>7.2</version>-->
+<!--                    </dependency>-->
+<!--                </dependencies>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>validate</id>-->
+<!--                        <phase>validate</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>check</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
         </plugins>
     </build>
     <dependencyManagement>
@@ -125,12 +264,42 @@
             <dependency>
                 <groupId>com.cloudaware</groupId>
                 <artifactId>deferred</artifactId>
-                <version>1.0.9</version>
+                <version>1.0.10</version>
             </dependency>
             <dependency>
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
                 <version>${version.joda-time}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.inject</groupId>
+                <artifactId>javax.inject</artifactId>
+                <version>1</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.servlet</groupId>
+                <artifactId>jakarta.servlet-api</artifactId>
+                <version>5.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.inject</groupId>
+                <artifactId>jakarta.inject-api</artifactId>
+                <version>2.0.1</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>2.7.1</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.http-client</groupId>
+                <artifactId>google-http-client-jackson2</artifactId>
+                <version>1.36.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.http-client</groupId>
+                <artifactId>google-http-client</artifactId>
+                <version>1.36.0</version>
             </dependency>
             <!-- test dependencies -->
             <dependency>

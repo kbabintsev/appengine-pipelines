@@ -11,6 +11,7 @@ public class PipelineModule extends ServletModule {
     protected void configureServlets() {
         bind(PipelineService.class).to(PipelineServiceImpl.class);
         bind(PipelineBackEnd.class).to(AppEngineBackEnd.class);
-        serve(PipelineServlet.baseUrl() + "*").with(PipelineServlet.class);
+        serve(PipelineServlet.baseUrl() + "*")
+                .with(PipelineServlet.class);
     }
 }

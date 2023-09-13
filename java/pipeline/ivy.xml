@@ -8,7 +8,7 @@
     <dependencies>
         <dependency org="com.google.appengine" name="appengine-api-1.0-sdk" rev="${sdk_version}"
                     conf="${sdk}->default"/>
-        <dependency org="javax.servlet" name="servlet-api" rev="2.5" conf="${sdk}->default"/>
+        <dependency org="jakarta.servlet" name="jakarta.servlet-api" rev="5.0.0" conf="${sdk}->default"/>
         <dependency org="com.google.appengine.tools" name="appengine-gcs-client"
                     rev="[0.4,0.5)" conf="${thirdparty}->default"/>
         <dependency org="com.google.appengine" name="appengine-testing" rev="${sdk_version}"

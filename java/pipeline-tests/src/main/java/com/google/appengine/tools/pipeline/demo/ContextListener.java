@@ -1,19 +1,19 @@
 package com.google.appengine.tools.pipeline.demo;
 
 import com.google.appengine.tools.pipeline.PipelineModule;
-import com.google.appengine.tools.pipeline.impl.backend.AppEngineTaskQueueModule;
+//import com.google.appengine.tools.pipeline.impl.backend.AppEngineTaskQueueModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextEvent;
 
 public final class ContextListener extends com.google.inject.servlet.GuiceServletContextListener {
 
     @Override
     protected Injector getInjector() {
         return Guice.createInjector(
-                new AppEngineTaskQueueModule(),
+                // new AppEngineTaskQueueModule(),
                 new PipelineModule()
         );
     }

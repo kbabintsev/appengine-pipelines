@@ -70,7 +70,7 @@ import com.google.inject.Provider;
 import org.threeten.bp.Duration;
 
 import javax.annotation.Nullable;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;

@@ -19,7 +19,7 @@ import com.google.appengine.tools.pipeline.impl.backend.PipelineTaskQueueInjectF
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.Optional;
 import java.util.UUID;

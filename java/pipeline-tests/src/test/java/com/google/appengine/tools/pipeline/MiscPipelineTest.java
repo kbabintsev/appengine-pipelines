@@ -27,7 +27,7 @@ import com.google.common.collect.ImmutableList;
 import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
