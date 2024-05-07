@@ -6,6 +6,7 @@
 
 <suppressions>
     <suppress checks=".*" files="[\\/]generated-sources[\\/]"/>
+    <suppress checks="MagicNumber" files="[\\/]test[\\/]java[\\/]"/>
 
     <suppress checks="OverloadMethodsDeclarationOrder" files="Job.java"/> <!-- there are static and non-static methods like 'immediate' with are split with auto-rearrange code -->
 </suppressions>

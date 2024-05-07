@@ -22,7 +22,7 @@ import java.io.InputStream;
 /**
  * @author rudominer@google.com (Mitch Rudominer)
  */
-public class StaticContentHandlerTest extends TestCase {
+public final class StaticContentHandlerTest extends TestCase {
 
     public void testGetResourceAsStream() throws Exception {
         InputStream in = StaticContentHandler.getResourceAsStream("common.js");

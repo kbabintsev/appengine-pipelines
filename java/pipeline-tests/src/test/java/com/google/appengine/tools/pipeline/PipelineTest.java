@@ -23,13 +23,29 @@ import com.google.appengine.tools.development.testing.LocalTaskQueueTestConfig;
 import com.google.appengine.tools.pipeline.impl.PipelineManager;
 import com.google.appengine.tools.pipeline.impl.util.UuidGenerator;
 import com.google.apphosting.api.ApiProxy;
+import com.google.cloud.spanner.DatabaseAdminClient;
+import com.google.cloud.spanner.DatabaseId;
+import com.google.cloud.spanner.InstanceAdminClient;
+import com.google.cloud.spanner.InstanceConfigId;
+import com.google.cloud.spanner.InstanceId;
+import com.google.cloud.spanner.InstanceInfo;
+import com.google.cloud.spanner.Spanner;
+import com.google.cloud.spanner.SpannerOptions;
+import com.google.common.base.Charsets;
+import com.google.common.io.CharStreams;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import junit.framework.TestCase;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static com.google.appengine.tools.pipeline.impl.util.UuidGenerator.USE_SIMPLE_UUIDS_FOR_DEBUGGING;
 
@@ -44,11 +60,12 @@ public abstract class PipelineTest extends TestCase {
     protected Injector injector;
     protected PipelineService service;
     protected PipelineManager pipelineManager;
+    protected Spanner spanner;
     private LocalTaskQueue taskQueue;
 
     public PipelineTest() {
         System.setProperty("java.util.logging.config.file", ClassLoader.getSystemResource("logging.properties").getPath());
-        LocalTaskQueueTestConfig taskQueueConfig = new LocalTaskQueueTestConfig();
+        final LocalTaskQueueTestConfig taskQueueConfig = new LocalTaskQueueTestConfig();
         taskQueueConfig.setCallbackClass(TestingTaskQueueCallback.class);
         taskQueueConfig.setDisableAutoTaskExecution(false);
         taskQueueConfig.setShouldCopyApiProxyEnvironment(true);
@@ -59,7 +76,7 @@ public abstract class PipelineTest extends TestCase {
                 taskQueueConfig, new LocalModulesServiceTestConfig());
     }
 
-    protected static void trace(String what) {
+    protected static void trace(final String what) {
         if (traceBuffer.length() > 0) {
             traceBuffer.append(' ');
         }
@@ -84,12 +101,16 @@ public abstract class PipelineTest extends TestCase {
     public void setUp() throws Exception {
         super.setUp();
         injector = Guice.createInjector(new TestModule());
-        pipelineManager = injector.getInstance(PipelineManager.class);
-        service = injector.getInstance(PipelineService.class);
         traceBuffer = new StringBuffer();
         helper.setUp();
         apiProxyEnvironment = ApiProxy.getCurrentEnvironment();
         System.setProperty(USE_SIMPLE_UUIDS_FOR_DEBUGGING, "true");
+        spanner = SpannerOptions.newBuilder().setEmulatorHost(Consts.SPANNER_EMULATOR_HOST).setProjectId(Consts.SPANNER_PROJECT).build().getService();
+        if (Consts.SPANNER_EMULATOR_HOST != null) {
+            createTestDatabase();
+        }
+        service = injector.getInstance(PipelineService.class);
+        pipelineManager = injector.getInstance(PipelineManager.class);
         taskQueue = LocalTaskQueueTestConfig.getLocalTaskQueue();
         cleanUp();
     }
@@ -97,24 +118,56 @@ public abstract class PipelineTest extends TestCase {
     @Override
     public void tearDown() throws Exception {
         cleanUp();
+        if (Consts.SPANNER_EMULATOR_HOST != null) {
+            removeTestDatabase();
+        }
         helper.tearDown();
         super.tearDown();
+    }
+
+    final void createTestDatabase() throws IOException, ExecutionException, InterruptedException {
+        final InstanceAdminClient instanceAdminClient = spanner.getInstanceAdminClient();
+        final InstanceId instanceId = InstanceId.of(Consts.SPANNER_PROJECT, Consts.SPANNER_INSTANCE);
+        if (
+                StreamSupport.stream(instanceAdminClient.listInstances().iterateAll().spliterator(), false)
+                        .noneMatch(o -> o.getId().equals(instanceId))
+        ) {
+            instanceAdminClient.createInstance(
+                    InstanceInfo.newBuilder(instanceId)
+                            .setInstanceConfigId(InstanceConfigId.of(Consts.SPANNER_PROJECT, Consts.SPANNER_INSTANCE))
+                            .setDisplayName(Consts.SPANNER_INSTANCE)
+                            .setNodeCount(1)
+                            .build()
+            ).get();
+        }
+
+        removeTestDatabase();
+
+        final DatabaseAdminClient dbAdminClient = spanner.getDatabaseAdminClient();
+        final String databaseDdl = CharStreams.toString(new InputStreamReader(getClass().getClassLoader().getResourceAsStream("database.sql"), Charsets.UTF_8));
+        dbAdminClient.createDatabase(Consts.SPANNER_INSTANCE, Consts.SPANNER_DATABASE, Arrays.stream(databaseDdl.split(";")).collect(Collectors.toList())).get();
+        final DatabaseId databaseId = DatabaseId.of(Consts.SPANNER_PROJECT, Consts.SPANNER_INSTANCE, Consts.SPANNER_DATABASE);
+    }
+
+    final void removeTestDatabase() {
+        final DatabaseAdminClient dbAdminClient = spanner.getDatabaseAdminClient();
+        dbAdminClient.dropDatabase(Consts.SPANNER_INSTANCE, Consts.SPANNER_DATABASE);
     }
 
     private void cleanUp() throws NoSuchObjectException {
         service.cleanBobs(UuidGenerator.getTestPrefix());
         final Set<UUID> testPipelines = service.getTestPipelines();
-        for (UUID pipelineId : testPipelines) {
+        for (final UUID pipelineId : testPipelines) {
             service.deletePipelineRecords(pipelineId, true, false);
         }
     }
 
-    protected void waitUntilTaskQueueIsEmpty() throws InterruptedException {
+    protected final void waitUntilTaskQueueIsEmpty() throws InterruptedException {
         boolean hasMoreTasks = true;
         while (hasMoreTasks) {
-            Map<String, QueueStateInfo> taskInfoMap = taskQueue.getQueueStateInfo();
+            final Map<String, QueueStateInfo> taskInfoMap = taskQueue.getQueueStateInfo();
             hasMoreTasks = false;
-            for (QueueStateInfo taskQueueInfo : taskInfoMap.values()) {
+            for (final QueueStateInfo taskQueueInfo : taskInfoMap.values()) {
                 if (taskQueueInfo.getCountTasks() > 0) {
                     hasMoreTasks = true;
                     break;
@@ -126,10 +179,10 @@ public abstract class PipelineTest extends TestCase {
         }
     }
 
-    protected JobInfo waitUntilJobComplete(UUID pipelineId) throws Exception {
+    protected final JobInfo waitUntilJobComplete(final UUID pipelineId) throws Exception {
         while (true) {
             Thread.sleep(2000);
-            JobInfo jobInfo = service.getJobInfo(pipelineId, pipelineId);
+            final JobInfo jobInfo = service.getJobInfo(pipelineId, pipelineId);
             switch (jobInfo.getJobState()) {
                 case RUNNING:
                 case WAITING_TO_RETRY:
@@ -140,10 +193,10 @@ public abstract class PipelineTest extends TestCase {
         }
     }
 
-    protected PipelineInfo waitUntilPipelineComplete(UUID pipelineId) throws Exception {
+    protected final PipelineInfo waitUntilPipelineComplete(final UUID pipelineId) throws Exception {
         while (true) {
             Thread.sleep(2000);
-            PipelineInfo jobInfo = service.getPipelineInfo(pipelineId);
+            final PipelineInfo jobInfo = service.getPipelineInfo(pipelineId);
             switch (jobInfo.getJobState()) {
                 case RUNNING:
                 case WAITING_TO_RETRY:
@@ -155,7 +208,7 @@ public abstract class PipelineTest extends TestCase {
     }
 
     @SuppressWarnings("unchecked")
-    protected <T> T waitForJobToComplete(UUID pipelineId) throws Exception {
+    protected final <T> T waitForJobToComplete(final UUID pipelineId) throws Exception {
         JobInfo jobInfo = waitUntilJobComplete(pipelineId);
         switch (jobInfo.getJobState()) {
             case COMPLETED_SUCCESSFULLY:

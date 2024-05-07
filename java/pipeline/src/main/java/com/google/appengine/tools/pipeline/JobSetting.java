@@ -53,7 +53,7 @@ public interface JobSetting extends Serializable {
             this.value = value;
         }
 
-        public int getValue() {
+        public final int getValue() {
             return value;
         }
 
@@ -75,7 +75,7 @@ public interface JobSetting extends Serializable {
             this.value = value;
         }
 
-        public String getValue() {
+        public final String getValue() {
             return value;
         }
 

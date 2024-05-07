@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 @SuppressWarnings("serial")
 public class TestingTaskQueueCallback extends DeferredTaskCallback {
 
-    private static Logger LOGGER = Logger.getLogger(TestingTaskQueueCallback.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(TestingTaskQueueCallback.class.getName());
     private final PipelineManager pipelineManager;
 
     public TestingTaskQueueCallback() {
@@ -50,35 +50,35 @@ public class TestingTaskQueueCallback extends DeferredTaskCallback {
      * @return The HTTP status code of the fetch.
      */
     @Override
-    public int executeNonDeferredRequest(URLFetchServicePb.URLFetchRequest req) {
+    public int executeNonDeferredRequest(final URLFetchServicePb.URLFetchRequest req) {
         String taskName = null;
         int retryCount = -1;
         String queueName = null;
-        for (URLFetchRequest.Header pbHeader : req.getHeaderList()) {
-            String headerName = pbHeader.getKey();
-            String headerValue = pbHeader.getValue();
+        for (final URLFetchRequest.Header pbHeader : req.getHeaderList()) {
+            final String headerName = pbHeader.getKey();
+            final String headerValue = pbHeader.getValue();
             if (TaskHandler.TASK_NAME_REQUEST_HEADER.equalsIgnoreCase(headerName)) {
                 taskName = headerValue;
             } else if (TaskHandler.TASK_RETRY_COUNT_HEADER.equalsIgnoreCase(headerName)) {
                 try {
                     retryCount = Integer.parseInt(headerValue);
-                } catch (Exception e) {
+                } catch (Exception ignore) {
                     // ignore
                 }
             } else if (TaskHandler.TASK_QUEUE_NAME_HEADER.equalsIgnoreCase(headerName)) {
                 queueName = headerValue;
             }
         }
-        String requestBody = req.getPayload().toStringUtf8();
-        String[] params = requestBody.split("&");
-        Properties properties = new Properties();
+        final String requestBody = req.getPayload().toStringUtf8();
+        final String[] params = requestBody.split("&");
+        final Properties properties = new Properties();
         Task task = null;
         try {
-            for (String param : params) {
-                String[] pair = param.split("=");
-                String name = pair[0];
-                String value = pair[1];
-                String decodedValue = URLDecoder.decode(value, "UTF8");
+            for (final String param : params) {
+                final String[] pair = param.split("=");
+                final String name = pair[0];
+                final String value = pair[1];
+                final String decodedValue = URLDecoder.decode(value, "UTF8");
                 properties.put(name, decodedValue);
             }
             task = Task.fromProperties(taskName, properties);

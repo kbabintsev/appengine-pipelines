@@ -123,7 +123,7 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
     @Inject
     public AppEngineBackEnd(final Provider<PipelineManager> pipelineManager, final PipelineTaskQueue pipelineTaskQueue) {
         this.pipelineManager = pipelineManager;
-        spanner = SpannerOptions.newBuilder().build().getService();
+        spanner = SpannerOptions.newBuilder().setEmulatorHost(Consts.SPANNER_EMULATOR_HOST).build().getService();
         final DatabaseId logsId = DatabaseId.of(Consts.SPANNER_PROJECT, Consts.SPANNER_INSTANCE, Consts.SPANNER_DATABASE);
         databaseClient = spanner.getDatabaseClient(logsId);
         taskQueue = pipelineTaskQueue;
@@ -708,25 +708,25 @@ public final class AppEngineBackEnd implements PipelineBackEnd {
 
         final PipelineRecord pipeline = new PipelineRecord(null, databaseClient.singleUse().readRow(PipelineRecord.DATA_STORE_KIND, Key.of(pipelineKey.toString()), PipelineRecord.PROPERTIES));
         try (ReadContext transaction = databaseClient.readOnlyTransaction()) {
-            queryAll(transaction, Barrier.DATA_STORE_KIND, Barrier.PROPERTIES, pipelineKey, (struct) -> {
+            queryAll(transaction, Barrier.DATA_STORE_KIND, Barrier.PROPERTIES, pipelineKey, struct -> {
                 barriers.put(
                         new RecordKey(UUID.fromString(struct.getString(Barrier.PIPELINE_KEY_PROPERTY)), UUID.fromString(struct.getString(Barrier.KEY_PROPERTY))),
                         new Barrier(null, struct)
                 );
             });
-            queryAll(transaction, Slot.DATA_STORE_KIND, Slot.PROPERTIES, pipelineKey, (struct) -> {
+            queryAll(transaction, Slot.DATA_STORE_KIND, Slot.PROPERTIES, pipelineKey, struct -> {
                 slots.put(
                         new RecordKey(UUID.fromString(struct.getString(Slot.PIPELINE_KEY_PROPERTY)), UUID.fromString(struct.getString(Slot.KEY_PROPERTY))),
                         new Slot(pipelineManager.get(), null, struct, true)
                 );
             });
-            queryAll(transaction, JobRecord.DATA_STORE_KIND, JobRecord.PROPERTIES, pipelineKey, (struct) -> {
+            queryAll(transaction, JobRecord.DATA_STORE_KIND, JobRecord.PROPERTIES, pipelineKey, struct -> {
                 jobs.put(UUID.fromString(struct.getString(JobRecord.KEY_PROPERTY)), new JobRecord(null, struct));
             });
-            queryAll(transaction, JobInstanceRecord.DATA_STORE_KIND, JobInstanceRecord.PROPERTIES, pipelineKey, (struct) -> {
+            queryAll(transaction, JobInstanceRecord.DATA_STORE_KIND, JobInstanceRecord.PROPERTIES, pipelineKey, struct -> {
                 jobInstanceRecords.put(UUID.fromString(struct.getString(JobInstanceRecord.KEY_PROPERTY)), new JobInstanceRecord(pipelineManager.get(), null, struct));
             });
-            queryAll(transaction, ExceptionRecord.DATA_STORE_KIND, ExceptionRecord.PROPERTIES, pipelineKey, (struct) -> {
+            queryAll(transaction, ExceptionRecord.DATA_STORE_KIND, ExceptionRecord.PROPERTIES, pipelineKey, struct -> {
                 failureRecords.put(UUID.fromString(struct.getString(ExceptionRecord.KEY_PROPERTY)), new ExceptionRecord(pipelineManager.get(), null, struct));
             });
         }

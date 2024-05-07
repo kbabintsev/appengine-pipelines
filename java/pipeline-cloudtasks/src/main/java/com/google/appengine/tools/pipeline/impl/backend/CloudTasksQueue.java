@@ -30,13 +30,19 @@ import com.google.appengine.tools.pipeline.Route;
 import com.google.appengine.tools.pipeline.impl.QueueSettings;
 import com.google.appengine.tools.pipeline.impl.servlets.TaskHandler;
 import com.google.appengine.tools.pipeline.impl.tasks.Task;
+import com.google.common.collect.ImmutableList;
+import dev.failsafe.Failsafe;
+import dev.failsafe.FailsafeException;
+import dev.failsafe.FailsafeExecutor;
+import dev.failsafe.RetryPolicy;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.security.GeneralSecurityException;
 import java.time.Duration;
-import java.util.ArrayList;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
-import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -48,6 +54,15 @@ import java.util.stream.Collectors;
  */
 public final class CloudTasksQueue implements PipelineTaskQueue {
 
+    static final FailsafeExecutor<Object> RETRY_HELPER = Failsafe.with(
+            RetryPolicy.builder()
+                    .withMaxAttempts(6)
+                    .withBackoff(1, 4, ChronoUnit.SECONDS)
+                    .abortOn(GoogleJsonResponseException.class)
+                    .handle(SocketTimeoutException.class)
+                    .handle(IOException.class)
+                    .build()
+    );
     private static final String CLOUDTASKS_API_ROOT_URL_PROPERTY = "cloudtasks.api.root.url";
     private static final String CLOUDTASKS_GZIP_DISABLE = "cloudtasks.gzip.disable";
     private static final String CLOUDTASKS_API_KEY_PROPERTY = "cloudtasks.api.key";
@@ -111,28 +126,7 @@ public final class CloudTasksQueue implements PipelineTaskQueue {
 
     @Override
     public void enqueue(final Task task) {
-        LOGGER.finest("Enqueueing: " + task);
-        final com.google.api.services.cloudtasks.v2.model.Task taskOptions = toTaskOptions(task);
-        try {
-            cloudTask
-                    .projects()
-                    .locations()
-                    .queues()
-                    .tasks()
-                    .create(
-                            getQueueName(task.getQueueSettings().getOnQueue()),
-                            new CreateTaskRequest().setTask(taskOptions)
-                    )
-                    .setKey(this.apiKey)
-                    .setDisableGZipContent(this.gzipDisable)
-                    .execute();
-        } catch (IOException e) {
-            if (e instanceof GoogleJsonResponseException && ((GoogleJsonResponseException) e).getStatusCode() == HTTP_409) {
-                //ignore TaskAlreadyExist
-            } else {
-                throw new RuntimeException(e);
-            }
-        }
+        addToQueue(ImmutableList.of(task));
     }
 
     @Override
@@ -155,36 +149,33 @@ public final class CloudTasksQueue implements PipelineTaskQueue {
     }
 
     //VisibleForTesting
-    List<com.google.api.services.cloudtasks.v2.model.Task> addToQueue(final Collection<Task> tasks) {
-        final List<com.google.api.services.cloudtasks.v2.model.Task> handles = new ArrayList<>();
+    void addToQueue(final Collection<Task> tasks) {
         for (final Task task : tasks) {
             LOGGER.finest("Enqueueing: " + task);
-            String queueName = task.getQueueSettings().getOnQueue();
-            queueName = queueName == null ? "default" : queueName;
+            final String queueName = Optional.ofNullable(task.getQueueSettings().getOnQueue()).orElse("default");
             try {
-                handles.add(
-                        cloudTask
-                            .projects()
-                            .locations()
-                            .queues()
-                            .tasks()
-                            .create(
-                                    getQueueName(queueName),
-                                    new CreateTaskRequest().setTask(toTaskOptions(task))
-                            )
-                            .setDisableGZipContent(this.gzipDisable)
-                            .setKey(this.apiKey)
-                            .execute()
+                RETRY_HELPER.get(() -> cloudTask
+                        .projects()
+                        .locations()
+                        .queues()
+                        .tasks()
+                        .create(
+                                getQueueName(queueName),
+                                new CreateTaskRequest().setTask(toTaskOptions(task))
+                        )
+                        .setDisableGZipContent(this.gzipDisable)
+                        .setKey(this.apiKey)
+                        .execute()
                 );
-            } catch (IOException e) {
-                if (e instanceof GoogleJsonResponseException && ((GoogleJsonResponseException) e).getStatusCode() == HTTP_409) {
-                    throw new TaskAlreadyExistsException(e);
+            } catch (FailsafeException e) {
+                final Throwable cause = e.getCause();
+                if (cause instanceof GoogleJsonResponseException && ((GoogleJsonResponseException) cause).getStatusCode() == HTTP_409) {
+                    //ignore TaskAlreadyExist
                 } else {
                     throw new RuntimeException(e);
                 }
             }
         }
-        return handles;
     }
 
     private String getQueueName(final String queue) {

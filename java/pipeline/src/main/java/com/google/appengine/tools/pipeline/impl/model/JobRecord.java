@@ -535,7 +535,7 @@ public final class JobRecord extends PipelineModelObject implements JobInfo {
     public boolean isExceptionHandlerSpecified() {
         // If this job is exception handler itself then it has exceptionHandlerSpecified
         // but it shouldn't delegate to it.
-        return exceptionHandlerSpecified && (!isCallExceptionHandler());
+        return exceptionHandlerSpecified && !isCallExceptionHandler();
     }
 
     /**

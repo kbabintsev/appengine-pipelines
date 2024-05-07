@@ -321,11 +321,4 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-    <pluginRepositories>
-        <pluginRepository>
-            <id>checkstyle-backport-jre6-maven</id>
-            <name>checkstyle-backport-jre6-maven</name>
-            <url>http://rnveach.github.io/checkstyle-backport-jre6/maven2</url>
-        </pluginRepository>
-    </pluginRepositories>
 </project>
